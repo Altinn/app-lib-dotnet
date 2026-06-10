@@ -11,6 +11,7 @@ using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.App.Core.Tests.TestUtils;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -25,7 +26,6 @@ public sealed class DataModelFieldCalculatorTests
     private readonly DataModelFieldCalculator _dataModelFieldCalculator;
     private readonly FakeLogger<DataModelFieldCalculator> _logger = new();
     private readonly Mock<IAppResources> _appResources = new(MockBehavior.Strict);
-    private readonly Mock<ILayoutEvaluatorStateInitializer> _layoutInitializer = new(MockBehavior.Strict);
     private readonly IOptions<FrontEndSettings> _frontendSettings = Microsoft.Extensions.Options.Options.Create(
         new FrontEndSettings()
     );
@@ -48,7 +48,6 @@ public sealed class DataModelFieldCalculatorTests
         _output = output;
         _dataModelFieldCalculator = new DataModelFieldCalculator(
             _logger,
-            _layoutInitializer.Object,
             _appResources.Object,
             dataElementAccessChecker.Object,
             telemetry.Object
@@ -101,7 +100,6 @@ public sealed class DataModelFieldCalculatorTests
             _dataModelFieldCalculator.CalculateFormData(
                 _instanceDataAccessor,
                 _dataElement,
-                "Task_1",
                 JsonSerializer.Serialize(testCase.CalculationConfig)
             )
         );
@@ -136,6 +134,7 @@ public sealed class DataModelFieldCalculatorTests
             if (expected.Result.HasValue)
             {
                 Assert.Equal(expected.Result.Value.ToObject(), result.Get(expected.Field));
+                Assert.Empty(_logger.Collector.GetSnapshot());
             }
             else
             {
@@ -156,7 +155,6 @@ public sealed class DataModelFieldCalculatorTests
         await _dataModelFieldCalculator.CalculateFormData(
             _instanceDataAccessor,
             _dataElement,
-            "Task_1",
             JsonSerializer.Serialize(testCase.CalculationConfig)
         );
 
@@ -171,12 +169,6 @@ public sealed class DataModelFieldCalculatorTests
         var dataType = new DataType() { Id = "default" };
 
         _dataElement = new DataElement { Id = "30844cc0-81af-4429-9f9e-035d78f1f9da", DataType = "default" };
-        _instanceDataAccessor = DynamicClassBuilder.DataAccessorFromJsonDocument(
-            instance,
-            testCase.FormData,
-            _dataElement
-        );
-
         var layout = new LayoutSetComponent(testCase.Layouts, "layout", dataType);
         var componentModel = new LayoutModel([layout], null);
         var translationService = new TranslationService(
@@ -184,17 +176,16 @@ public sealed class DataModelFieldCalculatorTests
             _appResources.Object,
             FakeLoggerXunit.Get<TranslationService>(_output)
         );
-        var evaluatorState = new LayoutEvaluatorState(
-            _instanceDataAccessor,
-            componentModel,
+        _instanceDataAccessor = DynamicClassBuilder.DataAccessorFromJsonDocument(
+            instance,
             translationService,
-            _frontendSettings.Value
+            componentModel,
+            new FrontEndSettings(),
+            testCase.FormData,
+            gatewayAction: null,
+            language: null,
+            _dataElement
         );
-        _layoutInitializer
-            .Setup(init =>
-                init.Init(It.IsAny<IInstanceDataAccessor>(), "Task_1", It.IsAny<string?>(), It.IsAny<string?>())
-            )
-            .ReturnsAsync(evaluatorState);
 
         _appResources
             .Setup(ar => ar.GetTexts("org", "app", "nb"))
