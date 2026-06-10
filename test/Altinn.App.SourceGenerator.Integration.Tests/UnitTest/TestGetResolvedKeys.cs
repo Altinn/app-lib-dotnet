@@ -119,10 +119,7 @@ public class TestGetResolvedKeys()
 
         // Test formDataWrapper
         var dataWrapper = FormDataWrapperFactory.Create(_skjema, _dataType, _dataElement);
-        var resolvedKeys = dataWrapper
-            .GetResolvedKeys(new DataReference() { Field = field, DataElementIdentifier = _dataElement })
-            .Select(k => k.Field)
-            .ToArray();
+        var resolvedKeys = dataWrapper.GetResolvedKeys(field);
         Assert.Equal(expectedKeys, resolvedKeys);
     }
 
@@ -136,11 +133,7 @@ public class TestGetResolvedKeys()
         Assert.Contains("ResolveKeys", exception.Message);
 
         var dataWrapper = FormDataWrapperFactory.Create(_skjema, _dataType, _dataElement);
-        var dataException = Assert.Throws<ArgumentException>(() =>
-            dataWrapper
-                .GetResolvedKeys(new DataReference() { Field = field, DataElementIdentifier = _dataElement })
-                .ToArray()
-        );
+        var dataException = Assert.Throws<ArgumentException>(() => dataWrapper.GetResolvedKeys(field));
         Assert.Contains("ResolveKeys", dataException.Message);
     }
 }

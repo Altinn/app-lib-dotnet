@@ -66,26 +66,27 @@ internal sealed class DataModelFieldCalculator
 
         foreach (var (baseField, calculation) in dataModelFieldCalculations)
         {
-            var resolvedFields = await dataAccessor
-                .GetLayoutEvaluatorState()
-                .GetResolvedKeys(
-                    new DataReference() { Field = baseField, DataElementIdentifier = dataElementIdentifier }
-                );
+            var resolvedFields = formDataWrapper.GetResolvedKeys(baseField);
             foreach (var resolvedField in resolvedFields)
             {
+                var resolvedFieldReference = new DataReference()
+                {
+                    Field = resolvedField,
+                    DataElementIdentifier = dataElementIdentifier,
+                };
                 var context = new ComponentContext(
                     dataAccessor,
                     component: null,
-                    rowIndices: ExpressionHelper.GetRowIndices(resolvedField.Field),
-                    dataElementIdentifier: resolvedField.DataElementIdentifier
+                    rowIndices: ExpressionHelper.GetRowIndices(resolvedField),
+                    dataElementIdentifier: dataElementIdentifier
                 );
-                var positionalArguments = new ExpressionValue[] { resolvedField.Field };
+                var positionalArguments = new ExpressionValue[] { resolvedFieldReference.Field };
 
                 await RunCalculation(
                     dataAccessor,
                     context,
                     formDataWrapper,
-                    resolvedField,
+                    resolvedFieldReference,
                     positionalArguments,
                     calculation
                 );

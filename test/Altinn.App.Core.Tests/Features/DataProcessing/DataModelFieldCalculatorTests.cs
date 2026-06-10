@@ -11,6 +11,7 @@ using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.App.Core.Tests.TestUtils;
 using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -133,6 +134,7 @@ public sealed class DataModelFieldCalculatorTests
             if (expected.Result.HasValue)
             {
                 Assert.Equal(expected.Result.Value.ToObject(), result.Get(expected.Field));
+                Assert.Empty(_logger.Collector.GetSnapshot());
             }
             else
             {
@@ -183,13 +185,6 @@ public sealed class DataModelFieldCalculatorTests
             gatewayAction: null,
             language: null,
             _dataElement
-        );
-
-        var evaluatorState = new LayoutEvaluatorState(
-            _instanceDataAccessor,
-            componentModel,
-            translationService,
-            _frontendSettings.Value
         );
 
         _appResources

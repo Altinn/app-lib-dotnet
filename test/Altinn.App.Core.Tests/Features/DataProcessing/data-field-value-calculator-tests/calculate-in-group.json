@@ -1,22 +1,37 @@
 {
-    "name": "Should set field when looking up hidden component",
+    "name": "Should set multiple values when in a group",
     "expects": [
         {
-            "field": "form.name",
-            "result": "nyVerdi"
+            "field": "form.children[0].total",
+            "result": 200
+        },
+        {
+            "field": "form.children[1].total",
+            "result": 220
         }
     ],
     "calculationConfig": {
         "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/calculation/calculation.schema.v1.json",
         "calculations": {
-            "form.name": {
-                "expression": "nyVerdi"
+            "form.children.total": {
+                "expression": ["multiply", ["dataModel", "form.children.price"], ["dataModel", "form.children.quantity"]]
             }
         }
     },
     "formData": {
         "form": {
-            "name": "feil"
+            "children": [
+                {
+                    "price": 100,
+                    "quantity": 2,
+                    "total": 0
+                },
+                {
+                    "price": 5,
+                    "quantity": 44,
+                    "total": 0
+                }
+            ]
         }
     },
     "layouts": {
