@@ -668,10 +668,10 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
         {
             throw new JsonException("Expected StartObject token.");
         }
-        var values =
+        var value =
             JsonSerializer.Deserialize<JsonObject>(ref reader, options)
             ?? throw new JsonException("Expected EndObject token.");
-        return new ExpressionValue(values);
+        return new ExpressionValue(value);
     }
 
     /// <inheritdoc />
