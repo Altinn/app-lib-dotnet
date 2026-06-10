@@ -340,8 +340,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                 { } sValue => sValue,
             },
             JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
-            JsonValueKind.Object => JsonSerializer.Serialize(Dictionary),
-            JsonValueKind.Array => JsonSerializer.Serialize(Array),
+            // JsonValueKind.Object => JsonSerializer.Serialize(Object),
+            // JsonValueKind.Array => JsonSerializer.Serialize(Array),
             _ => throw new NotImplementedException($"ToStringForEquals not implemented for {ValueKind}"),
         };
 
