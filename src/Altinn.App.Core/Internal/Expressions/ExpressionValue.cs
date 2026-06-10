@@ -658,7 +658,7 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
         }
         var values =
             JsonSerializer.Deserialize<JsonArray>(ref reader, options)
-            ?? throw new JsonException("Expected EndArray token.");
+            ?? throw new JsonException("Expected JSON array value.");
         return new ExpressionValue(values);
     }
 
