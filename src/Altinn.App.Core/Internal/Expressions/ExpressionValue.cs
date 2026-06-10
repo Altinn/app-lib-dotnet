@@ -670,7 +670,7 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
         }
         var value =
             JsonSerializer.Deserialize<JsonObject>(ref reader, options)
-            ?? throw new JsonException("Expected EndObject token.");
+            ?? throw new JsonException("Expected JSON object value.");
         return new ExpressionValue(value);
     }
 
