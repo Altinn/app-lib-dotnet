@@ -16,12 +16,10 @@ namespace Altinn.App.Core.Internal.Expressions;
 public readonly struct ExpressionValue : IEquatable<ExpressionValue>
 {
     private readonly string? _stringValue = null;
+    private string _stringValueNotNull => _stringValue ?? throw new UnreachableException("String value is null");
 
     // double is a value type where nullable takes extra space, and we only read it when it should be set
     private readonly double _numberValue = 0;
-
-    private readonly JsonObject? _objectValue = null;
-    private readonly JsonArray? _arrayValue = null;
 
     /// <summary>
     /// Constructor for NULL value (structs require a public parameterless constructor)
@@ -85,20 +83,54 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         _stringValue = value;
     }
 
-    /// <summary>
-    /// Constructor for object value
-    /// </summary>
-    public ExpressionValue(JsonObject value)
+    /// <summary>From a JsonNode</summary>
+    private ExpressionValue(JsonNode? value)
     {
-        ValueKind = JsonValueKind.Object;
-        _objectValue = value;
+        if (value is null)
+        {
+            ValueKind = JsonValueKind.Null;
+            return;
+        }
+        ValueKind = value.GetValueKind();
+        switch (ValueKind)
+        {
+            case JsonValueKind.String:
+                _stringValue = value.GetValue<string>();
+                break;
+            case JsonValueKind.Number:
+                _numberValue = value.GetValue<double>();
+                break;
+            case JsonValueKind.Array:
+            case JsonValueKind.Object:
+                _stringValue = JsonSerializer.Serialize(value);
+                break;
+            case JsonValueKind.True:
+            case JsonValueKind.False:
+            case JsonValueKind.Null:
+            case JsonValueKind.Undefined:
+                break;
+        }
     }
 
-    /// <summary>Constructor for array value</summary>
-    public ExpressionValue(JsonArray value)
+    private ExpressionValue(JsonElement value)
     {
-        ValueKind = JsonValueKind.Array;
-        _arrayValue = value;
+        ValueKind = value.ValueKind;
+        switch (ValueKind)
+        {
+            case JsonValueKind.String:
+                _stringValue = value.GetString();
+                break;
+            case JsonValueKind.Number:
+                _numberValue = value.GetDouble();
+                break;
+            case JsonValueKind.True:
+            case JsonValueKind.False:
+                break;
+            case JsonValueKind.Array:
+            case JsonValueKind.Object:
+                _stringValue = value.GetRawText();
+                break;
+        }
     }
 
     /// <summary>
@@ -117,14 +149,14 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     public static implicit operator ExpressionValue(string? value) => new(value);
 
     /// <summary>
-    /// Convert a Dictionary to ExpressionValue
+    /// Convert a JsonNode to ExpressionValue
     /// </summary>
-    public static implicit operator ExpressionValue(JsonObject value) => new(value);
+    public static implicit operator ExpressionValue(JsonNode value) => new(value);
 
     /// <summary>
-    /// Convert an array to ExpressionValue
+    /// Convert a JsonElement to ExpressionValue
     /// </summary>
-    public static implicit operator ExpressionValue(JsonArray value) => new(value);
+    public static implicit operator ExpressionValue(JsonElement value) => new(value);
 
     /// <summary>
     /// Convert any of the supported CLR types to an expressionTypeUnion
@@ -178,48 +210,20 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                     '"'
                 ) // Trim quotes to match the string representation
             ,
-            BigInteger => Null,
-            JsonObject jsonObject => jsonObject,
-            JsonArray jsonArray => jsonArray,
-            _ => ToJsonNodeOrNull(value),
-        };
-    }
-
-    private static ExpressionValue ToJsonNodeOrNull(object? value)
-    {
-        var node = JsonSerializer.SerializeToNode(value);
-        return node switch
-        {
-            JsonArray jsonArray => jsonArray,
-            JsonObject jsonObject => jsonObject,
-            _ => Null,
-        };
-    }
-
-    /// <summary>
-    /// Convert a JsonElement to ExpressionValue.
-    /// </summary>
-    public static ExpressionValue FromJsonElement(JsonElement element)
-    {
-        return element.ValueKind switch
-        {
-            JsonValueKind.Null => Null,
-            JsonValueKind.Undefined => Undefined,
-            JsonValueKind.True => True,
-            JsonValueKind.False => False,
-            JsonValueKind.String => element.GetString(),
-            JsonValueKind.Number => element.GetDouble(),
-            JsonValueKind.Object => element.Deserialize<JsonObject>() ?? Null,
-            JsonValueKind.Array => element.Deserialize<JsonArray>() ?? Null,
-            _ => throw new InvalidOperationException($"Invalid JsonElement with ValueKind {element.ValueKind}"),
+            BigInteger bigInteger => bigInteger.ToString(CultureInfo.InvariantCulture),
+            JsonNode jsonNode => jsonNode,
+            // Fallback to whatever JsonSerializer does
+            _ => JsonSerializer.SerializeToElement(value),
         };
     }
 
     /// <summary>
     /// Convert the value to the relevant CLR type
     /// </summary>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
+    [Obsolete(
+        "ToObject is not type safe and should be avoided. Use the type-specific properties or TryDeserialize<T> instead.",
+        error: false
+    )]
     public object? ToObject() =>
         ValueKind switch
         {
@@ -228,8 +232,6 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             JsonValueKind.False => false,
             JsonValueKind.String => String,
             JsonValueKind.Number => Number,
-            JsonValueKind.Object => Object,
-            JsonValueKind.Array => Array,
             _ => throw new InvalidOperationException("Invalid value kind"),
         };
 
@@ -254,48 +256,88 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// <summary>
     /// Get the value as a string (or throw if it isn't a string ValueKind)
     /// </summary>
-    public string String =>
-        ValueKind switch
+    public string String
+    {
+        get
         {
-            JsonValueKind.String => _stringValue ?? throw new UnreachableException("Not a string"),
-            _ => throw new InvalidCastException(
-                $"The .String property can't be used on an expression value that represent a {ValueKind}"
-            ),
-        };
+            ThrowIfNotOfKind(JsonValueKind.String);
+            return _stringValueNotNull;
+        }
+    }
 
     /// <summary>
     /// Get the value as a number (or throw if it isn't a number ValueKind)
     /// </summary>
-    public double Number =>
-        ValueKind switch
+    public double Number
+    {
+        get
         {
-            JsonValueKind.Number => _numberValue,
-            _ => throw new InvalidCastException(
-                $"The .Number property can't be used on an expression value that represent a {ValueKind}"
-            ),
-        };
+            ThrowIfNotOfKind(JsonValueKind.Number);
+            return _numberValue;
+        }
+    }
 
-#pragma warning disable CA1720
     /// <summary>
     /// Get the value as an object (or throw if it isn't an object ValueKind)
     /// </summary>
-    public JsonObject Object =>
+    public JsonNode? JsonNode =>
         ValueKind switch
         {
-            JsonValueKind.Object => _objectValue ?? throw new UnreachableException($"{this} is not an object"),
-            _ => throw new InvalidCastException(
-                $"The .Object property can't be used on an expression value that represent a {ValueKind}"
-            ),
+            JsonValueKind.Undefined => null,
+            JsonValueKind.Object => JsonObject,
+            JsonValueKind.Array => JsonArray,
+            JsonValueKind.String => _stringValue,
+            JsonValueKind.Number => _numberValue,
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Null => null,
+            _ => throw new UnreachableException($"Invalid value kind"),
         };
-#pragma warning restore CA1720
+
+    /// <summary>
+    /// Get the value as a dictionary (or throw if it isn't an object ValueKind)
+    /// </summary>
+    public JsonObject JsonObject
+    {
+        get
+        {
+            ThrowIfNotOfKind(JsonValueKind.Object);
+            return JsonNode.Parse(_stringValueNotNull)?.AsObject()
+                ?? throw new UnreachableException("JsonObject value is null when ValueKind is Object");
+        }
+    }
 
     /// <summary>Get the value as an array (or throw if it isn't an array ValueKind)</summary>
-    public JsonArray Array =>
+    public JsonArray JsonArray
+    {
+        get
+        {
+            ThrowIfNotOfKind(JsonValueKind.Array);
+            return JsonNode.Parse(_stringValueNotNull)?.AsArray()
+                ?? throw new UnreachableException("JsonArray value is null when ValueKind is Array");
+        }
+    }
+
+    /// <summary>
+    /// Get the value as a JsonElement
+    /// </summary>
+    public JsonElement JsonElement =>
         ValueKind switch
         {
-            JsonValueKind.Array => _arrayValue ?? throw new UnreachableException($"{this} is not an array"),
-            _ => throw new InvalidCastException(
-                $"The .Array property can't be used on an expression value that represent a {ValueKind}"
+            JsonValueKind.Object or JsonValueKind.Array => JsonDocument
+                .Parse(
+                    _stringValue
+                        ?? throw new UnreachableException("_stringValue is null when ValueKind is Object or Array")
+                )
+                .RootElement,
+            JsonValueKind.String => JsonSerializer.SerializeToElement(_stringValue),
+            JsonValueKind.Number => JsonSerializer.SerializeToElement(_numberValue),
+            JsonValueKind.True => JsonSerializer.SerializeToElement(true),
+            JsonValueKind.False => JsonSerializer.SerializeToElement(false),
+            JsonValueKind.Null => JsonSerializer.SerializeToElement((object?)null),
+            JsonValueKind.Undefined => default,
+            _ => throw new InvalidOperationException(
+                $"The .JsonElement property can't be used on an expression value that represent a {ValueKind}"
             ),
         };
 
@@ -311,8 +353,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             JsonValueKind.False => "false",
             JsonValueKind.String => JsonSerializer.Serialize(String, _unsafeSerializerOptionsForSerializingDates),
             JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
-            JsonValueKind.Object => JsonSerializer.Serialize(Object),
-            JsonValueKind.Array => JsonSerializer.Serialize(Array),
+            JsonValueKind.Object or JsonValueKind.Array => _stringValueNotNull,
             _ => throw new InvalidOperationException($"Invalid value kind {ValueKind}"),
         };
 
@@ -323,19 +364,13 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// <returns>
     /// A string representation of the value. Returns "true" for boolean true, "false" for boolean false,
     /// the string content for string values, the numeric value as a string for number values, or an empty string for null.
-    /// Throws <see cref="InvalidOperationException"/> for invalid or unsupported value kinds.
     /// </returns>
     public string? ToStringForText() =>
         ValueKind switch
         {
             JsonValueKind.Null => null,
-            JsonValueKind.True => "true",
-            JsonValueKind.False => "false",
-            JsonValueKind.String => String,
-            JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
-            JsonValueKind.Object => JsonSerializer.Serialize(Object),
-            JsonValueKind.Array => JsonSerializer.Serialize(Array),
-            _ => throw new InvalidOperationException($"Invalid value kind {ValueKind}"),
+            JsonValueKind.String => String, // Unquoted
+            _ => ToString(),
         };
 
     /// <summary>
@@ -361,8 +396,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                 { } sValue => sValue,
             },
             JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
-            // JsonValueKind.Object => JsonSerializer.Serialize(Object),
-            // JsonValueKind.Array => JsonSerializer.Serialize(Array),
+            JsonValueKind.Object => JsonSerializer.Serialize(this),
+            JsonValueKind.Array => JsonSerializer.Serialize(this),
             _ => throw new NotImplementedException($"ToStringForEquals not implemented for {ValueKind}"),
         };
 
@@ -648,57 +683,29 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             || type == typeof(ushort)
             || type == typeof(sbyte);
     }
-}
 
-/// <summary>
-/// JsonTypeUnion should serialize as the json value it represents, and the properties can't be accessed directly anyway
-/// </summary>
-internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
-{
-    /// <inheritdoc />
-    public override ExpressionValue Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    private void ThrowIfNotOfKind(JsonValueKind jsonValueKind)
     {
-        return reader.TokenType switch
-        {
-            JsonTokenType.True => true,
-            JsonTokenType.False => false,
-            JsonTokenType.String => reader.GetString(),
-            JsonTokenType.Number => reader.GetDouble(),
-            JsonTokenType.Null => ExpressionValue.Null,
-            JsonTokenType.StartObject => ReadObject(ref reader, options),
-            JsonTokenType.StartArray => ReadArray(ref reader, options),
-            _ => throw new JsonException(),
-        };
+        if (ValueKind != jsonValueKind)
+            throw new InvalidCastException(
+                $"The .JsonObject property can't be used on an expression value that represent a {ValueKind}"
+            );
     }
 
-    private static ExpressionValue ReadArray(ref Utf8JsonReader reader, JsonSerializerOptions options)
+    /// <summary>
+    /// Utility to initialize an ExpressionValue from a json string.
+    /// </summary>
+    public static ExpressionValue FromJsonString(string jsonString)
     {
-        if (reader.TokenType != JsonTokenType.StartArray)
-        {
-            throw new JsonException("Expected StartArray token.");
-        }
-        var values =
-            JsonSerializer.Deserialize<JsonArray>(ref reader, options)
-            ?? throw new JsonException("Expected JSON array value.");
-        return new ExpressionValue(values);
+        //TODO: consider a more lightweight way to validate the json string
+        //      correctly initialize the ExpressionValue.
+        using var doc = JsonDocument.Parse(jsonString);
+        return new(doc.RootElement);
     }
 
-    private static ExpressionValue ReadObject(ref Utf8JsonReader reader, JsonSerializerOptions options)
+    internal void WriteJson(Utf8JsonWriter writer, JsonSerializerOptions options)
     {
-        if (reader.TokenType != JsonTokenType.StartObject)
-        {
-            throw new JsonException("Expected StartObject token.");
-        }
-        var value =
-            JsonSerializer.Deserialize<JsonObject>(ref reader, options)
-            ?? throw new JsonException("Expected JSON object value.");
-        return new ExpressionValue(value);
-    }
-
-    /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, ExpressionValue value, JsonSerializerOptions options)
-    {
-        switch (value.ValueKind)
+        switch (ValueKind)
         {
             case JsonValueKind.Null:
             case JsonValueKind.Undefined:
@@ -711,19 +718,51 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
                 writer.WriteBooleanValue(false);
                 break;
             case JsonValueKind.String:
-                writer.WriteStringValue(value.String);
+                writer.WriteStringValue(_stringValueNotNull);
                 break;
             case JsonValueKind.Number:
-                writer.WriteNumberValue(value.Number);
+                writer.WriteNumberValue(_numberValue);
                 break;
             case JsonValueKind.Object:
-                JsonSerializer.Serialize(writer, value.Object, options);
-                break;
             case JsonValueKind.Array:
-                JsonSerializer.Serialize(writer, value.Array, options);
+                writer.WriteRawValue(_stringValueNotNull);
                 break;
             default:
                 throw new JsonException();
         }
     }
+}
+
+/// <summary>
+/// JsonTypeUnion should serialize as the json value it represents, and the properties can't be accessed directly anyway
+/// </summary>
+internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
+{
+    /// <inheritdoc />
+    public override ExpressionValue Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        switch (reader.TokenType)
+        {
+            case JsonTokenType.True:
+                return true;
+            case JsonTokenType.False:
+                return false;
+            case JsonTokenType.String:
+                return reader.GetString();
+            case JsonTokenType.Number:
+                return reader.GetDouble();
+            case JsonTokenType.Null:
+                return ExpressionValue.Null;
+            case JsonTokenType.StartObject:
+            case JsonTokenType.StartArray:
+                using (var doc = JsonDocument.ParseValue(ref reader))
+                    return doc.RootElement;
+            default:
+                throw new JsonException();
+        }
+    }
+
+    /// <inheritdoc />
+    public override void Write(Utf8JsonWriter writer, ExpressionValue value, JsonSerializerOptions options) =>
+        value.WriteJson(writer, options);
 }
