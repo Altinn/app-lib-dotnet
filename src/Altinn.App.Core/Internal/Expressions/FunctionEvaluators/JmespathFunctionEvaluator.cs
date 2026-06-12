@@ -3,23 +3,19 @@ using DevLab.JmesPath;
 
 namespace Altinn.App.Core.Internal.Expressions.FunctionEvaluators;
 
-internal sealed class JmespathFunctionEvaluator
+internal static class JmespathFunctionEvaluator
 {
-    private readonly ExpressionValue[] _args;
-
-    public JmespathFunctionEvaluator(ExpressionValue[] args) => _args = args;
-
-    public ExpressionValue Evaluate()
+    public static ExpressionValue Evaluate(ExpressionValue[] args)
     {
-        if (_args.Length != 2)
+        if (args.Length != 2)
         {
-            throw new ExpressionEvaluatorTypeErrorException($"Expected 2 argument(s), got {_args.Length}");
+            throw new ExpressionEvaluatorTypeErrorException($"Expected 2 argument(s), got {args.Length}");
         }
-        if (_args[1].ValueKind != JsonValueKind.String)
+        if (args[1].ValueKind != JsonValueKind.String)
         {
-            throw new ExpressionEvaluatorTypeErrorException($"Expected argument to be string, got {_args[1]}");
+            throw new ExpressionEvaluatorTypeErrorException($"Expected argument to be string, got {args[1]}");
         }
-        return EvaluateWithValidArguments(_args[0], _args[1].String);
+        return EvaluateWithValidArguments(args[0], args[1].String);
     }
 
     private static ExpressionValue EvaluateWithValidArguments(ExpressionValue data, string query)

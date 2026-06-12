@@ -1024,7 +1024,7 @@ public static partial class ExpressionEvaluator
 
     private static ExpressionValue Jmespath(ExpressionValue[] args)
     {
-        return new JmespathFunctionEvaluator(args).Evaluate();
+        return JmespathFunctionEvaluator.Evaluate(args);
     }
 
     /// <summary>
