@@ -523,4 +523,20 @@ public class AppResourcesSI : IAppResources
 
         return filedata;
     }
+
+    /// <inheritdoc />
+    public string? GetXsdSchema(string modelId)
+    {
+        string legalPath = Path.Join(_settings.AppBasePath, _settings.ModelsFolder);
+        string filename = Path.Join(legalPath, $"{modelId}.xsd");
+        PathHelper.EnsureLegalPath(legalPath, filename);
+
+        string? filedata = null;
+        if (File.Exists(filename))
+        {
+            filedata = File.ReadAllText(filename, Encoding.UTF8);
+        }
+
+        return filedata;
+    }
 }

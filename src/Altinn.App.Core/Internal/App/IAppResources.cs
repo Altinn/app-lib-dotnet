@@ -166,4 +166,10 @@ public interface IAppResources
     /// Gets the validation configuration for a given data type
     /// </summary>
     string? GetValidationConfiguration(string dataTypeId);
+
+    /// <summary>
+    /// Gets the xsd schema.
+    /// </summary>
+    /// <param name="modelId">Unique identifier for the model.</param>
+    string? GetXsdSchema(string modelId);
 }
