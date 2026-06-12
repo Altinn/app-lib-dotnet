@@ -1002,14 +1002,14 @@ public static partial class ExpressionEvaluator
         return positionalArguments[index.Value];
     }
 
-    private static JsonArray List(ExpressionValue[] args)
+    private static ExpressionValue List(ExpressionValue[] args)
     {
         return new JsonArray(args.Select(a => JsonSerializer.SerializeToNode(a)).ToArray());
     }
 
     private static JsonObject Object(ExpressionValue[] args)
     {
-        return new ObjectFunctionEvaluator(args).Evaluate();
+        return ObjectFunctionEvaluator.Evaluate(args);
     }
 
     private static ExpressionValue Jmespath(ExpressionValue[] args)

@@ -85,7 +85,9 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         _stringValue = value;
     }
 
-    /// <summary>Constructor for object value</summary>
+    /// <summary>
+    /// Constructor for object value
+    /// </summary>
     public ExpressionValue(JsonObject value)
     {
         ValueKind = JsonValueKind.Object;
@@ -226,7 +228,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             JsonValueKind.False => false,
             JsonValueKind.String => String,
             JsonValueKind.Number => Number,
-            JsonValueKind.Object => Dictionary,
+            JsonValueKind.Object => Object,
             JsonValueKind.Array => Array,
             _ => throw new InvalidOperationException("Invalid value kind"),
         };
@@ -273,8 +275,11 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             ),
         };
 
-    /// <summary>Get the value as an object (or throw if it isn't an object ValueKind)</summary>
-    public JsonObject Dictionary =>
+#pragma warning disable CA1720
+    /// <summary>
+    /// Get the value as an object (or throw if it isn't an object ValueKind)
+    /// </summary>
+    public JsonObject Object =>
         ValueKind switch
         {
             JsonValueKind.Object => _objectValue ?? throw new UnreachableException($"{this} is not an object"),
@@ -282,6 +287,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                 $"The .Object property can't be used on an expression value that represent a {ValueKind}"
             ),
         };
+#pragma warning restore CA1720
 
     /// <summary>Get the value as an array (or throw if it isn't an array ValueKind)</summary>
     public JsonArray Array =>
@@ -305,7 +311,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             JsonValueKind.False => "false",
             JsonValueKind.String => JsonSerializer.Serialize(String, _unsafeSerializerOptionsForSerializingDates),
             JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
-            JsonValueKind.Object => JsonSerializer.Serialize(Dictionary),
+            JsonValueKind.Object => JsonSerializer.Serialize(Object),
             JsonValueKind.Array => JsonSerializer.Serialize(Array),
             _ => throw new InvalidOperationException($"Invalid value kind {ValueKind}"),
         };
@@ -327,8 +333,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             JsonValueKind.False => "false",
             JsonValueKind.String => String,
             JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
-            // JsonValueKind.Object => JsonSerializer.Serialize(Object),
-            // JsonValueKind.Array => JsonSerializer.Serialize(Array),
+            JsonValueKind.Object => JsonSerializer.Serialize(Object),
+            JsonValueKind.Array => JsonSerializer.Serialize(Array),
             _ => throw new InvalidOperationException($"Invalid value kind {ValueKind}"),
         };
 
@@ -355,8 +361,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                 { } sValue => sValue,
             },
             JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
-            JsonValueKind.Object => JsonSerializer.Serialize(Dictionary),
-            JsonValueKind.Array => JsonSerializer.Serialize(Array),
+            // JsonValueKind.Object => JsonSerializer.Serialize(Object),
+            // JsonValueKind.Array => JsonSerializer.Serialize(Array),
             _ => throw new NotImplementedException($"ToStringForEquals not implemented for {ValueKind}"),
         };
 
@@ -673,7 +679,7 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
         }
         var values =
             JsonSerializer.Deserialize<JsonArray>(ref reader, options)
-            ?? throw new JsonException("Expected EndArray token.");
+            ?? throw new JsonException("Expected JSON array value.");
         return new ExpressionValue(values);
     }
 
@@ -683,10 +689,10 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
         {
             throw new JsonException("Expected StartObject token.");
         }
-        var values =
+        var value =
             JsonSerializer.Deserialize<JsonObject>(ref reader, options)
-            ?? throw new JsonException("Expected EndObject token.");
-        return new ExpressionValue(values);
+            ?? throw new JsonException("Expected JSON object value.");
+        return new ExpressionValue(value);
     }
 
     /// <inheritdoc />
@@ -711,7 +717,7 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
                 writer.WriteNumberValue(value.Number);
                 break;
             case JsonValueKind.Object:
-                JsonSerializer.Serialize(writer, value.Dictionary, options);
+                JsonSerializer.Serialize(writer, value.Object, options);
                 break;
             case JsonValueKind.Array:
                 JsonSerializer.Serialize(writer, value.Array, options);
