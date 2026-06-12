@@ -313,7 +313,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             JsonValueKind.String => String,
             JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
             // JsonValueKind.Object => JsonSerializer.Serialize(Object),
-            // JsonValueKind.Array => JsonSerializer.Serialize(Array),
+            JsonValueKind.Array => JsonSerializer.Serialize(Array),
             _ => throw new InvalidOperationException($"Invalid value kind {ValueKind}"),
         };
 
