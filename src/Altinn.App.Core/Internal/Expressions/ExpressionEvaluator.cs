@@ -1007,7 +1007,7 @@ public static partial class ExpressionEvaluator
 
     private static JsonObject Object(ExpressionValue[] args)
     {
-        return new ObjectFunctionEvaluator(args).Evaluate();
+        return ObjectFunctionEvaluator.Evaluate(args);
     }
 
     /// <summary>

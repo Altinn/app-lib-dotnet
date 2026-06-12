@@ -3,25 +3,21 @@ using System.Text.Json.Nodes;
 
 namespace Altinn.App.Core.Internal.Expressions;
 
-internal sealed class ObjectFunctionEvaluator
+internal static class ObjectFunctionEvaluator
 {
-    private readonly ExpressionValue[] _args;
-
-    public ObjectFunctionEvaluator(ExpressionValue[] args) => _args = args;
-
-    public JsonObject Evaluate()
+    public static JsonObject Evaluate(ExpressionValue[] args)
     {
-        AssertEvenNumberOfArguments();
-        string[] keys = ExtractKeys();
+        AssertEvenNumberOfArguments(args);
+        string[] keys = ExtractKeys(args);
         AssertKeysAreUnique(keys);
-        JsonNode?[] values = ExtractValues();
+        JsonNode?[] values = ExtractValues(args);
         Dictionary<string, JsonNode?> keyValuePairs = DictionaryFromKeysAndValues(keys, values);
         return new JsonObject(keyValuePairs);
     }
 
-    private void AssertEvenNumberOfArguments()
+    private static void AssertEvenNumberOfArguments(ExpressionValue[] args)
     {
-        if (_args.Length % 2 == 1)
+        if (args.Length % 2 == 1)
         {
             throw new ExpressionEvaluatorTypeErrorException(
                 "The object function must have an even number of arguments."
@@ -29,11 +25,11 @@ internal sealed class ObjectFunctionEvaluator
         }
     }
 
-    private string[] ExtractKeys()
+    private static string[] ExtractKeys(ExpressionValue[] args)
     {
         try
         {
-            return ExtractEvenIndexedArguments().Select(v => v.String).ToArray();
+            return ExtractEvenIndexedArguments(args).Select(v => v.String).ToArray();
         }
         catch (InvalidCastException)
         {
@@ -41,7 +37,8 @@ internal sealed class ObjectFunctionEvaluator
         }
     }
 
-    private ExpressionValue[] ExtractEvenIndexedArguments() => _args.Where((_, index) => index % 2 == 0).ToArray();
+    private static ExpressionValue[] ExtractEvenIndexedArguments(ExpressionValue[] args) =>
+        args.Where((_, index) => index % 2 == 0).ToArray();
 
     private static void AssertKeysAreUnique(string[] keys)
     {
@@ -51,10 +48,11 @@ internal sealed class ObjectFunctionEvaluator
         }
     }
 
-    private JsonNode?[] ExtractValues() =>
-        ExtractOddIndexedArguments().Select(v => JsonSerializer.SerializeToNode(v)).ToArray();
+    private static JsonNode?[] ExtractValues(ExpressionValue[] args) =>
+        ExtractOddIndexedArguments(args).Select(v => JsonSerializer.SerializeToNode(v)).ToArray();
 
-    private ExpressionValue[] ExtractOddIndexedArguments() => _args.Where((_, index) => index % 2 == 1).ToArray();
+    private static ExpressionValue[] ExtractOddIndexedArguments(ExpressionValue[] args) =>
+        args.Where((_, index) => index % 2 == 1).ToArray();
 
     private static Dictionary<string, JsonNode?> DictionaryFromKeysAndValues(string[] keys, JsonNode?[] values) =>
         keys.Zip(values, (k, v) => new { k, v }).ToDictionary(x => x.k, x => x.v);
