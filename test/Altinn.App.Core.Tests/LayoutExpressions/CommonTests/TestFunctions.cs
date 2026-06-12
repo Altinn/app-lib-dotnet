@@ -232,6 +232,11 @@ public class TestFunctions
     public async Task List_Theory(string testName, ExpressionTestCaseRoot.TestCaseItem testCaseItem) =>
         await RunTestCase(testName, new ExpressionTestCaseRoot(testCaseItem));
 
+    [Theory]
+    [SharedTestCases("object")]
+    public async Task Object_Theory(string testName, ExpressionTestCaseRoot.TestCaseItem testCaseItem) =>
+        await RunTestCase(testName, new ExpressionTestCaseRoot(testCaseItem));
+
     private static async Task<ExpressionTestCaseRoot> LoadTestCase(string file, string folder)
     {
         ExpressionTestCaseRoot testCase = new();
