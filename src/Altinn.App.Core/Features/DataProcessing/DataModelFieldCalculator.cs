@@ -80,7 +80,7 @@ internal sealed class DataModelFieldCalculator
                     rowIndices: ExpressionHelper.GetRowIndices(resolvedField),
                     dataElementIdentifier: dataElementIdentifier
                 );
-                var positionalArguments = new ExpressionValue[] { resolvedFieldReference.Field };
+                var positionalArguments = new ExpressionValue[] { resolvedField };
 
                 await RunCalculation(
                     dataAccessor,
@@ -194,17 +194,5 @@ internal sealed class DataModelFieldCalculator
         };
 
         return dataModelFieldCalculation;
-    }
-
-    private static bool IsSameOrDescendantField(string candidate, string hiddenField)
-    {
-        if (candidate.Equals(hiddenField, StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        return candidate.StartsWith(hiddenField, StringComparison.Ordinal)
-            && candidate.Length > hiddenField.Length
-            && (candidate[hiddenField.Length] == '.' || candidate[hiddenField.Length] == '[');
     }
 }

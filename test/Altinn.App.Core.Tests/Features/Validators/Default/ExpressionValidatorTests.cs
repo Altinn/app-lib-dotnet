@@ -120,9 +120,7 @@ public class ExpressionValidatorTests
         var validationIssues = await _validator.ValidateFormData(
             dataElement,
             dataAccessor,
-            JsonSerializer.Serialize(testCase.ValidationConfig),
-            "Task_1",
-            null
+            JsonSerializer.Serialize(testCase.ValidationConfig)
         );
 
         var result = validationIssues.Select(i => new

@@ -93,7 +93,7 @@ public class ExpressionValidator : IValidator
             var validationConfig = _appResourceService.GetValidationConfiguration(dataType.Id);
             if (!string.IsNullOrEmpty(validationConfig))
             {
-                var issues = await ValidateFormData(dataElement, dataAccessor, validationConfig, taskId, language);
+                var issues = await ValidateFormData(dataElement, dataAccessor, validationConfig);
                 validationIssues.AddRange(issues);
             }
         }
@@ -105,11 +105,10 @@ public class ExpressionValidator : IValidator
     internal async Task<List<ValidationIssue>> ValidateFormData(
         DataElement dataElement,
         IInstanceDataAccessor dataAccessor,
-        string rawValidationConfig,
-        string taskId,
-        string? language
+        string rawValidationConfig
     )
     {
+        var formDataWrapper = await dataAccessor.GetFormDataWrapper(dataElement);
         var hiddenFields = await LayoutEvaluator.GetHiddenFieldsForRemoval(
             dataAccessor.GetLayoutEvaluatorState(),
             evaluateRemoveWhenHidden: false
@@ -150,6 +149,7 @@ public class ExpressionValidator : IValidator
                         dataAccessor,
                         validationIssues,
                         resolvedField,
+                        formDataWrapper,
                         context,
                         positionalArguments,
                         validation
@@ -165,6 +165,7 @@ public class ExpressionValidator : IValidator
         IInstanceDataAccessor dataAccessor,
         List<ValidationIssue> validationIssues,
         DataReference resolvedField,
+        IFormDataWrapper formDataWrapper,
         ComponentContext context,
         ExpressionValue[] positionalArguments,
         ExpressionValidation validation
@@ -172,8 +173,7 @@ public class ExpressionValidator : IValidator
     {
         try
         {
-            var wrapper = await dataAccessor.GetFormDataWrapper(resolvedField.DataElementIdentifier);
-            if (wrapper.Get(resolvedField.Field) == null)
+            if (formDataWrapper.Get(resolvedField.Field) == null)
             {
                 return; // Assume that the required validator will catch empty fields.
             }

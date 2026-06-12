@@ -214,7 +214,7 @@ public class DataModelWrapper
                     elementAt,
                     elementType,
                     currentIndex + 1,
-                    JoinFieldKeyParts(currentKey, $"{key}[{groupIndex}]")
+                    JoinFieldKeyParts(currentKey, $"{key}[{groupIndex.Value}]")
                 );
             }
 
@@ -225,15 +225,16 @@ public class DataModelWrapper
             return [];
         }
 
-        // For non-collection properties, we can work with just the type
-        // Get the child object for further traversal
-        var childValue = currentModel is not null ? prop.GetValue(currentModel) : null;
         // If this is the last key part
         if (currentIndex == keyParts.Length - 1)
         {
             // Return the key (even if the value is null)
             return [JoinFieldKeyParts(currentKey, key)];
         }
+
+        // For non-collection properties, we can work with just the type
+        // Get the child object for further traversal
+        var childValue = currentModel is not null ? prop.GetValue(currentModel) : null;
 
         // Continue recursion using type information
         return GetResolvedKeysRecursive(
