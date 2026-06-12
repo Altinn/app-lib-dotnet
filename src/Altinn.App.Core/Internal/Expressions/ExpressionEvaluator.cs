@@ -65,7 +65,17 @@ public static partial class ExpressionEvaluator
     {
         var positionalArgumentUnions = positionalArguments?.Select(ExpressionValue.FromObject).ToArray();
         var result = await EvaluateExpression_internal(state, expr, context, positionalArgumentUnions);
-        return result.ToObject();
+        return result.ValueKind switch
+        {
+            JsonValueKind.Null => null,
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.String => result.String,
+            JsonValueKind.Number => result.Number,
+            JsonValueKind.Object => result.JsonElement,
+            JsonValueKind.Array => result.JsonElement,
+            _ => throw new InvalidOperationException("Invalid value kind"),
+        };
     }
 
     /// <summary>
