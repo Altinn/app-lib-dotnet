@@ -209,7 +209,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             JsonValueKind.False => false,
             JsonValueKind.String => String,
             JsonValueKind.Number => Number,
-            JsonValueKind.Object => Dictionary,
+            JsonValueKind.Object => Object,
             JsonValueKind.Array => Array,
             _ => throw new InvalidOperationException("Invalid value kind"),
         };
@@ -256,10 +256,11 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             ),
         };
 
+#pragma warning disable CA1720
     /// <summary>
     /// Get the value as an object (or throw if it isn't an object ValueKind)
     /// </summary>
-    public JsonObject Dictionary =>
+    public JsonObject Object =>
         ValueKind switch
         {
             JsonValueKind.Object => _objectValue ?? throw new UnreachableException($"{this} is not an object"),
@@ -267,6 +268,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                 $"The .Object property can't be used on an expression value that represent a {ValueKind}"
             ),
         };
+#pragma warning restore CA1720
 
     /// <summary>Get the value as an array (or throw if it isn't an array ValueKind)</summary>
     public JsonArray Array =>
@@ -290,7 +292,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             JsonValueKind.False => "false",
             JsonValueKind.String => JsonSerializer.Serialize(String, _unsafeSerializerOptionsForSerializingDates),
             JsonValueKind.Number => Number.ToString(CultureInfo.InvariantCulture),
-            JsonValueKind.Object => JsonSerializer.Serialize(Dictionary),
+            JsonValueKind.Object => JsonSerializer.Serialize(Object),
             JsonValueKind.Array => JsonSerializer.Serialize(Array),
             _ => throw new InvalidOperationException($"Invalid value kind {ValueKind}"),
         };
@@ -696,7 +698,7 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
                 writer.WriteNumberValue(value.Number);
                 break;
             case JsonValueKind.Object:
-                JsonSerializer.Serialize(writer, value.Dictionary, options);
+                JsonSerializer.Serialize(writer, value.Object, options);
                 break;
             case JsonValueKind.Array:
                 JsonSerializer.Serialize(writer, value.Array, options);

@@ -186,7 +186,7 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
         Assert.Throws<InvalidCastException>(() => undefinedValue.Number);
         Assert.Throws<InvalidCastException>(() => undefinedValue.String);
         Assert.Throws<InvalidCastException>(() => undefinedValue.Array);
-        Assert.Throws<InvalidCastException>(() => undefinedValue.Dictionary);
+        Assert.Throws<InvalidCastException>(() => undefinedValue.Object);
 
         Assert.Equal("null", JsonSerializer.Serialize(undefinedValue));
         Assert.Throws<NotImplementedException>(() => undefinedValue.GetHashCode());
@@ -204,7 +204,7 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
         Assert.Throws<InvalidCastException>(() => _ = nullValue.Number);
         Assert.Throws<InvalidCastException>(() => _ = nullValue.String);
         Assert.Throws<InvalidCastException>(() => _ = nullValue.Array);
-        Assert.Throws<InvalidCastException>(() => _ = nullValue.Dictionary);
+        Assert.Throws<InvalidCastException>(() => _ = nullValue.Object);
     }
 
     [Fact]
