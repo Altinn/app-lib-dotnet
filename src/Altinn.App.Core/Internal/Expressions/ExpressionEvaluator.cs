@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
@@ -131,6 +132,7 @@ public static partial class ExpressionEvaluator
             ExpressionFunction.minus => Minus(args),
             ExpressionFunction.multiply => Multiply(args),
             ExpressionFunction.divide => Divide(args),
+            ExpressionFunction.list => List(args),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
                 $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
             ),
@@ -995,6 +997,11 @@ public static partial class ExpressionEvaluator
         }
 
         return positionalArguments[index.Value];
+    }
+
+    private static ExpressionValue List(ExpressionValue[] args)
+    {
+        return new JsonArray(args.Select(a => JsonSerializer.SerializeToNode(a)).ToArray());
     }
 
     /// <summary>
