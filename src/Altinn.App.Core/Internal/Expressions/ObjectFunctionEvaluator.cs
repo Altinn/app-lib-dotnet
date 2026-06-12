@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
+using Altinn.App.Core.Models.Expressions;
 
 namespace Altinn.App.Core.Internal.Expressions;
 
@@ -9,7 +10,7 @@ internal static class ObjectFunctionEvaluator
     {
         AssertEvenNumberOfArguments(args);
         string[] keys = ExtractKeys(args);
-        AssertKeysAreUnique(keys);
+        AssertKeysAreUnique(keys, args);
         JsonNode?[] values = ExtractValues(args);
         Dictionary<string, JsonNode?> keyValuePairs = DictionaryFromKeysAndValues(keys, values);
         return new JsonObject(keyValuePairs);
@@ -20,7 +21,9 @@ internal static class ObjectFunctionEvaluator
         if (args.Length % 2 == 1)
         {
             throw new ExpressionEvaluatorTypeErrorException(
-                "The object function must have an even number of arguments."
+                "The object function must have an even number of arguments.",
+                ExpressionFunction.@object,
+                args
             );
         }
     }
@@ -33,18 +36,26 @@ internal static class ObjectFunctionEvaluator
         }
         catch (InvalidCastException)
         {
-            throw new ExpressionEvaluatorTypeErrorException("Object keys must be strings.");
+            throw new ExpressionEvaluatorTypeErrorException(
+                "Object keys must be strings.",
+                ExpressionFunction.@object,
+                args
+            );
         }
     }
 
     private static ExpressionValue[] ExtractEvenIndexedArguments(ExpressionValue[] args) =>
         args.Where((_, index) => index % 2 == 0).ToArray();
 
-    private static void AssertKeysAreUnique(string[] keys)
+    private static void AssertKeysAreUnique(string[] keys, ExpressionValue[] args)
     {
         if (keys.Length != keys.Distinct().Count())
         {
-            throw new ExpressionEvaluatorTypeErrorException("Object keys must be unique.");
+            throw new ExpressionEvaluatorTypeErrorException(
+                "Object keys must be unique.",
+                ExpressionFunction.@object,
+                args
+            );
         }
     }
 
