@@ -185,8 +185,8 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
         Assert.Throws<InvalidCastException>(() => undefinedValue.Bool);
         Assert.Throws<InvalidCastException>(() => undefinedValue.Number);
         Assert.Throws<InvalidCastException>(() => undefinedValue.String);
-        Assert.Throws<InvalidCastException>(() => undefinedValue.Array);
-        Assert.Throws<InvalidCastException>(() => undefinedValue.Object);
+        Assert.Throws<InvalidCastException>(() => undefinedValue.JsonObject);
+        Assert.Throws<InvalidCastException>(() => undefinedValue.JsonArray);
 
         Assert.Equal("null", JsonSerializer.Serialize(undefinedValue));
         Assert.Throws<NotImplementedException>(() => undefinedValue.GetHashCode());
@@ -203,8 +203,11 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
         Assert.Throws<InvalidCastException>(() => _ = nullValue.Bool);
         Assert.Throws<InvalidCastException>(() => _ = nullValue.Number);
         Assert.Throws<InvalidCastException>(() => _ = nullValue.String);
-        Assert.Throws<InvalidCastException>(() => _ = nullValue.Array);
-        Assert.Throws<InvalidCastException>(() => _ = nullValue.Object);
+        Assert.Throws<InvalidCastException>(() => _ = nullValue.JsonObject);
+        Assert.Throws<InvalidCastException>(() => _ = nullValue.JsonArray);
+        Assert.Null(nullValue.JsonNode);
+        Assert.Equal(JsonValueKind.Null, nullValue.JsonElement.ValueKind);
+        Assert.Equal(JsonValueKind.Null, nullValue.JsonElement.ValueKind);
     }
 
     [Fact]
