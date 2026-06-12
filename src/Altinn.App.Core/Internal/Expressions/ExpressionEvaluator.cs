@@ -1005,7 +1005,7 @@ public static partial class ExpressionEvaluator
         return new JsonArray(args.Select(a => JsonSerializer.SerializeToNode(a)).ToArray());
     }
 
-    private static JsonObject Object(ExpressionValue[] args)
+    private static ExpressionValue Object(ExpressionValue[] args)
     {
         return ObjectFunctionEvaluator.Evaluate(args);
     }
