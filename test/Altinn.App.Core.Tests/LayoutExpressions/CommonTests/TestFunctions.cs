@@ -238,9 +238,8 @@ public class TestFunctions
         await RunTestCase(testName, new ExpressionTestCaseRoot(testCaseItem));
 
     [Theory]
-    [SharedTestCases("jmespath")]
-    public async Task Jmespath_Theory(string testName, ExpressionTestCaseRoot.TestCaseItem testCaseItem) =>
-        await RunTestCase(testName, new ExpressionTestCaseRoot(testCaseItem));
+    [SharedTest("jmespath")]
+    public async Task Jmespath_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
     private static async Task<ExpressionTestCaseRoot> LoadTestCase(string file, string folder)
     {
