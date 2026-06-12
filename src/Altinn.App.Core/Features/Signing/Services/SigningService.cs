@@ -222,7 +222,7 @@ internal sealed class SigningService(
         CancellationToken ct = default
     )
     {
-        string taskId = instanceDataMutator.Instance.Process.CurrentTask.ElementId;
+        string taskId = GetTaskId(instanceDataMutator);
 
         using var activity = telemetry?.StartAbortRuntimeDelegatedSigningActivity(taskId);
 
@@ -230,6 +230,43 @@ internal sealed class SigningService(
         RemoveSigneeState(instanceDataMutator, signatureConfiguration.SigneeStatesDataTypeId);
         RemoveAllSignatures(instanceDataMutator, signatureConfiguration.SignatureDataType);
 
+        await RevokeDelegatedSigneeRights(instanceDataMutator, signatureConfiguration, taskId, ct);
+    }
+
+    /// <inheritdoc />
+    public async Task RevokeSigneeRightsOnTaskEnd(
+        IInstanceDataMutator instanceDataMutator,
+        AltinnSignatureConfiguration signatureConfiguration,
+        CancellationToken ct = default
+    )
+    {
+        string taskId = GetTaskId(instanceDataMutator);
+
+        using var activity = telemetry?.StartRevokeSigneeRightsOnTaskEndActivity(taskId);
+
+        await RevokeDelegatedSigneeRights(instanceDataMutator, signatureConfiguration, taskId, ct);
+    }
+
+    /// <summary>
+    /// Gets the id of the task currently being processed.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="IInstanceDataAccessor.TaskId"/> is used instead of <c>Instance.Process.CurrentTask</c>,
+    /// because the latter may already have been moved to the next task (or cleared if the process ended)
+    /// by the time task end/abandon handlers run.
+    /// </remarks>
+    private static string GetTaskId(IInstanceDataAccessor instanceDataAccessor) =>
+        instanceDataAccessor.TaskId
+        ?? instanceDataAccessor.Instance.Process.CurrentTask?.ElementId
+        ?? throw new SigningException("Unable to determine the task ID for signee rights revocation.");
+
+    private async Task RevokeDelegatedSigneeRights(
+        IInstanceDataMutator instanceDataMutator,
+        AltinnSignatureConfiguration signatureConfiguration,
+        string taskId,
+        CancellationToken ct
+    )
+    {
         List<SigneeContext> signeeContexts = await GetSigneeContexts(
             instanceDataMutator,
             signatureConfiguration,
