@@ -1,5 +1,5 @@
 {
-    "name": "Should set multiple values when in a group",
+    "name": "Should set multiple values when resolving keys in a datamodel array",
     "expects": [
         {
             "field": "form.children[0].total",
