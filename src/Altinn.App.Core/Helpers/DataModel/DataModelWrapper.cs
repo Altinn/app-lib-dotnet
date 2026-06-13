@@ -129,7 +129,8 @@ public class DataModelWrapper
         }
 
         var fieldParts = field.Split('.');
-        return GetResolvedKeysRecursive(fieldParts, _dataModel, _dataModel.GetType());
+        return GetResolvedKeysRecursive(fieldParts, _dataModel, _dataModel.GetType(), currentIndex: 0, currentKey: "")
+            .ToArray();
     }
 
     private static string JoinFieldKeyParts(string? currentKey, string? key)
@@ -146,12 +147,12 @@ public class DataModelWrapper
         return currentKey + "." + key;
     }
 
-    private static string[] GetResolvedKeysRecursive(
+    private static IEnumerable<string> GetResolvedKeysRecursive(
         string[] keyParts,
         object? currentModel,
         Type currentType,
-        int currentIndex = 0,
-        string currentKey = ""
+        int currentIndex,
+        string currentKey
     )
     {
         if (currentIndex == keyParts.Length)
@@ -213,7 +214,7 @@ public class DataModelWrapper
                 }
                 i++;
             }
-            return resolvedKeys.ToArray();
+            return resolvedKeys;
         }
 
         // Non-collection: resolve the key (even if the value is null) ...
