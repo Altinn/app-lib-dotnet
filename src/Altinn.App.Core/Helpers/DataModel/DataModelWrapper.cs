@@ -168,75 +168,61 @@ public class DataModelWrapper
         }
 
         var childType = prop.PropertyType;
-        // Check if the property is a collection type (but not string)
+        bool isLastPart = currentIndex == keyParts.Length - 1;
+
+        // Collection (but not string): we need the instance to enumerate the rows
         if (childType != typeof(string) && childType.IsAssignableTo(typeof(System.Collections.IEnumerable)))
         {
-            // For collections, we need the actual object to enumerate
             var childModel = currentModel is not null ? prop.GetValue(currentModel) : null;
-            if (childModel is System.Collections.IEnumerable childModelList)
+            if (childModel is not System.Collections.IEnumerable childModelList)
             {
-                // Get the element type of the collection
-                var elementType = childType.IsArray
-                    ? childType.GetElementType() ?? typeof(object)
-                    : childType.GetGenericArguments().FirstOrDefault() ?? typeof(object);
-                // Index not specified, recurse on all elements
-                if (groupIndex is null)
-                {
-                    int i = 0;
-                    var resolvedKeys = new List<string>();
-                    foreach (var child in childModelList)
-                    {
-                        if (child is null)
-                        {
-                            i++;
-                            continue;
-                        }
-                        var newResolvedKeys = GetResolvedKeysRecursive(
-                            keyParts,
-                            child,
-                            elementType,
-                            currentIndex + 1,
-                            JoinFieldKeyParts(currentKey, $"{key}[{i}]")
-                        );
-                        resolvedKeys.AddRange(newResolvedKeys);
-                        i++;
-                    }
-                    return resolvedKeys.ToArray();
-                }
-                // Index specified, recurse on that element
+                // Collection is null: row count is unknown, so we can only resolve the
+                // bare key when it's the last part of the path.
+                return isLastPart ? [JoinFieldKeyParts(currentKey, key)] : [];
+            }
+
+            if (groupIndex is not null)
+            {
                 var elementAt = GetElementAt(childModelList, groupIndex.Value);
                 if (elementAt is null)
-                {
                     return [];
-                }
                 return GetResolvedKeysRecursive(
                     keyParts,
                     elementAt,
-                    elementType,
+                    elementAt.GetType(),
                     currentIndex + 1,
                     JoinFieldKeyParts(currentKey, $"{key}[{groupIndex.Value}]")
                 );
             }
 
-            if (currentIndex == keyParts.Length - 1)
+            var resolvedKeys = new List<string>();
+            int i = 0;
+            foreach (var child in childModelList)
             {
-                return [JoinFieldKeyParts(currentKey, key)];
+                if (child is not null) // null rows can't be set/resolved, skip them
+                {
+                    resolvedKeys.AddRange(
+                        GetResolvedKeysRecursive(
+                            keyParts,
+                            child,
+                            child.GetType(),
+                            currentIndex + 1,
+                            JoinFieldKeyParts(currentKey, $"{key}[{i}]")
+                        )
+                    );
+                }
+                i++;
             }
-            return [];
+            return resolvedKeys.ToArray();
         }
 
-        // If this is the last key part
-        if (currentIndex == keyParts.Length - 1)
+        // Non-collection: resolve the key (even if the value is null) ...
+        if (isLastPart)
         {
-            // Return the key (even if the value is null)
             return [JoinFieldKeyParts(currentKey, key)];
         }
-
-        // For non-collection properties, we can work with just the type
-        // Get the child object for further traversal
+        // ... otherwise traverse, falling back to the declared type when the value is null
         var childValue = currentModel is not null ? prop.GetValue(currentModel) : null;
-
-        // Continue recursion using type information
         return GetResolvedKeysRecursive(
             keyParts,
             childValue,
