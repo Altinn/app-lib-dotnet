@@ -309,6 +309,15 @@ internal static class FormDataWrapperExtensions
             .ToArray();
     }
 
+    public static string[] GetResolvedKeys(this IFormDataWrapper formDataWrapper, string field)
+    {
+        var data = formDataWrapper.BackingData<object>();
+#pragma warning disable CS0618 // Type or member is obsolete
+        var dataModelWrapper = new DataModelWrapper(data);
+#pragma warning restore CS0618 // Type or member is obsolete
+        return dataModelWrapper.GetResolvedKeys(field);
+    }
+
     private static int GetMaxBufferLength(ReadOnlySpan<char> path, ReadOnlySpan<int> rowIndexes)
     {
         // assume adding indexes adds at most 10 characters per index + "[]"
