@@ -1,21 +1,14 @@
 {
-  "name": "Should return null when looking up hidden component",
-  "expects": [
-    {
-      "message": "Navnet ditt kan ikke være feil.",
-      "severity": "error",
-      "field": "personer[0].navn",
-      "componentId": "person-navn"
-    }
-  ],
+  "name": "Should ignore validation when value is null",
+  "expects": [],
   "validationConfig": {
     "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/validation/validation.schema.v1.json",
     "validations": {
       "personer.navn": [
         {
-          "message": "Navnet ditt kan ikke være feil.",
+          "message": "Always invalid rule",
           "severity": "error",
-          "condition": ["equals", ["component", "person-navn"], "feil"]
+          "condition": true
         }
       ]
     }
@@ -24,17 +17,17 @@
     "personer": [
       {
         "altinnRowId": "person0",
-        "navn": "feil",
+        "navn": null,
         "utenNavn": false
       },
       {
         "altinnRowId": "person1",
-        "navn": "feil",
+        "navn": null,
         "utenNavn": true
       },
       {
         "altinnRowId": "person2",
-        "navn": "riktig",
+        "navn": null,
         "utenNavn": false
       }
     ]

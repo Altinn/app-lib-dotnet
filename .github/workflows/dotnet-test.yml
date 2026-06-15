@@ -6,13 +6,17 @@ on:
       - "main"
       - "release/**"
   pull_request:
-    branches:
-      - "main"
-      - "release/**"
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - edited
   workflow_dispatch:
 
 jobs:
   analyze:
+    # Only run on pull_request edit if the base branch was changed, to avoid running when only description or title was edited.
+    if: github.event.action != 'edited' || github.event.changes.base.ref != null
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
