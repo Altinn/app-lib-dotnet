@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
@@ -50,6 +51,19 @@ public static partial class ExpressionEvaluator
                 e
             );
         }
+    }
+
+    /// <summary>
+    /// Evaluate a <see cref="Expression" /> from a given <see cref="IInstanceDataAccessor" /> in a <see cref="ComponentContext" />
+    /// </summary>
+    public static async Task<ExpressionValue> EvaluateExpressionToExpressionValue(
+        IInstanceDataAccessor state,
+        Expression expr,
+        ComponentContext context,
+        ExpressionValue[]? positionalArguments = null
+    )
+    {
+        return await EvaluateExpression_internal(state.GetLayoutEvaluatorState(), expr, context, positionalArguments);
     }
 
     /// <summary>
