@@ -93,13 +93,10 @@ public class CorrespondenceClientMappingTests
                     .WithNotificationChannel(CorrespondenceNotificationChannel.EmailPreferred)
                     .WithReminderNotificationChannel(CorrespondenceNotificationChannel.SmsPreferred)
                     .WithSendersReference("notification-senders-ref")
-                    .WithRecipientOverride(
-                        CorrespondenceNotificationOverrideBuilder
-                            .Create()
-                            .WithEmailAddress("override@example.com")
-                            .WithMobileNumber("+4799999999")
-                            .Build()
-                    )
+                    .WithRecipientOverrides([
+                        new CorrespondenceNotificationRecipient { EmailAddress = "override@example.com" },
+                        new CorrespondenceNotificationRecipient { MobileNumber = "+4799999999" },
+                    ])
             )
             .WithExistingAttachment(existingAttachmentId)
             .Build();
@@ -187,9 +184,15 @@ public class CorrespondenceClientMappingTests
         notification.GetProperty("reminderNotificationChannel").GetString().Should().Be("SmsPreferred");
         notification.GetProperty("sendersReference").GetString().Should().Be("notification-senders-ref");
 
-        var customRecipient = notification.GetProperty("customRecipient");
-        customRecipient.GetProperty("emailAddress").GetString().Should().Be("override@example.com");
-        customRecipient.GetProperty("mobileNumber").GetString().Should().Be("+4799999999");
+        // The deprecated singular customRecipient is no longer emitted; recipients are sent as the plural
+        // customRecipients array with exactly one identifier per entry.
+        notification.TryGetProperty("customRecipient", out _).Should().BeFalse();
+        var customRecipients = notification.GetProperty("customRecipients");
+        customRecipients.GetArrayLength().Should().Be(2);
+        customRecipients[0].GetProperty("emailAddress").GetString().Should().Be("override@example.com");
+        customRecipients[0].TryGetProperty("mobileNumber", out _).Should().BeFalse();
+        customRecipients[1].GetProperty("mobileNumber").GetString().Should().Be("+4799999999");
+        customRecipients[1].TryGetProperty("emailAddress", out _).Should().BeFalse();
     }
 
     [Fact]

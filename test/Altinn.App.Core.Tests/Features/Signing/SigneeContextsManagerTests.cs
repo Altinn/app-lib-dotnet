@@ -241,8 +241,11 @@ public sealed class SigneeContextsManagerTests : IDisposable
             {
                 Notification = new Notification
                 {
-                    Email = new EmailModel { }, // Empty to test auto-fill from Party
-                    Sms = new SmsModel { }, // Empty to test auto-fill from Party
+                    // Empty blocks: contact info is NOT auto-filled from the registry anymore. The notification is
+                    // sent to the default correspondence recipient (the signee), resolved via the registry by
+                    // Correspondence itself, so the addresses remain empty here.
+                    Email = new EmailModel { },
+                    Sms = new SmsModel { },
                 },
             },
         };
@@ -276,10 +279,12 @@ public sealed class SigneeContextsManagerTests : IDisposable
 
         Assert.NotNull(context.CommunicationConfig);
         Assert.NotNull(context.CommunicationConfig.Notification);
+        // The declared blocks are preserved (expressing intent to notify on those channels), but the contact info is
+        // left unset - it is no longer enriched from the registry.
         Assert.NotNull(context.CommunicationConfig.Notification.Email);
-        Assert.Equal("test@org.com", context.CommunicationConfig.Notification.Email.EmailAddress);
+        Assert.True(string.IsNullOrEmpty(context.CommunicationConfig.Notification.Email.EmailAddress));
         Assert.NotNull(context.CommunicationConfig.Notification.Sms);
-        Assert.Equal("87654321", context.CommunicationConfig.Notification.Sms.MobileNumber);
+        Assert.True(string.IsNullOrEmpty(context.CommunicationConfig.Notification.Sms.MobileNumber));
     }
 
     [Fact]

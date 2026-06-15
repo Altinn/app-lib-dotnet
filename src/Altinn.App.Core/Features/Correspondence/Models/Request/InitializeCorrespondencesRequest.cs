@@ -281,8 +281,18 @@ internal sealed record CorrespondenceNotificationRequest
     public string? SendersReference { get; init; }
 
     /// <summary>
+    /// Custom recipients for the notification. These are notified in addition to the default correspondence recipient.
+    /// </summary>
+    /// <remarks>Each entry must carry exactly one identifier (email, mobile, organisation number or national identity number).</remarks>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("customRecipients")]
+    public IReadOnlyList<CorrespondenceNotificationRecipientRequest>? CustomRecipients { get; init; }
+
+    /// <summary>
     /// A custom recipient for the notification. When set, overrides the default correspondence recipient.
     /// </summary>
+    [Obsolete("This property is deprecated by the Correspondence API. Use CustomRecipients instead.")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("customRecipient")]
     public CorrespondenceNotificationRecipientRequest? CustomRecipient { get; init; }
 
@@ -290,7 +300,7 @@ internal sealed record CorrespondenceNotificationRequest
     /// Per-recipient notification overrides.
     /// </summary>
     /// <remarks>Only the first entry is used by the API.</remarks>
-    [Obsolete("This property is deprecated. Use CustomRecipient instead.")]
+    [Obsolete("This property is deprecated. Use CustomRecipients instead.")]
     [JsonPropertyName("customNotificationRecipients")]
     public IReadOnlyList<CorrespondenceCustomNotificationRecipientRequest>? CustomNotificationRecipients { get; init; }
 }
@@ -303,24 +313,28 @@ internal sealed record CorrespondenceNotificationRecipientRequest
     /// <summary>
     /// Email address of the recipient.
     /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("emailAddress")]
     public string? EmailAddress { get; init; }
 
     /// <summary>
     /// Mobile number of the recipient.
     /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("mobileNumber")]
     public string? MobileNumber { get; init; }
 
     /// <summary>
     /// Organisation number of the recipient in URN format.
     /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("organizationNumber")]
     public string? OrganizationNumber { get; init; }
 
     /// <summary>
     /// National identity number of the recipient in URN format.
     /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("nationalIdentityNumber")]
     public string? NationalIdentityNumber { get; init; }
 }

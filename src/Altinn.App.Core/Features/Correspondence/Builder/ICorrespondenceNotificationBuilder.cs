@@ -98,9 +98,31 @@ public interface ICorrespondenceNotificationBuilder : ICorrespondenceNotificatio
     ICorrespondenceNotificationBuilder WithRequestedSendTime(DateTimeOffset? requestedSendTime);
 
     /// <summary>
+    /// Sets the custom recipients for the correspondence notification. Each recipient is notified in addition to the
+    /// default correspondence recipient and must carry exactly one identifier (email, mobile, organisation number or
+    /// national identity number).
+    /// </summary>
+    /// <param name="recipientOverrides">The custom recipients.</param>
+    public ICorrespondenceNotificationBuilder WithRecipientOverrides(
+        IEnumerable<CorrespondenceNotificationRecipient> recipientOverrides
+    );
+
+    /// <summary>
+    /// Sets the custom recipients for the correspondence notification, if any are provided. A <c>null</c> or empty
+    /// collection is a no-op.
+    /// </summary>
+    /// <param name="recipientOverrides">The custom recipients.</param>
+    public ICorrespondenceNotificationBuilder WithRecipientOverridesIfConfigured(
+        IEnumerable<CorrespondenceNotificationRecipient>? recipientOverrides
+    );
+
+    /// <summary>
     /// Sets the recipient override for the correspondence notification.
     /// </summary>
     /// <param name="recipientOverride">The recipient override</param>
+    [Obsolete(
+        "Use WithRecipientOverrides instead. A single recipient with multiple identifiers is no longer accepted by the Correspondence API."
+    )]
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         CorrespondenceNotificationRecipient recipientOverride
     );
@@ -109,6 +131,9 @@ public interface ICorrespondenceNotificationBuilder : ICorrespondenceNotificatio
     /// Sets the recipient override for the correspondence notification.
     /// </summary>
     /// <param name="recipientOverrideBuilder">The recipient override builder.</param>
+    [Obsolete(
+        "Use WithRecipientOverrides instead. A single recipient with multiple identifiers is no longer accepted by the Correspondence API."
+    )]
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         ICorrespondenceNotificationOverrideBuilder recipientOverrideBuilder
     );

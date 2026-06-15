@@ -87,14 +87,27 @@ public sealed record CorrespondenceNotification
     public DateTimeOffset? RequestedSendTime { get; init; }
 
     /// <summary>
-    /// A list of recipients for the notification. If not set, the notification will be sent to the recipient of the Correspondence
+    /// Custom recipients for the notification. These are notified <em>in addition to</em> the recipient of the Correspondence.
     /// </summary>
+    /// <remarks>
+    /// Each recipient must be identified by exactly one of email address, mobile number, organisation number or
+    /// national identity number. A recipient carrying more than one of these is automatically split into one
+    /// notification recipient per identifier when the request is sent.
+    /// </remarks>
+    public IReadOnlyList<CorrespondenceNotificationRecipient>? CustomRecipients { get; init; }
+
+    /// <summary>
+    /// A custom recipient for the notification. If not set, the notification will be sent to the recipient of the Correspondence
+    /// </summary>
+    [Obsolete(
+        "This property is deprecated and will be removed in a future version. Use CustomRecipients instead. A single recipient with multiple identifiers is no longer accepted by the Correspondence API and will be split into one recipient per identifier."
+    )]
     public CorrespondenceNotificationRecipient? CustomRecipient { get; init; }
 
     /// <summary>
     /// A list of recipients for the notification. If not set, the notification will be sent to the recipient of the Correspondence
     /// </summary>
     /// <remarks> Only the first recipient in the list will be used for sending the notification. </remarks>
-    [Obsolete("This property is deprecated and will be removed in a future version. Use CustomRecipient instead.")]
+    [Obsolete("This property is deprecated and will be removed in a future version. Use CustomRecipients instead.")]
     public IReadOnlyList<CorrespondenceNotificationRecipientWrapper>? CustomNotificationRecipients { get; init; }
 }

@@ -1,5 +1,7 @@
 using Altinn.App.Core.Features.Correspondence.Models;
 
+#pragma warning disable CS0618 // Type or member is obsolete
+
 namespace Altinn.App.Core.Features.Correspondence.Builder;
 
 /// <summary>
@@ -19,6 +21,7 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     private CorrespondenceNotificationChannel? _reminderNotificationChannel;
     private string? _sendersReference;
     private CorrespondenceNotificationRecipient? _recipientOverride;
+    private List<CorrespondenceNotificationRecipient>? _recipientOverrides;
 
     [Obsolete]
     private List<CorrespondenceNotificationRecipientWrapper>? _recipientToOverrideWrapper;
@@ -123,6 +126,9 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     }
 
     /// <inheritdoc/>
+    [Obsolete(
+        "Use WithRecipientOverrides instead. A single recipient with multiple identifiers is no longer accepted by the Correspondence API."
+    )]
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         ICorrespondenceNotificationOverrideBuilder recipientOverrideBuilder
     )
@@ -131,6 +137,9 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     }
 
     /// <inheritdoc/>
+    [Obsolete(
+        "Use WithRecipientOverrides instead. A single recipient with multiple identifiers is no longer accepted by the Correspondence API."
+    )]
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         CorrespondenceNotificationRecipient recipientOverride
     )
@@ -140,6 +149,9 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     }
 
     /// <inheritdoc/>
+    [Obsolete(
+        "Use WithRecipientOverridesIfConfigured instead. A single recipient with multiple identifiers is no longer accepted by the Correspondence API."
+    )]
     public ICorrespondenceNotificationBuilder WithRecipientOverrideIfConfigured(
         CorrespondenceNotificationRecipient? recipientOverride
     )
@@ -150,6 +162,30 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
         }
 
         return this;
+    }
+
+    /// <inheritdoc/>
+    public ICorrespondenceNotificationBuilder WithRecipientOverrides(
+        IEnumerable<CorrespondenceNotificationRecipient> recipientOverrides
+    )
+    {
+        ArgumentNullException.ThrowIfNull(recipientOverrides);
+        _recipientOverrides = recipientOverrides.ToList();
+        return this;
+    }
+
+    /// <inheritdoc/>
+    public ICorrespondenceNotificationBuilder WithRecipientOverridesIfConfigured(
+        IEnumerable<CorrespondenceNotificationRecipient>? recipientOverrides
+    )
+    {
+        if (recipientOverrides is null)
+        {
+            return this;
+        }
+
+        List<CorrespondenceNotificationRecipient> list = recipientOverrides.ToList();
+        return list.Count == 0 ? this : WithRecipientOverrides(list);
     }
 
     /// <inheritdoc/>
@@ -182,6 +218,7 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
             ReminderNotificationChannel = _reminderNotificationChannel,
             SendersReference = _sendersReference,
             CustomRecipient = _recipientOverride,
+            CustomRecipients = _recipientOverrides,
         };
     }
 }

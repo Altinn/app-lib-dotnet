@@ -357,9 +357,10 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
             NotificationChannel = notification.NotificationChannel,
             ReminderNotificationChannel = notification.ReminderNotificationChannel,
             SendersReference = notification.SendersReference,
-            CustomRecipient = notification.CustomRecipient is null
-                ? null
-                : BuildNotificationRecipient(notification.CustomRecipient),
+            // The Correspondence API no longer accepts the singular customRecipient, nor a recipient carrying more
+            // than one identifier. Both the new CustomRecipients and the legacy singular CustomRecipient are folded
+            // into the plural customRecipients, exploded into one entry per identifier.
+            CustomRecipients = BuildCustomRecipients(notification),
             CustomNotificationRecipients = notification
                 .CustomNotificationRecipients?.Select(x => new CorrespondenceCustomNotificationRecipientRequest
                 {
@@ -381,6 +382,62 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
             OrganizationNumber = recipient.OrganizationNumber?.ToUrnFormattedString(),
             NationalIdentityNumber = recipient.NationalIdentityNumber?.ToUrnFormattedString(),
         };
+    }
+
+    private static List<CorrespondenceNotificationRecipientRequest>? BuildCustomRecipients(
+        CorrespondenceNotification notification
+    )
+    {
+        List<CorrespondenceNotificationRecipientRequest>? recipients = null;
+
+        if (notification.CustomRecipients is not null)
+        {
+            foreach (CorrespondenceNotificationRecipient recipient in notification.CustomRecipients)
+            {
+                (recipients ??= []).AddRange(ExplodeNotificationRecipient(recipient));
+            }
+        }
+
+        if (notification.CustomRecipient is not null)
+        {
+            (recipients ??= []).AddRange(ExplodeNotificationRecipient(notification.CustomRecipient));
+        }
+
+        return recipients;
+    }
+
+    /// <summary>
+    /// Splits a recipient into one request per populated identifier. The Correspondence API requires each custom
+    /// recipient to carry exactly one of email, mobile, organisation number or national identity number.
+    /// </summary>
+    private static IEnumerable<CorrespondenceNotificationRecipientRequest> ExplodeNotificationRecipient(
+        CorrespondenceNotificationRecipient recipient
+    )
+    {
+        if (recipient.EmailAddress is not null)
+        {
+            yield return new CorrespondenceNotificationRecipientRequest { EmailAddress = recipient.EmailAddress };
+        }
+
+        if (recipient.MobileNumber is not null)
+        {
+            yield return new CorrespondenceNotificationRecipientRequest { MobileNumber = recipient.MobileNumber };
+        }
+
+        string? organizationNumber = recipient.OrganizationNumber?.ToUrnFormattedString();
+        if (organizationNumber is not null)
+        {
+            yield return new CorrespondenceNotificationRecipientRequest { OrganizationNumber = organizationNumber };
+        }
+
+        string? nationalIdentityNumber = recipient.NationalIdentityNumber?.ToUrnFormattedString();
+        if (nationalIdentityNumber is not null)
+        {
+            yield return new CorrespondenceNotificationRecipientRequest
+            {
+                NationalIdentityNumber = nationalIdentityNumber,
+            };
+        }
     }
 
     private async Task<HttpRequestMessage> AuthenticatedHttpRequestFactory(

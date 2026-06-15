@@ -169,12 +169,12 @@ public class CorrespondenceBuilderTests
                     .WithSendReminder(data.notification.sendReminder)
                     .WithNotificationChannel(data.notification.notificationChannel)
                     .WithReminderNotificationChannel(data.notification.reminderNotificationChannel)
-                    .WithRecipientOverride(
+                    .WithRecipientOverrides([
                         CorrespondenceNotificationOverrideBuilder
                             .Create()
                             .WithOrganizationNumber(data.recipient.Value)
-                            .Build()
-                    )
+                            .Build(),
+                    ])
             )
             .WithDueDateTime(data.dueDateTime)
             .WithMessageSender(data.messageSender)
@@ -283,10 +283,10 @@ public class CorrespondenceBuilderTests
         correspondence
             .Notification.ReminderNotificationChannel.Should()
             .Be(data.notification.reminderNotificationChannel);
-        correspondence.Notification.CustomRecipient.Should().NotBeNull();
-        correspondence.Notification.CustomRecipient!.OrganizationNumber.Should().NotBeNull();
-
-        correspondence.Notification.CustomRecipient.OrganizationNumber.Should().Be(data.recipient.Value);
+        correspondence.Notification.CustomRecipients.Should().NotBeNull();
+        correspondence.Notification.CustomRecipients!.Should().ContainSingle();
+        correspondence.Notification.CustomRecipients![0].OrganizationNumber.Should().NotBeNull();
+        correspondence.Notification.CustomRecipients[0].OrganizationNumber.Should().Be(data.recipient.Value);
 
         correspondence.ExistingAttachments.Should().BeEquivalentTo(data.existingAttachments);
 

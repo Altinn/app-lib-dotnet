@@ -9,7 +9,6 @@ using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Internal.Registers;
 using Altinn.App.Core.Models;
-using Altinn.Platform.Register.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.Logging;
 using static Altinn.App.Core.Features.Signing.Models.Signee;
@@ -141,22 +140,12 @@ internal sealed class SigneeContextsManager(
     )
     {
         Signee signee = await From(providedSignee, altinnPartyClient.LookupParty);
-        Party party = signee.GetParty();
 
-        Notification? notification = providedSignee.CommunicationConfig?.Notification;
-
-        Email? emailNotification = notification?.Email;
-        if (emailNotification is not null && string.IsNullOrEmpty(emailNotification.EmailAddress))
-        {
-            emailNotification.EmailAddress = party.Organization?.EMailAddress;
-        }
-
-        Sms? smsNotification = notification?.Sms;
-        if (smsNotification is not null && string.IsNullOrEmpty(smsNotification.MobileNumber))
-        {
-            smsNotification.MobileNumber = party.Organization?.MobileNumber ?? party.Person?.MobileNumber;
-        }
-
+        // Contact info is intentionally not enriched from the registry here. A correspondence notification is always
+        // sent to the default correspondence recipient (the signee), resolved via the contact and reservation
+        // registry. Custom notification recipients are notified *in addition* to that default recipient, so injecting
+        // the signee's own registry contact here would notify the signee twice. Explicit contact overrides provided
+        // by the app flow through CommunicationConfig unchanged.
         return new SigneeContext
         {
             TaskId = taskId,
