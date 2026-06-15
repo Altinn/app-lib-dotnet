@@ -31,7 +31,7 @@ jobs:
           dotnet-version: |
             8.0.x
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ format('refs/pull/{0}/head', github.event.issue.number) }}
           fetch-depth: 0
@@ -52,7 +52,7 @@ jobs:
           echo $version
 
       - name: Create PR comment
-        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5
         id: pr-comment
         with:
           issue-number: ${{ github.event.issue.number }}
@@ -81,7 +81,7 @@ jobs:
           dotnet nuget push src/**/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
 
       - name: Update PR comment - failure
-        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5
         if: failure()
         with:
           issue-number: ${{ github.event.issue.number }}
@@ -91,7 +91,7 @@ jobs:
             > ❌ Failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Update PR comment - success
-        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5
         if: success()
         with:
           issue-number: ${{ github.event.issue.number }}

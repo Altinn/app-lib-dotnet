@@ -24,7 +24,7 @@ jobs:
           echo "Validating that the tag is in the correct format"
           echo "${{ github.event.release.tag_name }}" | grep -P $REGEX
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
 
@@ -39,9 +39,11 @@ jobs:
       - name: Extract release notes
         id: extract-notes
         run: |
-          echo "Release notes look best on GitHub: ${{ github.event.release.html_url }}" > RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
-          echo "${{ github.event.release.body }}" >> RELEASE_NOTES.md
+          {
+            echo "Release notes look best on GitHub: ${{ github.event.release.html_url }}"
+            echo
+            jq -r '.release.body // ""' "$GITHUB_EVENT_PATH"
+          } > RELEASE_NOTES.md
           cat RELEASE_NOTES.md
       - name: Build
         run: |
