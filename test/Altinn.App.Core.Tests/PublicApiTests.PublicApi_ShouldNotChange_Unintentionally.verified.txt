@@ -467,24 +467,24 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
     public class CorrespondenceNotificationBuilder : Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder, Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilderTemplate
     {
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotification Build() { }
+        public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithCustomRecipients(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipient> customRecipients) { }
+        public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithCustomRecipientsIfConfigured(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipient>? customRecipients) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithEmailBody(string? emailBody) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithEmailSubject(string? emailSubject) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithNotificationChannel(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationChannel? notificationChannel) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithNotificationTemplate(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationTemplate notificationTemplate) { }
-        [System.Obsolete("Use WithRecipientOverrides instead. A single recipient with multiple identifiers " +
-            "is no longer accepted by the Correspondence API.")]
+        [System.Obsolete("Use WithCustomRecipients instead. A single recipient with multiple identifiers is" +
+            " no longer accepted by the Correspondence API.")]
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRecipientOverride(Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationOverrideBuilder recipientOverrideBuilder) { }
-        [System.Obsolete("Use WithRecipientOverrides instead. A single recipient with multiple identifiers " +
-            "is no longer accepted by the Correspondence API.")]
+        [System.Obsolete("Use WithCustomRecipients instead. A single recipient with multiple identifiers is" +
+            " no longer accepted by the Correspondence API.")]
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRecipientOverride(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipient recipientOverride) { }
         [System.Obsolete("Use WithRecipientOverride(CorrespondenceNotificationRecipient recipientOverride) " +
             "instead.")]
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRecipientOverride(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipientWrapper recipientToOverrideWrapper) { }
-        [System.Obsolete("Use WithRecipientOverridesIfConfigured instead. A single recipient with multiple " +
-            "identifiers is no longer accepted by the Correspondence API.")]
+        [System.Obsolete("Use WithCustomRecipientsIfConfigured instead. A single recipient with multiple id" +
+            "entifiers is no longer accepted by the Correspondence API.")]
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRecipientOverrideIfConfigured(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipient? recipientOverride) { }
-        public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRecipientOverrides(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipient> recipientOverrides) { }
-        public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRecipientOverridesIfConfigured(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipient>? recipientOverrides) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderEmailBody(string? reminderEmailBody) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderEmailSubject(string? reminderEmailSubject) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderNotificationChannel(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationChannel? reminderNotificationChannel) { }
@@ -617,20 +617,20 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
     public interface ICorrespondenceNotificationBuilder : Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilderTemplate
     {
         Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotification Build();
+        Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithCustomRecipients(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipient> customRecipients);
+        Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithCustomRecipientsIfConfigured(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipient>? customRecipients);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithEmailBody(string? emailBody);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithEmailSubject(string? emailSubject);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithNotificationChannel(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationChannel? notificationChannel);
-        [System.Obsolete("Use WithRecipientOverrides instead. A single recipient with multiple identifiers " +
-            "is no longer accepted by the Correspondence API.")]
+        [System.Obsolete("Use WithCustomRecipients instead. A single recipient with multiple identifiers is" +
+            " no longer accepted by the Correspondence API.")]
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRecipientOverride(Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationOverrideBuilder recipientOverrideBuilder);
-        [System.Obsolete("Use WithRecipientOverrides instead. A single recipient with multiple identifiers " +
-            "is no longer accepted by the Correspondence API.")]
+        [System.Obsolete("Use WithCustomRecipients instead. A single recipient with multiple identifiers is" +
+            " no longer accepted by the Correspondence API.")]
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRecipientOverride(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipient recipientOverride);
         [System.Obsolete("Use WithRecipientOverride(CorrespondenceNotificationRecipient recipientOverride) " +
             "instead.")]
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRecipientOverride(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipientWrapper recipientToOverrideWrapper);
-        Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRecipientOverrides(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipient> recipientOverrides);
-        Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithRecipientOverridesIfConfigured(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipient>? recipientOverrides);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderEmailBody(string? reminderEmailBody);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderEmailSubject(string? reminderEmailSubject);
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceNotificationBuilder WithReminderNotificationChannel(Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationChannel? reminderNotificationChannel);

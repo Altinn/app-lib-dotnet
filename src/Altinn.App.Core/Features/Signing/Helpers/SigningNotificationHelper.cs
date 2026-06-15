@@ -69,7 +69,7 @@ internal sealed class SigningNotificationHelper
                 .WithEmailSubject(cw.EmailSubject)
                 .WithEmailBody(cw.EmailBody)
                 .WithSendersReference(cw.SendersReference)
-                .WithRecipientOverridesIfConfigured(BuildRecipientOverrides(emailAddress, mobileNumber: null))
+                .WithCustomRecipientsIfConfigured(BuildCustomRecipients(emailAddress, mobileNumber: null))
                 .WithSendReminder(cw.ReminderNotification is not null)
                 .WithReminderEmailBody(cw.ReminderEmailBody)
                 .WithReminderEmailSubject(cw.ReminderEmailSubject)
@@ -81,7 +81,7 @@ internal sealed class SigningNotificationHelper
                 .WithNotificationChannel(CorrespondenceNotificationChannel.Sms)
                 .WithSmsBody(cw.SmsBody)
                 .WithSendersReference(cw.SendersReference)
-                .WithRecipientOverridesIfConfigured(BuildRecipientOverrides(emailAddress: null, mobileNumber))
+                .WithCustomRecipientsIfConfigured(BuildCustomRecipients(emailAddress: null, mobileNumber))
                 .WithSendReminder(cw.ReminderNotification is not null)
                 .WithReminderEmailBody(cw.ReminderEmailBody)
                 .WithReminderEmailSubject(cw.ReminderEmailSubject)
@@ -95,7 +95,7 @@ internal sealed class SigningNotificationHelper
                 .WithEmailSubject(cw.EmailSubject)
                 .WithEmailBody(cw.EmailBody)
                 .WithSendersReference(cw.SendersReference)
-                .WithRecipientOverridesIfConfigured(BuildRecipientOverrides(emailAddress, mobileNumber))
+                .WithCustomRecipientsIfConfigured(BuildCustomRecipients(emailAddress, mobileNumber))
                 .WithSendReminder(cw.ReminderNotification is not null)
                 .WithReminderEmailBody(cw.ReminderEmailBody)
                 .WithReminderEmailSubject(cw.ReminderEmailSubject)
@@ -109,7 +109,7 @@ internal sealed class SigningNotificationHelper
                 .WithEmailSubject(cw.EmailSubject)
                 .WithEmailBody(cw.EmailBody)
                 .WithSendersReference(cw.SendersReference)
-                .WithRecipientOverridesIfConfigured(BuildRecipientOverrides(emailAddress: null, mobileNumber))
+                .WithCustomRecipientsIfConfigured(BuildCustomRecipients(emailAddress: null, mobileNumber))
                 .WithSendReminder(cw.ReminderNotification is not null)
                 .WithReminderEmailBody(cw.ReminderEmailBody)
                 .WithReminderEmailSubject(cw.ReminderEmailSubject)
@@ -123,7 +123,7 @@ internal sealed class SigningNotificationHelper
                 .WithEmailSubject(cw.EmailSubject)
                 .WithEmailBody(cw.EmailBody)
                 .WithSendersReference(cw.SendersReference)
-                .WithRecipientOverridesIfConfigured(BuildRecipientOverrides(emailAddress, mobileNumber: null))
+                .WithCustomRecipientsIfConfigured(BuildCustomRecipients(emailAddress, mobileNumber: null))
                 .WithSendReminder(cw.ReminderNotification is not null)
                 .WithReminderEmailBody(cw.ReminderEmailBody)
                 .WithReminderEmailSubject(cw.ReminderEmailSubject)
@@ -143,11 +143,11 @@ internal sealed class SigningNotificationHelper
 
     /// <summary>
     /// Builds one custom notification recipient per explicitly provided contact method. The Correspondence API
-    /// requires each custom recipient to carry exactly one identifier, so email and mobile overrides become separate
-    /// recipients. When no contact override is provided, the notification falls back to the correspondence recipient
+    /// requires each custom recipient to carry exactly one identifier, so email and mobile contacts become separate
+    /// recipients. When no explicit contact is provided, the notification falls back to the correspondence recipient
     /// (resolved via the contact and reservation registry) and the notification channel governs delivery.
     /// </summary>
-    private static List<CorrespondenceNotificationRecipient> BuildRecipientOverrides(
+    private static List<CorrespondenceNotificationRecipient> BuildCustomRecipients(
         string? emailAddress,
         string? mobileNumber
     )

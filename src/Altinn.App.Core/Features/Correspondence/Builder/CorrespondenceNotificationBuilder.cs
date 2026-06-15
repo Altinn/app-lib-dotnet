@@ -21,7 +21,7 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     private CorrespondenceNotificationChannel? _reminderNotificationChannel;
     private string? _sendersReference;
     private CorrespondenceNotificationRecipient? _recipientOverride;
-    private List<CorrespondenceNotificationRecipient>? _recipientOverrides;
+    private List<CorrespondenceNotificationRecipient>? _customRecipients;
 
     [Obsolete]
     private List<CorrespondenceNotificationRecipientWrapper>? _recipientToOverrideWrapper;
@@ -127,7 +127,7 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
 
     /// <inheritdoc/>
     [Obsolete(
-        "Use WithRecipientOverrides instead. A single recipient with multiple identifiers is no longer accepted by the Correspondence API."
+        "Use WithCustomRecipients instead. A single recipient with multiple identifiers is no longer accepted by the Correspondence API."
     )]
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         ICorrespondenceNotificationOverrideBuilder recipientOverrideBuilder
@@ -138,7 +138,7 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
 
     /// <inheritdoc/>
     [Obsolete(
-        "Use WithRecipientOverrides instead. A single recipient with multiple identifiers is no longer accepted by the Correspondence API."
+        "Use WithCustomRecipients instead. A single recipient with multiple identifiers is no longer accepted by the Correspondence API."
     )]
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         CorrespondenceNotificationRecipient recipientOverride
@@ -150,7 +150,7 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
 
     /// <inheritdoc/>
     [Obsolete(
-        "Use WithRecipientOverridesIfConfigured instead. A single recipient with multiple identifiers is no longer accepted by the Correspondence API."
+        "Use WithCustomRecipientsIfConfigured instead. A single recipient with multiple identifiers is no longer accepted by the Correspondence API."
     )]
     public ICorrespondenceNotificationBuilder WithRecipientOverrideIfConfigured(
         CorrespondenceNotificationRecipient? recipientOverride
@@ -165,27 +165,27 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilder WithRecipientOverrides(
-        IEnumerable<CorrespondenceNotificationRecipient> recipientOverrides
+    public ICorrespondenceNotificationBuilder WithCustomRecipients(
+        IEnumerable<CorrespondenceNotificationRecipient> customRecipients
     )
     {
-        ArgumentNullException.ThrowIfNull(recipientOverrides);
-        _recipientOverrides = recipientOverrides.ToList();
+        ArgumentNullException.ThrowIfNull(customRecipients);
+        _customRecipients = customRecipients.ToList();
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilder WithRecipientOverridesIfConfigured(
-        IEnumerable<CorrespondenceNotificationRecipient>? recipientOverrides
+    public ICorrespondenceNotificationBuilder WithCustomRecipientsIfConfigured(
+        IEnumerable<CorrespondenceNotificationRecipient>? customRecipients
     )
     {
-        if (recipientOverrides is null)
+        if (customRecipients is null)
         {
             return this;
         }
 
-        List<CorrespondenceNotificationRecipient> list = recipientOverrides.ToList();
-        return list.Count == 0 ? this : WithRecipientOverrides(list);
+        List<CorrespondenceNotificationRecipient> list = customRecipients.ToList();
+        return list.Count == 0 ? this : WithCustomRecipients(list);
     }
 
     /// <inheritdoc/>
@@ -218,7 +218,7 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
             ReminderNotificationChannel = _reminderNotificationChannel,
             SendersReference = _sendersReference,
             CustomRecipient = _recipientOverride,
-            CustomRecipients = _recipientOverrides,
+            CustomRecipients = _customRecipients,
         };
     }
 }

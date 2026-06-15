@@ -93,7 +93,7 @@ public class CorrespondenceClientMappingTests
                     .WithNotificationChannel(CorrespondenceNotificationChannel.EmailPreferred)
                     .WithReminderNotificationChannel(CorrespondenceNotificationChannel.SmsPreferred)
                     .WithSendersReference("notification-senders-ref")
-                    .WithRecipientOverrides([
+                    .WithCustomRecipients([
                         new CorrespondenceNotificationRecipient { EmailAddress = "override@example.com" },
                         new CorrespondenceNotificationRecipient { MobileNumber = "+4799999999" },
                     ])

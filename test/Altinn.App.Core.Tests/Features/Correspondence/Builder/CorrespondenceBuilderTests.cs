@@ -169,7 +169,7 @@ public class CorrespondenceBuilderTests
                     .WithSendReminder(data.notification.sendReminder)
                     .WithNotificationChannel(data.notification.notificationChannel)
                     .WithReminderNotificationChannel(data.notification.reminderNotificationChannel)
-                    .WithRecipientOverrides([
+                    .WithCustomRecipients([
                         CorrespondenceNotificationOverrideBuilder
                             .Create()
                             .WithOrganizationNumber(data.recipient.Value)
