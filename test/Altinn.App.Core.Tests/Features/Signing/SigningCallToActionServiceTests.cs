@@ -659,4 +659,152 @@ public class SigningCallToActionServiceTests(ITestOutputHelper output)
         Assert.NotNull(result.EmailSubject);
         Assert.Contains(expectedBodyContains, result.Body);
     }
+
+    /// <summary>
+    /// Regression test for the double-notification bug: when the app declares notification channels but provides no
+    /// explicit contact info, no custom recipients are sent. The signee is then notified exactly once — via the
+    /// default correspondence recipient (resolved through the registry by Correspondence).
+    /// </summary>
+    [Fact]
+    public async Task SendSignCallToAction_NoExplicitContact_DoesNotAddCustomRecipients()
+    {
+        // Arrange
+        SendCorrespondencePayload? capturedPayload = null;
+        Mock<ICorrespondenceClient> correspondenceClientMock = new();
+        correspondenceClientMock
+            .Setup(m => m.Send(It.IsAny<SendCorrespondencePayload>(), It.IsAny<CancellationToken>()))
+            .Callback<SendCorrespondencePayload, CancellationToken>((payload, _) => capturedPayload = payload);
+
+        Mock<IHostEnvironment> hostEnvironmentMock = new();
+        hostEnvironmentMock.Setup(m => m.EnvironmentName).Returns("tt02");
+        Mock<IAppMetadata> appMetadataMock = new();
+        appMetadataMock
+            .Setup(m => m.GetApplicationMetadata())
+            .ReturnsAsync(new ApplicationMetadata("org/app") { Title = new() { { LanguageConst.Nb, "TestAppName" } } });
+
+        SigningCallToActionService service = SetupService(
+            correspondenceClientMockOverride: correspondenceClientMock,
+            appMetadataMockOverride: appMetadataMock,
+            hostEnvironmentMockOverride: hostEnvironmentMock
+        );
+
+        // Both channels requested, but no explicit address/number (these would previously be registry-enriched).
+        CommunicationConfig communicationConfig = new()
+        {
+            Notification = new Notification { Email = new Email(), Sms = new Sms() },
+        };
+
+        var ssn = GetSsn(2);
+        Party signingParty = new() { Name = "Signee", SSN = ssn };
+        Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = GetOrgNumber(2) };
+        List<AltinnEnvironmentConfig> correspondenceResources =
+        [
+            new() { Environment = "tt02", Value = "app_ttd_appname" },
+        ];
+
+        // Act
+        await service.SendSignCallToAction(
+            communicationConfig,
+            new AppIdentifier("org", "app"),
+            new InstanceIdentifier(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07")),
+            signingParty,
+            serviceOwnerParty,
+            correspondenceResources,
+            CancellationToken.None
+        );
+
+        // Assert
+        Assert.NotNull(capturedPayload);
+        // The signee is the single (default) correspondence recipient...
+        Assert.Single(capturedPayload.CorrespondenceRequest.Recipients);
+        Assert.True(ssn == capturedPayload.CorrespondenceRequest.Recipients[0]);
+        // ...and is NOT additionally added as a custom recipient (which would double-notify the signee).
+        Assert.Null(capturedPayload.CorrespondenceRequest.Notification!.CustomRecipients);
+        // Channel is inferred from the declared notification blocks.
+        Assert.Equal(
+            CorrespondenceNotificationChannel.EmailAndSms,
+            capturedPayload.CorrespondenceRequest.Notification.NotificationChannel
+        );
+    }
+
+    /// <summary>
+    /// When the app provides explicit contact info for multiple channels, each becomes its own custom recipient with
+    /// exactly one identifier — never a single recipient carrying multiple identifiers (which the Correspondence API
+    /// rejects with "Custom recipient with multiple identifiers is not allowed").
+    /// </summary>
+    [Fact]
+    public async Task SendSignCallToAction_ExplicitEmailAndMobile_AddsOneSingleIdentifierRecipientPerMethod()
+    {
+        // Arrange
+        SendCorrespondencePayload? capturedPayload = null;
+        Mock<ICorrespondenceClient> correspondenceClientMock = new();
+        correspondenceClientMock
+            .Setup(m => m.Send(It.IsAny<SendCorrespondencePayload>(), It.IsAny<CancellationToken>()))
+            .Callback<SendCorrespondencePayload, CancellationToken>((payload, _) => capturedPayload = payload);
+
+        Mock<IHostEnvironment> hostEnvironmentMock = new();
+        hostEnvironmentMock.Setup(m => m.EnvironmentName).Returns("tt02");
+        Mock<IAppMetadata> appMetadataMock = new();
+        appMetadataMock
+            .Setup(m => m.GetApplicationMetadata())
+            .ReturnsAsync(new ApplicationMetadata("org/app") { Title = new() { { LanguageConst.Nb, "TestAppName" } } });
+
+        SigningCallToActionService service = SetupService(
+            correspondenceClientMockOverride: correspondenceClientMock,
+            appMetadataMockOverride: appMetadataMock,
+            hostEnvironmentMockOverride: hostEnvironmentMock
+        );
+
+        CommunicationConfig communicationConfig = new()
+        {
+            Notification = new Notification
+            {
+                Email = new Email { EmailAddress = "explicit@test.no" },
+                Sms = new Sms { MobileNumber = "99887766" },
+            },
+            NotificationChoice = NotificationChoice.SmsAndEmail,
+        };
+
+        Party signingParty = new() { Name = "Signee", SSN = GetSsn(3) };
+        Party serviceOwnerParty = new() { Name = "Service owner", OrgNumber = GetOrgNumber(3) };
+        List<AltinnEnvironmentConfig> correspondenceResources =
+        [
+            new() { Environment = "tt02", Value = "app_ttd_appname" },
+        ];
+
+        // Act
+        await service.SendSignCallToAction(
+            communicationConfig,
+            new AppIdentifier("org", "app"),
+            new InstanceIdentifier(123, Guid.Parse("ab0cdeb5-dc5e-4faa-966b-d18bb932ca07")),
+            signingParty,
+            serviceOwnerParty,
+            correspondenceResources,
+            CancellationToken.None
+        );
+
+        // Assert
+        Assert.NotNull(capturedPayload);
+        IReadOnlyList<CorrespondenceNotificationRecipient>? customRecipients = capturedPayload
+            .CorrespondenceRequest
+            .Notification!
+            .CustomRecipients;
+        Assert.NotNull(customRecipients);
+        Assert.Equal(2, customRecipients!.Count);
+        // Each entry carries exactly one identifier.
+        Assert.All(
+            customRecipients,
+            r =>
+            {
+                int identifierCount =
+                    (r.EmailAddress is not null ? 1 : 0)
+                    + (r.MobileNumber is not null ? 1 : 0)
+                    + (r.OrganizationNumber is not null ? 1 : 0)
+                    + (r.NationalIdentityNumber is not null ? 1 : 0);
+                Assert.Equal(1, identifierCount);
+            }
+        );
+        Assert.Contains(customRecipients, r => r.EmailAddress == "explicit@test.no");
+        Assert.Contains(customRecipients, r => r.MobileNumber == "99887766");
+    }
 }
