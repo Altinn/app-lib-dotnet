@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using Altinn.App.Core.Helpers.DataModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models.Layout;
@@ -84,32 +82,43 @@ public class TestGetResolvedKeys()
     [InlineData("eierAdresse.gate", new[] { "eierAdresse.gate" })]
     [InlineData("doesnotexist", new string[] { })]
     [InlineData("skjemainnhold.doesnotexist", new string[] { })]
-    // These cases ends in enumerables does not make sense to resolve keys for, and should throw exceptions.
-    // Currently added as test here to verify current behaviour, but should be removed when the implementation is updated to throw exceptions for these cases.
-    [InlineData("skjemainnhold", new string[] { "skjemainnhold[0]", "skjemainnhold[1]" })]
+    // An unindexed collection as the last part of the path refers to the collection itself,
+    // so it resolves to the (indexed) collection key without enumerating its rows. The
+    // collection reference is returned even when the collection is null (cf. skjemainnhold[0]).
+    [InlineData("skjemainnhold", new string[] { "skjemainnhold" })]
     [InlineData(
         "skjemainnhold.tidligere-adresse",
-        new string[]
-        {
-            "skjemainnhold[0].tidligere-adresse",
-            "skjemainnhold[1].tidligere-adresse[0]",
-            "skjemainnhold[1].tidligere-adresse[1]",
-        }
+        new string[] { "skjemainnhold[0].tidligere-adresse", "skjemainnhold[1].tidligere-adresse" }
     )]
     [InlineData(
         "skjemainnhold.tidligere-adresse.tags",
-        new string[]
-        {
-            "skjemainnhold[1].tidligere-adresse[0].tags",
-            "skjemainnhold[1].tidligere-adresse[1].tags[0]",
-            "skjemainnhold[1].tidligere-adresse[1].tags[1]",
-        }
+        new string[] { "skjemainnhold[1].tidligere-adresse[0].tags", "skjemainnhold[1].tidligere-adresse[1].tags" }
     )]
+    // An explicit index refers to a single row, which is resolved as usual.
     [InlineData(
+        // skjemainnhold[0].tidligere-adresse is null, so the index does not resolve
         "skjemainnhold.tidligere-adresse[1]",
-        new string[] { "skjemainnhold[0].tidligere-adresse", "skjemainnhold[1].tidligere-adresse[1]" }
+        new string[] { "skjemainnhold[1].tidligere-adresse[1]" }
     )]
     [InlineData("skjemainnhold[0]", new string[] { "skjemainnhold[0]" })]
+    // "group[]" enumerates every row of the collection at the end of the path.
+    [InlineData("skjemainnhold[]", new[] { "skjemainnhold[0]", "skjemainnhold[1]" })]
+    // "[]" in the middle of the path is equivalent to a bare collection (both expand over rows).
+    [InlineData("skjemainnhold[].navn", new[] { "skjemainnhold[0].navn", "skjemainnhold[1].navn" })]
+    [InlineData(
+        // skjemainnhold[0].tidligere-adresse is null, so it contributes no rows
+        "skjemainnhold.tidligere-adresse[]",
+        new[] { "skjemainnhold[1].tidligere-adresse[0]", "skjemainnhold[1].tidligere-adresse[1]" }
+    )]
+    [InlineData(
+        "skjemainnhold[1].tidligere-adresse[]",
+        new[] { "skjemainnhold[1].tidligere-adresse[0]", "skjemainnhold[1].tidligere-adresse[1]" }
+    )]
+    [InlineData(
+        // tidligere-adresse[0].tags is null, so only tidligere-adresse[1].tags contributes rows
+        "skjemainnhold[].tidligere-adresse[].tags[]",
+        new[] { "skjemainnhold[1].tidligere-adresse[1].tags[0]", "skjemainnhold[1].tidligere-adresse[1].tags[1]" }
+    )]
     public void TestResolvedKeys(string field, string[] expectedKeys)
     {
         // Test old reflection based implementation
@@ -123,17 +132,52 @@ public class TestGetResolvedKeys()
         Assert.Equal(expectedKeys, resolvedKeys);
     }
 
-    // [Theory]
-    // TODO: move test cases here when implementation is updated to throw exceptions for cases that resolves to enumerables, as these cases does not make sense to resolve keys for.
-    private void TestResolvedKeys_ErrorConditions(string field)
+    /// <summary>
+    /// A null collection and an empty collection must resolve identically - the result must
+    /// depend only on the path, not on whether the (empty) collection was instantiated.
+    ///
+    /// A bare collection at the end of the path resolves to the collection itself (so the key
+    /// is returned regardless of contents), while descending through or indexing into an
+    /// empty/null collection finds no rows and resolves to nothing.
+    /// </summary>
+    [Theory]
+    // Top level collection (Skjemainnhold)
+    [InlineData("skjemainnhold", new[] { "skjemainnhold" })]
+    [InlineData("skjemainnhold[]", new string[] { })]
+    [InlineData("skjemainnhold.navn", new string[] { })]
+    [InlineData("skjemainnhold[0].navn", new string[] { })]
+    public void NullAndEmptyTopLevelCollection_ResolveTheSame(string field, string[] expectedKeys)
+    {
+        AssertResolvedKeys(new Skjema() { Skjemainnhold = null }, field, expectedKeys);
+        AssertResolvedKeys(new Skjema() { Skjemainnhold = [] }, field, expectedKeys);
+    }
+
+    /// <summary>
+    /// Same as <see cref="NullAndEmptyTopLevelCollection_ResolveTheSame"/>, but for a nested
+    /// collection (TidligereAdresse) inside a populated parent row.
+    /// </summary>
+    [Theory]
+    [InlineData("skjemainnhold[0].tidligere-adresse", new[] { "skjemainnhold[0].tidligere-adresse" })]
+    [InlineData("skjemainnhold[0].tidligere-adresse[]", new string[] { })]
+    [InlineData("skjemainnhold[0].tidligere-adresse.gate", new string[] { })]
+    [InlineData("skjemainnhold[0].tidligere-adresse[1].gate", new string[] { })]
+    public void NullAndEmptyNestedCollection_ResolveTheSame(string field, string[] expectedKeys)
+    {
+        AssertResolvedKeys(BuildNested(null), field, expectedKeys);
+        AssertResolvedKeys(BuildNested([]), field, expectedKeys);
+
+        static Skjema BuildNested(List<Adresse>? tidligereAdresse) =>
+            new() { Skjemainnhold = [new SkjemaInnhold() { Navn = "navn", TidligereAdresse = tidligereAdresse }] };
+    }
+
+    private void AssertResolvedKeys(Skjema skjema, string field, string[] expectedKeys)
     {
         // Test old reflection based implementation
-        var modelWrapper = new DataModelWrapper(_skjema);
-        var exception = Assert.Throws<Exception>(() => modelWrapper.GetResolvedKeys(field).ToArray());
-        Assert.Contains("ResolveKeys", exception.Message);
+        var modelWrapper = new DataModelWrapper(skjema);
+        Assert.Equal(expectedKeys, modelWrapper.GetResolvedKeys(field));
 
-        var dataWrapper = FormDataWrapperFactory.Create(_skjema, _dataType, _dataElement);
-        var dataException = Assert.Throws<ArgumentException>(() => dataWrapper.GetResolvedKeys(field));
-        Assert.Contains("ResolveKeys", dataException.Message);
+        // Test formDataWrapper
+        var dataWrapper = FormDataWrapperFactory.Create(skjema, _dataType, _dataElement);
+        Assert.Equal(expectedKeys, dataWrapper.GetResolvedKeys(field));
     }
 }
