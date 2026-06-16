@@ -918,6 +918,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         Sms = 1,
         EmailPreferred = 2,
         SmsPreferred = 3,
+        EmailAndSms = 4,
     }
     public sealed class CorrespondenceNotificationDetailsResponse : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationDetailsResponse>
     {

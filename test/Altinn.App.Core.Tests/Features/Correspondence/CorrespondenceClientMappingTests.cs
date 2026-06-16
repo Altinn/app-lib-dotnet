@@ -187,9 +187,12 @@ public class CorrespondenceClientMappingTests
         notification.GetProperty("reminderNotificationChannel").GetString().Should().Be("SmsPreferred");
         notification.GetProperty("sendersReference").GetString().Should().Be("notification-senders-ref");
 
-        var customRecipient = notification.GetProperty("customRecipient");
-        customRecipient.GetProperty("emailAddress").GetString().Should().Be("override@example.com");
-        customRecipient.GetProperty("mobileNumber").GetString().Should().Be("+4799999999");
+        // The deprecated singular recipient override is folded into the plural customRecipients and exploded into
+        // one entry per identifier (email and mobile become separate single-identifier recipients).
+        var customRecipients = notification.GetProperty("customRecipients");
+        customRecipients.GetArrayLength().Should().Be(2);
+        customRecipients[0].GetProperty("emailAddress").GetString().Should().Be("override@example.com");
+        customRecipients[1].GetProperty("mobileNumber").GetString().Should().Be("+4799999999");
     }
 
     [Fact]

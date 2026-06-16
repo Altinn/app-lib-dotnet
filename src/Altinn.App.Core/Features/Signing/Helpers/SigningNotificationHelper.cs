@@ -86,7 +86,7 @@ internal sealed class SigningNotificationHelper
             NotificationChoice.SmsAndEmail => CorrespondenceNotificationBuilder
                 .Create()
                 .WithNotificationTemplate(CorrespondenceNotificationTemplate.CustomMessage)
-                .WithNotificationChannel(CorrespondenceNotificationChannel.EmailPreferred)
+                .WithNotificationChannel(CorrespondenceNotificationChannel.EmailAndSms)
                 .WithSmsBody(cw.SmsBody)
                 .WithEmailSubject(cw.EmailSubject)
                 .WithEmailBody(cw.EmailBody)

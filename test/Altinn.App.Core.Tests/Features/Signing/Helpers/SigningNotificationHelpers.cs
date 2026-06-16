@@ -93,6 +93,9 @@ public class SigningNotificationHelpers
         Assert.NotNull(notification);
         Assert.True(notification.OverrideRegisteredContactInformation);
 
+        // SmsAndEmail must map to the EmailAndSms channel (notify on both), not EmailPreferred (prefer one).
+        Assert.Equal(CorrespondenceNotificationChannel.EmailAndSms, notification.NotificationChannel);
+
         IReadOnlyList<CorrespondenceNotificationRecipient> recipients = notification.CustomRecipients!;
         Assert.NotNull(recipients);
         Assert.Equal(2, recipients.Count);
