@@ -1,5 +1,8 @@
+using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Signing;
 using Altinn.App.Core.Features.Signing.Helpers;
+using Altinn.App.Core.Features.Signing.Models;
+using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Tests.Features.Signing.Helpers;
 
@@ -65,5 +68,126 @@ public class SigningNotificationHelpers
             NotificationChoice.None,
             SigningNotificationHelper.GetNotificationChoiceIfNotSet(notificationWithNone)
         );
+    }
+
+    /// <summary>
+    /// Regression test for https://github.com/Altinn/altinn-studio/issues/19153.
+    /// A signee with both an email address and a mobile number must produce one custom recipient
+    /// per channel, each with exactly one identifier - the Correspondence API rejects a custom
+    /// recipient that carries multiple identifiers.
+    /// </summary>
+    [Fact]
+    public void CreateNotification_SmsAndEmail_ProducesOneSingleIdentifierRecipientPerChannel()
+    {
+        // Arrange
+        ContentWrapper contentWrapper = CreateContentWrapper(
+            NotificationChoice.SmsAndEmail,
+            emailAddress: "test@test.no",
+            mobileNumber: "12345678"
+        );
+
+        // Act
+        CorrespondenceNotification? notification = SigningNotificationHelper.CreateNotification(contentWrapper);
+
+        // Assert
+        Assert.NotNull(notification);
+        Assert.True(notification.OverrideRegisteredContactInformation);
+
+        IReadOnlyList<CorrespondenceNotificationRecipient> recipients = notification.CustomRecipients!;
+        Assert.NotNull(recipients);
+        Assert.Equal(2, recipients.Count);
+
+        // Each recipient must carry exactly one identifier.
+        Assert.All(recipients, r => Assert.Equal(1, CountIdentifiers(r)));
+
+        Assert.Contains(recipients, r => r.EmailAddress == "test@test.no");
+        Assert.Contains(recipients, r => r.MobileNumber == "12345678");
+    }
+
+    [Theory]
+    [InlineData(NotificationChoice.Email, "test@test.no", null, 1)]
+    [InlineData(NotificationChoice.Sms, null, "12345678", 1)]
+    [InlineData(NotificationChoice.SmsPreferred, "test@test.no", "12345678", 2)]
+    [InlineData(NotificationChoice.EmailPreferred, "test@test.no", "12345678", 2)]
+    public void CreateNotification_CustomAddresses_OverridesRegisteredContactInformation(
+        NotificationChoice notificationChoice,
+        string? emailAddress,
+        string? mobileNumber,
+        int expectedRecipientCount
+    )
+    {
+        // Arrange
+        ContentWrapper contentWrapper = CreateContentWrapper(notificationChoice, emailAddress, mobileNumber);
+
+        // Act
+        CorrespondenceNotification? notification = SigningNotificationHelper.CreateNotification(contentWrapper);
+
+        // Assert
+        Assert.NotNull(notification);
+        Assert.True(notification.OverrideRegisteredContactInformation);
+        Assert.NotNull(notification.CustomRecipients);
+        Assert.Equal(expectedRecipientCount, notification.CustomRecipients.Count);
+        Assert.All(notification.CustomRecipients, r => Assert.Equal(1, CountIdentifiers(r)));
+    }
+
+    [Fact]
+    public void CreateNotification_None_DoesNotOverrideRegisteredContactInformation()
+    {
+        // Arrange
+        ContentWrapper contentWrapper = CreateContentWrapper(
+            NotificationChoice.None,
+            emailAddress: null,
+            mobileNumber: null
+        );
+
+        // Act
+        CorrespondenceNotification? notification = SigningNotificationHelper.CreateNotification(contentWrapper);
+
+        // Assert
+        Assert.NotNull(notification);
+        Assert.False(notification.OverrideRegisteredContactInformation);
+        Assert.Null(notification.CustomRecipients);
+    }
+
+    private static int CountIdentifiers(CorrespondenceNotificationRecipient recipient)
+    {
+        int count = 0;
+        if (!string.IsNullOrEmpty(recipient.EmailAddress))
+            count++;
+        if (!string.IsNullOrEmpty(recipient.MobileNumber))
+            count++;
+        if (recipient.OrganizationNumber is not null)
+            count++;
+        if (recipient.NationalIdentityNumber is not null)
+            count++;
+        return count;
+    }
+
+    private static ContentWrapper CreateContentWrapper(
+        NotificationChoice notificationChoice,
+        string? emailAddress,
+        string? mobileNumber
+    )
+    {
+        return new ContentWrapper
+        {
+            CorrespondenceContent = new CorrespondenceContent
+            {
+                Language = LanguageCode<Iso6391>.Parse("nb"),
+                Title = "title",
+                Summary = "summary",
+                Body = "body",
+            },
+            SendersReference = "ref",
+            NotificationChoice = notificationChoice,
+            Notification = new Notification
+            {
+                Email = emailAddress is null ? null : new Email { EmailAddress = emailAddress },
+                Sms = mobileNumber is null ? null : new Sms { MobileNumber = mobileNumber },
+            },
+            EmailBody = "email body",
+            EmailSubject = "email subject",
+            SmsBody = "sms body",
+        };
     }
 }

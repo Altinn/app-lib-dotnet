@@ -357,6 +357,9 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
             NotificationChannel = notification.NotificationChannel,
             ReminderNotificationChannel = notification.ReminderNotificationChannel,
             SendersReference = notification.SendersReference,
+            CustomRecipients = notification.CustomRecipients?.Select(BuildNotificationRecipient).ToList(),
+            OverrideRegisteredContactInformation = notification.OverrideRegisteredContactInformation,
+#pragma warning disable CS0618 // Type or member is obsolete - mapped for backwards compatibility
             CustomRecipient = notification.CustomRecipient is null
                 ? null
                 : BuildNotificationRecipient(notification.CustomRecipient),
@@ -367,6 +370,7 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
                     Recipients = x.CorrespondenceNotificationRecipients.Select(BuildNotificationRecipient).ToList(),
                 })
                 .ToList(),
+#pragma warning restore CS0618
         };
     }
 

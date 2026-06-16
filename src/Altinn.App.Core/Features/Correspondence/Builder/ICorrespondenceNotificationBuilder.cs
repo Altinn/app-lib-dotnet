@@ -98,9 +98,50 @@ public interface ICorrespondenceNotificationBuilder : ICorrespondenceNotificatio
     ICorrespondenceNotificationBuilder WithRequestedSendTime(DateTimeOffset? requestedSendTime);
 
     /// <summary>
+    /// <p>Adds custom recipients to the correspondence notification, <em>in addition to</em> the contact information
+    /// registered in KRR (both are notified). To notify only the custom recipients instead, use
+    /// <see cref="WithRecipientOverrides"/>.</p>
+    /// <p>Each recipient must have exactly one identifier populated; to notify on multiple channels, supply one entry per channel.</p>
+    /// </summary>
+    /// <param name="customRecipients">The custom recipients</param>
+    public ICorrespondenceNotificationBuilder WithCustomRecipients(
+        IReadOnlyList<CorrespondenceNotificationRecipient> customRecipients
+    );
+
+    /// <summary>
+    /// Same as <see cref="WithCustomRecipients"/>, but only applied if <paramref name="customRecipients"/> is
+    /// not <c>null</c> or empty.
+    /// </summary>
+    /// <param name="customRecipients">The custom recipients</param>
+    public ICorrespondenceNotificationBuilder WithCustomRecipientsIfConfigured(
+        IReadOnlyList<CorrespondenceNotificationRecipient>? customRecipients
+    );
+
+    /// <summary>
+    /// <p>Sets custom recipients for the correspondence notification that <em>override</em> the contact information
+    /// registered in KRR (only the recipient overrides are notified). To notify the registered contact information
+    /// as well, use <see cref="WithCustomRecipients"/> instead.</p>
+    /// <p>Each recipient must have exactly one identifier populated; to notify on multiple channels, supply one entry per channel.</p>
+    /// </summary>
+    /// <param name="recipientOverrides">The recipient overrides</param>
+    public ICorrespondenceNotificationBuilder WithRecipientOverrides(
+        IReadOnlyList<CorrespondenceNotificationRecipient> recipientOverrides
+    );
+
+    /// <summary>
+    /// Same as <see cref="WithRecipientOverrides"/>, but only applied if <paramref name="recipientOverrides"/> is
+    /// not <c>null</c> or empty.
+    /// </summary>
+    /// <param name="recipientOverrides">The recipient overrides</param>
+    public ICorrespondenceNotificationBuilder WithRecipientOverridesIfConfigured(
+        IReadOnlyList<CorrespondenceNotificationRecipient>? recipientOverrides
+    );
+
+    /// <summary>
     /// Sets the recipient override for the correspondence notification.
     /// </summary>
     /// <param name="recipientOverride">The recipient override</param>
+    [Obsolete("Use WithCustomRecipients instead.")]
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         CorrespondenceNotificationRecipient recipientOverride
     );
@@ -109,6 +150,7 @@ public interface ICorrespondenceNotificationBuilder : ICorrespondenceNotificatio
     /// Sets the recipient override for the correspondence notification.
     /// </summary>
     /// <param name="recipientOverrideBuilder">The recipient override builder.</param>
+    [Obsolete("Use WithCustomRecipients instead.")]
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         ICorrespondenceNotificationOverrideBuilder recipientOverrideBuilder
     );

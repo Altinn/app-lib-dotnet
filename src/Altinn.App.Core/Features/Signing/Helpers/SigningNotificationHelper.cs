@@ -65,14 +65,7 @@ internal sealed class SigningNotificationHelper
                 .WithEmailSubject(cw.EmailSubject)
                 .WithEmailBody(cw.EmailBody)
                 .WithSendersReference(cw.SendersReference)
-                .WithRecipientOverride(
-                    CorrespondenceNotificationOverrideBuilder
-                        .Create()
-                        .WithEmailAddress(emailAddress)
-                        .WithMobileNumber(mobileNumber)
-                        .WithOrganisationOrPersonIdentifier(cw.Recipient)
-                        .Build()
-                )
+                .WithSigneeRecipientOverrides(emailAddress, null)
                 .WithSendReminder(cw.ReminderNotification is not null)
                 .WithReminderEmailBody(cw.ReminderEmailBody)
                 .WithReminderEmailSubject(cw.ReminderEmailSubject)
@@ -84,13 +77,7 @@ internal sealed class SigningNotificationHelper
                 .WithNotificationChannel(CorrespondenceNotificationChannel.Sms)
                 .WithSmsBody(cw.SmsBody)
                 .WithSendersReference(cw.SendersReference)
-                .WithRecipientOverride(
-                    CorrespondenceNotificationOverrideBuilder
-                        .Create()
-                        .WithMobileNumber(mobileNumber)
-                        .WithOrganisationOrPersonIdentifier(cw.Recipient)
-                        .Build()
-                )
+                .WithSigneeRecipientOverrides(null, mobileNumber)
                 .WithSendReminder(cw.ReminderNotification is not null)
                 .WithReminderEmailBody(cw.ReminderEmailBody)
                 .WithReminderEmailSubject(cw.ReminderEmailSubject)
@@ -104,14 +91,7 @@ internal sealed class SigningNotificationHelper
                 .WithEmailSubject(cw.EmailSubject)
                 .WithEmailBody(cw.EmailBody)
                 .WithSendersReference(cw.SendersReference)
-                .WithRecipientOverride(
-                    CorrespondenceNotificationOverrideBuilder
-                        .Create()
-                        .WithEmailAddress(emailAddress)
-                        .WithMobileNumber(mobileNumber)
-                        .WithOrganisationOrPersonIdentifier(cw.Recipient)
-                        .Build()
-                )
+                .WithSigneeRecipientOverrides(emailAddress, mobileNumber)
                 .WithSendReminder(cw.ReminderNotification is not null)
                 .WithReminderEmailBody(cw.ReminderEmailBody)
                 .WithReminderEmailSubject(cw.ReminderEmailSubject)
@@ -125,13 +105,7 @@ internal sealed class SigningNotificationHelper
                 .WithEmailSubject(cw.EmailSubject)
                 .WithEmailBody(cw.EmailBody)
                 .WithSendersReference(cw.SendersReference)
-                .WithRecipientOverride(
-                    CorrespondenceNotificationOverrideBuilder
-                        .Create()
-                        .WithMobileNumber(mobileNumber)
-                        .WithOrganisationOrPersonIdentifier(cw.Recipient)
-                        .Build()
-                )
+                .WithSigneeRecipientOverrides(emailAddress, mobileNumber)
                 .WithSendReminder(cw.ReminderNotification is not null)
                 .WithReminderEmailBody(cw.ReminderEmailBody)
                 .WithReminderEmailSubject(cw.ReminderEmailSubject)
@@ -145,13 +119,7 @@ internal sealed class SigningNotificationHelper
                 .WithEmailSubject(cw.EmailSubject)
                 .WithEmailBody(cw.EmailBody)
                 .WithSendersReference(cw.SendersReference)
-                .WithRecipientOverride(
-                    CorrespondenceNotificationOverrideBuilder
-                        .Create()
-                        .WithEmailAddress(emailAddress)
-                        .WithOrganisationOrPersonIdentifier(cw.Recipient)
-                        .Build()
-                )
+                .WithSigneeRecipientOverrides(emailAddress, mobileNumber)
                 .WithSendReminder(cw.ReminderNotification is not null)
                 .WithReminderEmailBody(cw.ReminderEmailBody)
                 .WithReminderEmailSubject(cw.ReminderEmailSubject)
@@ -167,5 +135,35 @@ internal sealed class SigningNotificationHelper
                 .Build(),
             _ => null,
         };
+    }
+}
+
+/// <summary>
+/// Signing-specific helpers for configuring custom notification recipients on a <see cref="CorrespondenceNotificationBuilder"/>.
+/// </summary>
+internal static class SigningNotificationBuilderExtensions
+{
+    /// <summary>
+    /// Adds the signee's notification recipient overrides (one single-identifier entry per channel, as required by the
+    /// Correspondence API), overriding the contact information registered in KRR. When no addresses are supplied, the
+    /// notification falls back to the registered contact information of the correspondence recipient.
+    /// </summary>
+    internal static ICorrespondenceNotificationBuilder WithSigneeRecipientOverrides(
+        this ICorrespondenceNotificationBuilder builder,
+        string? emailAddress,
+        string? mobileNumber
+    )
+    {
+        var recipients = new List<CorrespondenceNotificationRecipient>(2);
+        if (!string.IsNullOrEmpty(emailAddress))
+        {
+            recipients.Add(new CorrespondenceNotificationRecipient { EmailAddress = emailAddress });
+        }
+        if (!string.IsNullOrEmpty(mobileNumber))
+        {
+            recipients.Add(new CorrespondenceNotificationRecipient { MobileNumber = mobileNumber });
+        }
+
+        return builder.WithRecipientOverridesIfConfigured(recipients);
     }
 }
