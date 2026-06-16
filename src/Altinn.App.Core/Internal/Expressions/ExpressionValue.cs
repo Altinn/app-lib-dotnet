@@ -697,8 +697,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// </summary>
     public static ExpressionValue FromJsonString(string jsonString)
     {
-        //TODO: consider a more lightweight way to validate the json string
-        //      correctly initialize the ExpressionValue.
+        // We could initialize directly with the json string, but parsing ensures that whitespace and tracing commas are consistent
+        // A more light weight verification that don't transcode the string to UTF8 would be nice.
         using var doc = JsonDocument.Parse(jsonString);
         return new(doc.RootElement);
     }
