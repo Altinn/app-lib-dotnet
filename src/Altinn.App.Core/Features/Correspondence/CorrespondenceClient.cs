@@ -357,9 +357,6 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
             NotificationChannel = notification.NotificationChannel,
             ReminderNotificationChannel = notification.ReminderNotificationChannel,
             SendersReference = notification.SendersReference,
-            // The Correspondence API no longer accepts the singular customRecipient, nor a recipient carrying more
-            // than one identifier. Both the new CustomRecipients and the legacy singular CustomRecipient are folded
-            // into the plural customRecipients, exploded into one entry per identifier.
             CustomRecipients = BuildCustomRecipients(notification),
             OverrideRegisteredContactInformation = notification.OverrideRegisteredContactInformation,
 #pragma warning disable CS0618 // Type or member is obsolete - mapped for backwards compatibility

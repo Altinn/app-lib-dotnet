@@ -223,10 +223,11 @@ public class CorrespondenceClientMappingTests
                     .Create()
                     .WithNotificationTemplate(CorrespondenceNotificationTemplate.CustomMessage)
                     .WithNotificationChannel(CorrespondenceNotificationChannel.EmailPreferred)
-                    .WithRecipientOverrides([
+                    .WithCustomRecipients([
                         new CorrespondenceNotificationRecipient { EmailAddress = "override@example.com" },
                         new CorrespondenceNotificationRecipient { MobileNumber = "+4799999999" },
                     ])
+                    .WithOverrideRegisteredContactInformation(true)
             )
             .Build();
 

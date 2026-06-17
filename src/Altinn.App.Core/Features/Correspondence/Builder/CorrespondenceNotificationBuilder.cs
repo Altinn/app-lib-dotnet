@@ -139,16 +139,26 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     }
 
     /// <inheritdoc/>
-    [Obsolete("Use WithRecipientOverrides instead.")]
+    [Obsolete("Use WithCustomRecipients instead.")]
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         ICorrespondenceNotificationOverrideBuilder recipientOverrideBuilder
     ) => WithCustomRecipients([recipientOverrideBuilder.Build()]);
 
     /// <inheritdoc/>
-    [Obsolete("Use WithRecipientOverrides instead.")]
+    [Obsolete("Use WithCustomRecipients instead.")]
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         CorrespondenceNotificationRecipient recipientOverride
     ) => WithCustomRecipients([recipientOverride]);
+
+    /// <summary>
+    /// Same as <see cref="WithRecipientOverride(CorrespondenceNotificationRecipient)"/>, but only applied if
+    /// <paramref name="recipientOverride"/> is not <c>null</c>.
+    /// </summary>
+    /// <param name="recipientOverride">The recipient override</param>
+    [Obsolete("Use WithCustomRecipients instead.")]
+    public ICorrespondenceNotificationBuilder WithRecipientOverrideIfConfigured(
+        CorrespondenceNotificationRecipient? recipientOverride
+    ) => recipientOverride is not null ? WithCustomRecipients([recipientOverride]) : this;
 
     /// <inheritdoc/>
     public CorrespondenceNotification Build()
