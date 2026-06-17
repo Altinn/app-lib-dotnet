@@ -20,10 +20,6 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     private string? _sendersReference;
     private IReadOnlyList<CorrespondenceNotificationRecipient>? _customRecipients;
     private bool _overrideRegisteredContactInformation;
-    private CorrespondenceNotificationRecipient? _recipientOverride;
-
-    [Obsolete]
-    private List<CorrespondenceNotificationRecipientWrapper>? _recipientToOverrideWrapper;
 
     private CorrespondenceNotificationBuilder() { }
 
@@ -117,6 +113,15 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     }
 
     /// <inheritdoc/>
+    public ICorrespondenceNotificationBuilder WithOverrideRegisteredContactInformation(
+        bool overrideRegisteredContactInformation
+    )
+    {
+        _overrideRegisteredContactInformation = overrideRegisteredContactInformation;
+        return this;
+    }
+
+    /// <inheritdoc/>
     [Obsolete("RequestedSendTime is no longer supported by the Correspondence API.")]
     public ICorrespondenceNotificationBuilder WithRequestedSendTime(DateTimeOffset? requestedSendTime)
     {
@@ -130,91 +135,20 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     )
     {
         _customRecipients = customRecipients;
-        _overrideRegisteredContactInformation = false;
         return this;
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilder WithCustomRecipientsIfConfigured(
-        IReadOnlyList<CorrespondenceNotificationRecipient>? customRecipients
-    )
-    {
-        if (customRecipients is { Count: > 0 })
-        {
-            return WithCustomRecipients(customRecipients);
-        }
-
-        return this;
-    }
-
-    /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilder WithRecipientOverrides(
-        IReadOnlyList<CorrespondenceNotificationRecipient> recipientOverrides
-    )
-    {
-        _customRecipients = recipientOverrides;
-        _overrideRegisteredContactInformation = true;
-        return this;
-    }
-
-    /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilder WithRecipientOverridesIfConfigured(
-        IReadOnlyList<CorrespondenceNotificationRecipient>? recipientOverrides
-    )
-    {
-        if (recipientOverrides is { Count: > 0 })
-        {
-            return WithRecipientOverrides(recipientOverrides);
-        }
-
-        return this;
-    }
-
-    /// <inheritdoc/>
-    [Obsolete("Use WithCustomRecipients instead.")]
+    [Obsolete("Use WithRecipientOverrides instead.")]
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         ICorrespondenceNotificationOverrideBuilder recipientOverrideBuilder
-    )
-    {
-        return WithRecipientOverride(recipientOverrideBuilder.Build());
-    }
+    ) => WithCustomRecipients([recipientOverrideBuilder.Build()]);
 
     /// <inheritdoc/>
-    [Obsolete("Use WithCustomRecipients instead.")]
+    [Obsolete("Use WithRecipientOverrides instead.")]
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         CorrespondenceNotificationRecipient recipientOverride
-    )
-    {
-        _recipientOverride = recipientOverride;
-        return this;
-    }
-
-    /// <inheritdoc/>
-    [Obsolete("Use WithCustomRecipientsIfConfigured instead.")]
-    public ICorrespondenceNotificationBuilder WithRecipientOverrideIfConfigured(
-        CorrespondenceNotificationRecipient? recipientOverride
-    )
-    {
-        if (recipientOverride is not null)
-        {
-#pragma warning disable CS0618 // Type or member is obsolete
-            return WithRecipientOverride(recipientOverride);
-#pragma warning restore CS0618
-        }
-
-        return this;
-    }
-
-    /// <inheritdoc/>
-    [Obsolete("Use WithRecipientOverride(CorrespondenceNotificationRecipient recipientOverride) instead.")]
-    public ICorrespondenceNotificationBuilder WithRecipientOverride(
-        CorrespondenceNotificationRecipientWrapper recipientToOverrideWrapper
-    )
-    {
-        _recipientToOverrideWrapper ??= [];
-        _recipientToOverrideWrapper.Add(recipientToOverrideWrapper);
-        return this;
-    }
+    ) => WithCustomRecipients([recipientOverride]);
 
     /// <inheritdoc/>
     public CorrespondenceNotification Build()
@@ -236,9 +170,6 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
             SendersReference = _sendersReference,
             CustomRecipients = _customRecipients,
             OverrideRegisteredContactInformation = _overrideRegisteredContactInformation,
-#pragma warning disable CS0618 // Type or member is obsolete - retained for backwards compatibility
-            CustomRecipient = _recipientOverride,
-#pragma warning restore CS0618
         };
     }
 }
