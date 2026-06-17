@@ -147,6 +147,7 @@ public static partial class ExpressionEvaluator
             ExpressionFunction.multiply => Multiply(args),
             ExpressionFunction.divide => Divide(args),
             ExpressionFunction.list => List(args),
+            ExpressionFunction.@object => Object(args),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
                 $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
             ),
@@ -1016,6 +1017,11 @@ public static partial class ExpressionEvaluator
     private static ExpressionValue List(ExpressionValue[] args)
     {
         return new JsonArray(args.Select(a => JsonSerializer.SerializeToNode(a)).ToArray());
+    }
+
+    private static ExpressionValue Object(ExpressionValue[] args)
+    {
+        return ObjectFunctionEvaluator.Evaluate(args);
     }
 
     /// <summary>
