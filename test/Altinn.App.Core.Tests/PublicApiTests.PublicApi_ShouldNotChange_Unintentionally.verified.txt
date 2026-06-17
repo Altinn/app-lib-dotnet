@@ -3254,7 +3254,6 @@ namespace Altinn.App.Core.Internal.Expressions
         public System.Text.Json.Nodes.JsonNode? JsonNode { get; }
         public System.Text.Json.Nodes.JsonObject JsonObject { get; }
         public double Number { get; }
-        public System.Text.Json.Nodes.JsonObject Object { get; }
         public string String { get; }
         public System.Text.Json.JsonValueKind ValueKind { get; }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue False { get; }
