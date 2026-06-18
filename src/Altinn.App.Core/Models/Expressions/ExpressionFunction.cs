@@ -235,4 +235,9 @@ public enum ExpressionFunction
 #pragma warning disable CA1720
     @object,
 #pragma warning restore CA1720
+
+    /// <summary>
+    /// Run a Jmespath query on the arguments
+    /// </summary>
+    jmespath,
 }
