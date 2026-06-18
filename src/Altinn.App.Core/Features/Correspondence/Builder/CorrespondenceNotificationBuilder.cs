@@ -113,28 +113,10 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     }
 
     /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilder WithOverrideRegisteredContactInformation(
-        bool overrideRegisteredContactInformation
-    )
-    {
-        _overrideRegisteredContactInformation = overrideRegisteredContactInformation;
-        return this;
-    }
-
-    /// <inheritdoc/>
     [Obsolete("RequestedSendTime is no longer supported by the Correspondence API.")]
     public ICorrespondenceNotificationBuilder WithRequestedSendTime(DateTimeOffset? requestedSendTime)
     {
         // Intentional no-op: RequestedSendTime is no longer accepted by the Correspondence API.
-        return this;
-    }
-
-    /// <inheritdoc/>
-    public ICorrespondenceNotificationBuilder WithCustomRecipients(
-        IReadOnlyList<CorrespondenceNotificationRecipient> customRecipients
-    )
-    {
-        _customRecipients = customRecipients;
         return this;
     }
 
@@ -159,6 +141,24 @@ public class CorrespondenceNotificationBuilder : ICorrespondenceNotificationBuil
     public ICorrespondenceNotificationBuilder WithRecipientOverrideIfConfigured(
         CorrespondenceNotificationRecipient? recipientOverride
     ) => recipientOverride is not null ? WithCustomRecipients([recipientOverride]) : this;
+
+    /// <inheritdoc/>
+    public ICorrespondenceNotificationBuilder WithCustomRecipients(
+        IReadOnlyList<CorrespondenceNotificationRecipient> customRecipients
+    )
+    {
+        _customRecipients = customRecipients;
+        return this;
+    }
+
+    /// <inheritdoc/>
+    public ICorrespondenceNotificationBuilder WithOverrideRegisteredContactInformation(
+        bool overrideRegisteredContactInformation
+    )
+    {
+        _overrideRegisteredContactInformation = overrideRegisteredContactInformation;
+        return this;
+    }
 
     /// <inheritdoc/>
     public CorrespondenceNotification Build()

@@ -91,17 +91,6 @@ public interface ICorrespondenceNotificationBuilder : ICorrespondenceNotificatio
     ICorrespondenceNotificationBuilder WithSendersReference(string? sendersReference);
 
     /// <summary>
-    /// <p>Sets whether to override the registered contact information for the correspondence notification.
-    /// If <c>true</c>, only the custom recipients specified in the notification will be notified.
-    /// If <c>false</c> (default), both the registered contact information and any custom recipients will be notified.</p>
-    /// <p>See <see cref="WithCustomRecipients"/> and <see cref="WithNotificationChannel"/>.</p>
-    /// </summary>
-    /// <param name="overrideRegisteredContactInformation">Whether to override the registered contact information or not</param>
-    ICorrespondenceNotificationBuilder WithOverrideRegisteredContactInformation(
-        bool overrideRegisteredContactInformation
-    );
-
-    /// <summary>
     /// Sets the requested send time for the correspondence notification.
     /// </summary>
     /// <param name="requestedSendTime">The requested send time</param>
@@ -109,18 +98,9 @@ public interface ICorrespondenceNotificationBuilder : ICorrespondenceNotificatio
     ICorrespondenceNotificationBuilder WithRequestedSendTime(DateTimeOffset? requestedSendTime);
 
     /// <summary>
-    /// <p>Adds custom recipients to the correspondence notification. Exactly how this interacts with the default recipient information
-    /// registered in KRR depends on the value of <see cref="WithOverrideRegisteredContactInformation"/> and <see cref="WithNotificationChannel"/>.</p>
-    /// <p>Each recipient must have exactly <b>one</b> identifier populated; to notify on multiple channels, supply one entry per channel.</p>
-    /// </summary>
-    /// <param name="customRecipients">The custom recipients</param>
-    public ICorrespondenceNotificationBuilder WithCustomRecipients(
-        IReadOnlyList<CorrespondenceNotificationRecipient> customRecipients
-    );
-
-    /// <summary>
     /// Sets the recipient override for the correspondence notification.
     /// </summary>
+    /// <param name="recipientOverride">The recipient override</param>
     [Obsolete("Use WithCustomRecipients instead.")]
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         CorrespondenceNotificationRecipient recipientOverride
@@ -133,6 +113,27 @@ public interface ICorrespondenceNotificationBuilder : ICorrespondenceNotificatio
     [Obsolete("Use WithCustomRecipients instead.")]
     public ICorrespondenceNotificationBuilder WithRecipientOverride(
         ICorrespondenceNotificationOverrideBuilder recipientOverrideBuilder
+    );
+
+    /// <summary>
+    /// <p>Adds custom recipients to the correspondence notification. Exactly how this interacts with the default recipient information
+    /// registered in KRR depends on the value of <see cref="WithOverrideRegisteredContactInformation"/> and <see cref="WithNotificationChannel"/>.</p>
+    /// <p>Each recipient must have exactly <b>one</b> identifier populated; to notify on multiple channels, supply one entry per channel.</p>
+    /// </summary>
+    /// <param name="customRecipients">The custom recipients</param>
+    public ICorrespondenceNotificationBuilder WithCustomRecipients(
+        IReadOnlyList<CorrespondenceNotificationRecipient> customRecipients
+    );
+
+    /// <summary>
+    /// <p>Sets whether to override the registered contact information for the correspondence notification.
+    /// If <c>true</c>, only the custom recipients specified in the notification will be notified.
+    /// If <c>false</c> (default), both the registered contact information and any custom recipients will be notified.</p>
+    /// <p>See <see cref="WithCustomRecipients"/> and <see cref="WithNotificationChannel"/>.</p>
+    /// </summary>
+    /// <param name="overrideRegisteredContactInformation">Whether to override the registered contact information or not</param>
+    ICorrespondenceNotificationBuilder WithOverrideRegisteredContactInformation(
+        bool overrideRegisteredContactInformation
     );
 
     /// <summary>
