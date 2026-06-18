@@ -91,6 +91,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             ValueKind = JsonValueKind.Null;
             return;
         }
+
         ValueKind = value.GetValueKind();
         switch (ValueKind)
         {
@@ -324,12 +325,9 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     public JsonElement JsonElement =>
         ValueKind switch
         {
-            JsonValueKind.Object or JsonValueKind.Array => JsonDocument
-                .Parse(
-                    _stringValue
-                        ?? throw new UnreachableException("_stringValue is null when ValueKind is Object or Array")
-                )
-                .RootElement,
+            JsonValueKind.Object or JsonValueKind.Array => ParseAndCloneJsonElement(
+                _stringValue ?? throw new UnreachableException("_stringValue is null when ValueKind is Object or Array")
+            ),
             JsonValueKind.String => JsonSerializer.SerializeToElement(_stringValue),
             JsonValueKind.Number => JsonSerializer.SerializeToElement(_numberValue),
             JsonValueKind.True => JsonSerializer.SerializeToElement(true),
@@ -340,6 +338,12 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                 $"The .JsonElement property can't be used on an expression value that represent a {ValueKind}"
             ),
         };
+
+    private static JsonElement ParseAndCloneJsonElement(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.Clone();
+    }
 
     /// <summary>
     /// Get the value as it would be serialized to JSON
