@@ -521,4 +521,47 @@ public class CorrespondenceResponseTests
         statusDetails.Smses![0].Recipient!.MobileNumber.Should().Be("+4793477179");
         statusDetails.Smses[0].SendStatus!.Status.Should().Be("SMS_Accepted");
     }
+
+    [Fact]
+    public void Status_AttachmentsDownloadedStatus_DeserializesCorrectly()
+    {
+        // "AttachmentsDownloaded" is a valid CorrespondenceStatus returned by the API (e.g. once the
+        // recipient downloads attachments). It appears both as the top-level status and in the history.
+        // Regression: the value was missing from the enum, so JsonStringEnumConverter threw on it.
+        var encodedResponse = """
+            {
+                "statusHistory": [
+                    {
+                        "status": "Published",
+                        "statusText": "Published",
+                        "statusChanged": "2025-05-16T09:55:28.64087+00:00"
+                    },
+                    {
+                        "status": "AttachmentsDownloaded",
+                        "statusText": "Attachment 0196d885-2b97-7e8d-b8fb-21bd0e64b39b has been downloaded",
+                        "statusChanged": "2025-05-16T09:57:11.21523+00:00"
+                    }
+                ],
+                "recipient": "urn:altinn:organization:identifier-no:313756270",
+                "correspondenceId": "0196d885-2d03-74cc-885d-13159c39b588",
+                "created": "2025-05-16T09:55:28.641293+00:00",
+                "status": "AttachmentsDownloaded",
+                "statusText": "Attachment 0196d885-2b97-7e8d-b8fb-21bd0e64b39b has been downloaded",
+                "statusChanged": "2025-05-16T09:57:11.21523+00:00",
+                "resourceId": "dagl-correspondence",
+                "sender": "urn:altinn:organization:identifier-no:310356875",
+                "sendersReference": "1234",
+                "ignoreReservation": true,
+                "isConfirmationNeeded": true
+            }
+            """;
+
+        // Act
+        var parsedResponse = JsonSerializer.Deserialize<GetCorrespondenceStatusResponse>(encodedResponse);
+
+        // Assert
+        Assert.NotNull(parsedResponse);
+        parsedResponse.Status.Should().Be(CorrespondenceStatus.AttachmentsDownloaded);
+        parsedResponse.StatusHistory.Last().Status.Should().Be(CorrespondenceStatus.AttachmentsDownloaded);
+    }
 }

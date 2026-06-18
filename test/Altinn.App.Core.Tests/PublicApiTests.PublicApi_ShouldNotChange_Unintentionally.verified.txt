@@ -802,6 +802,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         Published = 2,
         Purged = 3,
         Failed = 4,
+        Expired = 5,
     }
     public enum CorrespondenceAuthorisation
     {
@@ -1084,6 +1085,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         Archived = 9,
         Reserved = 10,
         Failed = 11,
+        AttachmentsDownloaded = 12,
     }
     public sealed class CorrespondenceStatusEventResponse : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceStatusEventResponse>
     {
