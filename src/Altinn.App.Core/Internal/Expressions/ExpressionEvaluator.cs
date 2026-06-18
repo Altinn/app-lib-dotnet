@@ -1048,12 +1048,12 @@ public static partial class ExpressionEvaluator
     {
         return ObjectFunctionEvaluator.Evaluate(args);
     }
-  
+
     private static ExpressionValue Jmespath(ExpressionValue[] args)
     {
         return JmespathFunctionEvaluator.Evaluate(args);
     }
-  
+
     private static double? Sum(ExpressionValue[] args)
     {
         var expressionValue = args.FirstOrDefault();
@@ -1062,7 +1062,7 @@ public static partial class ExpressionEvaluator
             throw new ExpressionEvaluatorTypeErrorException("Expected a list as the only argument");
         }
 
-        var doubles = expressionValue.Array.Select(PrepareNumericArg).ToArray();
+        var doubles = expressionValue.JsonArray.Select(PrepareNumericArg).ToArray();
         return doubles.Length != 0 ? (double)PerformArithmeticWithReducer(doubles, (x, y) => x + y) : 0;
     }
 

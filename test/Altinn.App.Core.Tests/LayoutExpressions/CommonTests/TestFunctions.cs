@@ -236,7 +236,8 @@ public class TestFunctions
     [SharedTestCases("object")]
     public async Task Object_Theory(string testName, ExpressionTestCaseRoot.TestCaseItem testCaseItem) =>
         await RunTestCase(testName, new ExpressionTestCaseRoot(testCaseItem));
-  
+
+    [Theory]
     [SharedTest("jmespath")]
     public async Task Jmespath_Theory(string testName, string folder) => await RunTestCase(testName, folder);
 
@@ -244,7 +245,7 @@ public class TestFunctions
     [SharedTestCases("sum")]
     public async Task Sum_Theory(string testName, ExpressionTestCaseRoot.TestCaseItem testCaseItem) =>
         await RunTestCase(testName, new ExpressionTestCaseRoot(testCaseItem));
-  
+
     private static async Task<ExpressionTestCaseRoot> LoadTestCase(string file, string folder)
     {
         ExpressionTestCaseRoot testCase = new();
