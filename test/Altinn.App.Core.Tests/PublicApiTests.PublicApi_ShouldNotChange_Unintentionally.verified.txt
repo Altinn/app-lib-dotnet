@@ -979,7 +979,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models
     {
         public CorrespondenceNotificationStatusDetailsResponse() { }
         [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public System.Guid Id { get; init; }
+        public System.Guid? Id { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("recipient")]
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationRecipientResponse? Recipient { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("sendStatus")]
@@ -1009,8 +1009,12 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         public CorrespondenceNotificationSummaryResponse() { }
         [System.Text.Json.Serialization.JsonPropertyName("email")]
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationStatusDetailsResponse? Email { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("emails")]
+        public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationStatusDetailsResponse>? Emails { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("sms")]
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationStatusDetailsResponse? Sms { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("smses")]
+        public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationStatusDetailsResponse>? Smses { get; init; }
     }
     [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     public enum CorrespondenceNotificationTemplate
