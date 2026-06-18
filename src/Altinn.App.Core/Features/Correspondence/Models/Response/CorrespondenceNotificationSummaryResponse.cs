@@ -10,18 +10,14 @@ public sealed record CorrespondenceNotificationSummaryResponse
     /// <summary>
     /// Notification sent via email.
     /// </summary>
-    /// <remarks>
-    /// When a notification is sent to multiple recipients, see <see cref="Emails"/> for the full set.
-    /// </remarks>
+    [Obsolete("Use Emails instead.")]
     [JsonPropertyName("email")]
     public CorrespondenceNotificationStatusDetailsResponse? Email { get; init; }
 
     /// <summary>
     /// Notification sent via SMS.
     /// </summary>
-    /// <remarks>
-    /// When a notification is sent to multiple recipients, see <see cref="Smses"/> for the full set.
-    /// </remarks>
+    [Obsolete("Use Smses instead.")]
     [JsonPropertyName("sms")]
     public CorrespondenceNotificationStatusDetailsResponse? Sms { get; init; }
 

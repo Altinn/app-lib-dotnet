@@ -1007,10 +1007,12 @@ namespace Altinn.App.Core.Features.Correspondence.Models
     public sealed class CorrespondenceNotificationSummaryResponse : System.IEquatable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationSummaryResponse>
     {
         public CorrespondenceNotificationSummaryResponse() { }
+        [System.Obsolete("Use Emails instead.")]
         [System.Text.Json.Serialization.JsonPropertyName("email")]
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationStatusDetailsResponse? Email { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("emails")]
         public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationStatusDetailsResponse>? Emails { get; init; }
+        [System.Obsolete("Use Smses instead.")]
         [System.Text.Json.Serialization.JsonPropertyName("sms")]
         public Altinn.App.Core.Features.Correspondence.Models.CorrespondenceNotificationStatusDetailsResponse? Sms { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("smses")]
