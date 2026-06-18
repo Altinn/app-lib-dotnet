@@ -226,11 +226,12 @@ internal sealed class SigningService(
 
         using var activity = telemetry?.StartAbortRuntimeDelegatedSigningActivity(taskId);
 
+        // Revoke must run before cleanup, since it reads signee state that cleanup removes.
+        await RevokeDelegatedSigneeRights(instanceDataMutator, signatureConfiguration, taskId, ct);
+
         // cleanup
         RemoveSigneeState(instanceDataMutator, signatureConfiguration.SigneeStatesDataTypeId);
         RemoveAllSignatures(instanceDataMutator, signatureConfiguration.SignatureDataType);
-
-        await RevokeDelegatedSigneeRights(instanceDataMutator, signatureConfiguration, taskId, ct);
     }
 
     /// <inheritdoc />
