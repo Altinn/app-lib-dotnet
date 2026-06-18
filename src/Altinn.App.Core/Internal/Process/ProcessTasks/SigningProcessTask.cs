@@ -110,6 +110,7 @@ internal sealed class SigningProcessTask : IProcessTask
             );
         }
 
+        // Revoke delegated signing if configured
         if (
             signatureConfiguration?.SigneeProviderId is not null
             && signatureConfiguration.SigneeStatesDataTypeId is not null
