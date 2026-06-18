@@ -236,6 +236,10 @@ public enum ExpressionFunction
     @object,
 #pragma warning restore CA1720
 
+    /// Run a Jmespath query on the arguments
+    /// </summary>
+    jmespath,
+    
     /// <summary>
     /// Adding numbers. Must be numeric values in a list.
     /// </summary>
