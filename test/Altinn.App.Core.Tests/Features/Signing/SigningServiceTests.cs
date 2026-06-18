@@ -1222,7 +1222,7 @@ public sealed class SigningServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task AbortRuntimeDelegatedSigning_WithExceptionInPartyLookup_LogsErrorAndThrowsException()
+    public async Task AbortRuntimeDelegatedSigning_WithExceptionInPartyLookup_LogsErrorAndContinues()
     {
         // Arrange
         var signatureConfiguration = new AltinnSignatureConfiguration
@@ -1289,16 +1289,15 @@ public sealed class SigningServiceTests : IDisposable
             .Setup(x => x.LookupParty(It.IsAny<PartyLookup>()))
             .ThrowsAsync(new Exception("Party lookup failed"));
 
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<SigningException>(() =>
-            _signingService.AbortRuntimeDelegatedSigning(
-                cachedInstanceMutator.Object,
-                signatureConfiguration,
-                CancellationToken.None
-            )
+        // Act
+        // Revocation failure must not throw - it should be logged and the process should continue.
+        await _signingService.AbortRuntimeDelegatedSigning(
+            cachedInstanceMutator.Object,
+            signatureConfiguration,
+            CancellationToken.None
         );
 
-        Assert.Contains("Failed to lookup party information for instance owner.", exception.Message);
+        // Assert
         _logger.Verify(
             x =>
                 x.Log(
@@ -1310,5 +1309,9 @@ public sealed class SigningServiceTests : IDisposable
                 ),
             Times.AtLeastOnce
         );
+
+        // Cleanup must still happen even though revocation failed.
+        cachedInstanceMutator.Verify(x => x.RemoveDataElement(signeeStateDataElement), Times.Once);
+        cachedInstanceMutator.Verify(x => x.RemoveDataElement(signatureDataElement), Times.Once);
     }
 }
