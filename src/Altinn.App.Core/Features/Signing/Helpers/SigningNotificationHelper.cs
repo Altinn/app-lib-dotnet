@@ -139,7 +139,7 @@ internal static class SigningNotificationHelper
             return builder;
         }
 
-        var recipients = new List<CorrespondenceNotificationRecipient>();
+        List<CorrespondenceNotificationRecipient> recipients = [];
         if (haveEmail)
         {
             recipients.Add(new CorrespondenceNotificationRecipient { EmailAddress = emailAddress });
@@ -149,9 +149,6 @@ internal static class SigningNotificationHelper
             recipients.Add(new CorrespondenceNotificationRecipient { MobileNumber = mobileNumber });
         }
 
-        builder.WithCustomRecipients(recipients);
-        builder.WithOverrideRegisteredContactInformation(true);
-
-        return builder;
+        return builder.WithCustomRecipients(recipients).WithOverrideRegisteredContactInformation(true);
     }
 }
