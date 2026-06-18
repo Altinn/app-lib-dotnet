@@ -230,6 +230,13 @@ public enum ExpressionFunction
     list,
 
     /// <summary>
+    /// Create a dictionary from the arguments, which must be alternating keys and values.
+    /// </summary>
+#pragma warning disable CA1720
+    @object,
+#pragma warning restore CA1720
+
+    /// <summary>
     /// Calculate the average. Must be numeric values in a list.
     /// </summary>
     average,

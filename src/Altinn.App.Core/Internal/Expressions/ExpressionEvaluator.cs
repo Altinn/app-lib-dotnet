@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
@@ -50,6 +51,19 @@ public static partial class ExpressionEvaluator
                 e
             );
         }
+    }
+
+    /// <summary>
+    /// Evaluate a <see cref="Expression" /> from a given <see cref="IInstanceDataAccessor" /> in a <see cref="ComponentContext" />
+    /// </summary>
+    public static async Task<ExpressionValue> EvaluateExpressionToExpressionValue(
+        IInstanceDataAccessor state,
+        Expression expr,
+        ComponentContext context,
+        ExpressionValue[]? positionalArguments = null
+    )
+    {
+        return await EvaluateExpression_internal(state.GetLayoutEvaluatorState(), expr, context, positionalArguments);
     }
 
     /// <summary>
@@ -133,6 +147,7 @@ public static partial class ExpressionEvaluator
             ExpressionFunction.multiply => Multiply(args),
             ExpressionFunction.divide => Divide(args),
             ExpressionFunction.list => List(args),
+            ExpressionFunction.@object => Object(args),
             ExpressionFunction.average => Average(args),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
                 $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
@@ -1012,9 +1027,14 @@ public static partial class ExpressionEvaluator
         return positionalArguments[index.Value];
     }
 
-    private static JsonArray List(ExpressionValue[] args)
+    private static ExpressionValue List(ExpressionValue[] args)
     {
         return new JsonArray(args.Select(a => JsonSerializer.SerializeToNode(a)).ToArray());
+    }
+
+    private static ExpressionValue Object(ExpressionValue[] args)
+    {
+        return ObjectFunctionEvaluator.Evaluate(args);
     }
 
     private static double? Average(ExpressionValue[] args)

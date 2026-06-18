@@ -233,6 +233,11 @@ public class TestFunctions
         await RunTestCase(testName, new ExpressionTestCaseRoot(testCaseItem));
 
     [Theory]
+    [SharedTestCases("object")]
+    public async Task Object_Theory(string testName, ExpressionTestCaseRoot.TestCaseItem testCaseItem) =>
+        await RunTestCase(testName, new ExpressionTestCaseRoot(testCaseItem));
+
+    [Theory]
     [SharedTestCases("average")]
     public async Task Average_Theory(string testName, ExpressionTestCaseRoot.TestCaseItem testCaseItem) =>
         await RunTestCase(testName, new ExpressionTestCaseRoot(testCaseItem));

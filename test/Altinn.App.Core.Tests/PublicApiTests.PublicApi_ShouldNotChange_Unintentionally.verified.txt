@@ -4,6 +4,7 @@ namespace Altinn.App.Core.Configuration
 {
     public class AppSettings
     {
+        public const string CALCULATION_CONFIG_FILENAME = "calculation.json";
         public const string JSON_SCHEMA_FILENAME = "schema.json";
         public const string VALIDATION_CONFIG_FILENAME = "validation.json";
         public AppSettings() { }
@@ -16,6 +17,7 @@ namespace Altinn.App.Core.Configuration
         [System.Obsolete("This is not used, and will be removed in the next major version")]
         public string BaseResourceFolderContainer { get; set; }
         public int CacheResourceLifeTimeInSeconds { get; set; }
+        public string CalculationConfigurationFileName { get; set; }
         public string ConfigurationFolder { get; set; }
         public string DefaultBootstrapUrl { get; set; }
         public bool DisableCsrfCheck { get; set; }
@@ -555,7 +557,11 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithReplyOptions(System.Collections.Generic.IEnumerable<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceReplyOption> replyOptions) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilder WithRequestedPublishTime(System.DateTimeOffset requestedPublishTime) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSender WithResourceId(string resourceId) { }
+        [System.Obsolete("This method is deprecated. The sender is now automatically determined from the Re" +
+            "source Registry based on the resourceId.")]
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSendersReference WithSender(Altinn.App.Core.Models.OrganisationNumber sender) { }
+        [System.Obsolete("This method is deprecated. The sender is now automatically determined from the Re" +
+            "source Registry based on the resourceId.")]
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSendersReference WithSender(string sender) { }
         public Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderRecipients WithSendersReference(string sendersReference) { }
         public static Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderResourceId Create() { }
@@ -703,9 +709,13 @@ namespace Altinn.App.Core.Features.Correspondence.Builder
     {
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSender WithResourceId(string resourceId);
     }
-    public interface ICorrespondenceRequestBuilderSender
+    public interface ICorrespondenceRequestBuilderSender : Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSendersReference
     {
+        [System.Obsolete("This method is deprecated. The sender is now automatically determined from the Re" +
+            "source Registry based on the resourceId.")]
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSendersReference WithSender(Altinn.App.Core.Models.OrganisationNumber sender);
+        [System.Obsolete("This method is deprecated. The sender is now automatically determined from the Re" +
+            "source Registry based on the resourceId.")]
         Altinn.App.Core.Features.Correspondence.Builder.ICorrespondenceRequestBuilderSendersReference WithSender(string sender);
     }
     public interface ICorrespondenceRequestBuilderSendersReference
@@ -1045,7 +1055,9 @@ namespace Altinn.App.Core.Features.Correspondence.Models
         public System.Collections.Generic.IReadOnlyList<Altinn.App.Core.Features.Correspondence.Models.CorrespondenceReplyOption>? ReplyOptions { get; init; }
         public System.DateTimeOffset? RequestedPublishTime { get; init; }
         public required string ResourceId { get; init; }
-        public required Altinn.App.Core.Models.OrganisationNumber Sender { get; init; }
+        [System.Obsolete("This property is deprecated. The sender is now automatically determined from the " +
+            "Resource Registry based on the resourceId.")]
+        public Altinn.App.Core.Models.OrganisationNumber? Sender { get; init; }
         public required string SendersReference { get; init; }
     }
     [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
@@ -2144,7 +2156,7 @@ namespace Altinn.App.Core.Features.Validation.Default
     }
     public class ExpressionValidator : Altinn.App.Core.Features.IValidator
     {
-        public ExpressionValidator(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Features.Validation.Default.ExpressionValidator> logger, Altinn.App.Core.Internal.App.IAppResources appResourceService, Altinn.App.Core.Internal.Expressions.ILayoutEvaluatorStateInitializer layoutEvaluatorStateInitializer, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, System.IServiceProvider serviceProvider) { }
+        public ExpressionValidator(Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Features.Validation.Default.ExpressionValidator> logger, Altinn.App.Core.Internal.App.IAppResources appResourceService, Altinn.App.Core.Internal.App.IAppMetadata appMetadata, System.IServiceProvider serviceProvider) { }
         public string TaskId { get; }
         public string ValidationSource { get; }
         public System.Threading.Tasks.Task<bool> HasRelevantChanges(Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor, string taskId, Altinn.App.Core.Models.DataElementChanges changes) { }
@@ -2411,6 +2423,7 @@ namespace Altinn.App.Core.Implementation
         public Altinn.Platform.Storage.Interface.Models.Application GetApplication() { }
         public string? GetApplicationBPMNProcess() { }
         public string? GetApplicationXACMLPolicy() { }
+        public string? GetCalculationConfiguration(string dataTypeId) { }
         public string GetClassRefForLogicDataType(string dataType) { }
         public System.Threading.Tasks.Task<string?> GetFooter() { }
         [System.Obsolete("Use GetLayoutModelForTask instead")]
@@ -2974,6 +2987,7 @@ namespace Altinn.App.Core.Internal.App
         [System.Obsolete("GetApplication is scheduled for removal. Use Altinn.App.Core.Internal.App.IAppMet" +
             "adata.GetApplicationXACMLPolicy instead", false)]
         string? GetApplicationXACMLPolicy();
+        string? GetCalculationConfiguration(string dataTypeId);
         string GetClassRefForLogicDataType(string dataType);
         System.Threading.Tasks.Task<string?> GetFooter();
         [System.Obsolete("Use GetLayoutModelForTask instead", false)]
@@ -3222,6 +3236,7 @@ namespace Altinn.App.Core.Internal.Expressions
         [System.Obsolete("Use ComponentContext.IsHidden or ComponentContext.EvaluateExpression instead")]
         public static System.Threading.Tasks.Task<bool> EvaluateBooleanExpression(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Models.Expressions.ComponentContext context, string property, bool defaultReturn) { }
         public static System.Threading.Tasks.Task<object?> EvaluateExpression(Altinn.App.Core.Internal.Expressions.LayoutEvaluatorState state, Altinn.App.Core.Models.Expressions.Expression expr, Altinn.App.Core.Models.Expressions.ComponentContext context, object?[]? positionalArguments = null) { }
+        public static System.Threading.Tasks.Task<Altinn.App.Core.Internal.Expressions.ExpressionValue> EvaluateExpressionToExpressionValue(Altinn.App.Core.Features.IInstanceDataAccessor state, Altinn.App.Core.Models.Expressions.Expression expr, Altinn.App.Core.Models.Expressions.ComponentContext context, Altinn.App.Core.Internal.Expressions.ExpressionValue[]? positionalArguments = null) { }
     }
     public class ExpressionEvaluatorTypeErrorException : Altinn.App.Core.Exceptions.AltinnException
     {
@@ -3229,14 +3244,16 @@ namespace Altinn.App.Core.Internal.Expressions
         public ExpressionEvaluatorTypeErrorException(string msg, System.Exception innerException) { }
     }
     [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
-    [System.Text.Json.Serialization.JsonConverter(typeof(Altinn.App.Core.Internal.Expressions.ExpressionTypeUnionConverter?))]
+    [System.Text.Json.Serialization.JsonConverter(typeof(Altinn.App.Core.Internal.Expressions.ExpressionTypeUnionConverter))]
     public readonly struct ExpressionValue : System.IEquatable<Altinn.App.Core.Internal.Expressions.ExpressionValue>
     {
         public ExpressionValue() { }
         public ExpressionValue(System.Text.Json.Nodes.JsonArray value) { }
+        public ExpressionValue(System.Text.Json.Nodes.JsonObject value) { }
         public System.Text.Json.Nodes.JsonArray Array { get; }
         public bool Bool { get; }
         public double Number { get; }
+        public System.Text.Json.Nodes.JsonObject Object { get; }
         public string String { get; }
         public System.Text.Json.JsonValueKind ValueKind { get; }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue False { get; }
@@ -3255,6 +3272,7 @@ namespace Altinn.App.Core.Internal.Expressions
         public bool TryDeserialize<T>(out T? result) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue FromObject(object? value) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(System.Text.Json.Nodes.JsonArray value) { }
+        public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(System.Text.Json.Nodes.JsonObject value) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(bool? value) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(double? value) { }
         public static Altinn.App.Core.Internal.Expressions.ExpressionValue op_Implicit(string? value) { }
@@ -3418,7 +3436,7 @@ namespace Altinn.App.Core.Internal.Pdf
     }
     public class PdfService : Altinn.App.Core.Internal.Pdf.IPdfService
     {
-        public PdfService(Altinn.App.Core.Internal.Data.IDataClient dataClient, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor, Altinn.App.Core.Internal.Pdf.IPdfGeneratorClient pdfGeneratorClient, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Internal.Pdf.PdfGeneratorSettings> pdfGeneratorSettings, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.GeneralSettings> generalSettings, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Pdf.PdfService> logger, Altinn.App.Core.Features.Auth.IAuthenticationContext authenticationContext, Altinn.App.Core.Internal.Texts.ITranslationService translationService, System.IServiceProvider? serviceProvider = null, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
+        public PdfService(Altinn.App.Core.Internal.Data.IDataClient dataClient, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor, Altinn.App.Core.Internal.Pdf.IPdfGeneratorClient pdfGeneratorClient, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Internal.Pdf.PdfGeneratorSettings> pdfGeneratorSettings, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.GeneralSettings> generalSettings, Microsoft.Extensions.Logging.ILogger<Altinn.App.Core.Internal.Pdf.PdfService> logger, Altinn.App.Core.Features.Auth.IAuthenticationContext authenticationContext, Altinn.App.Core.Internal.Texts.ITranslationService translationService, Altinn.App.Core.Internal.App.IAppResources resources, System.IServiceProvider? serviceProvider = null, Altinn.App.Core.Features.Telemetry? telemetry = null) { }
         public System.Threading.Tasks.Task GenerateAndStorePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, System.Threading.CancellationToken ct) { }
         public System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> GenerateAndStorePdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, string? customFileNameTextResourceKey, System.Collections.Generic.List<string>? autoGeneratePdfForTaskIds = null, System.Threading.CancellationToken ct = default) { }
         public System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.DataElement> GenerateAndStoreSubformPdf(Altinn.Platform.Storage.Interface.Models.Instance instance, string taskId, string? customFileNameTextResourceKey, Altinn.App.Core.Internal.Pdf.SubformPdfContext subformPdfContext, System.Threading.CancellationToken ct) { }
@@ -4721,6 +4739,7 @@ namespace Altinn.App.Core.Models.Expressions
         multiply = 39,
         divide = 40,
         list = 41,
+        @object = 42,
     }
 }
 namespace Altinn.App.Core.Models.Layout.Components.Base
