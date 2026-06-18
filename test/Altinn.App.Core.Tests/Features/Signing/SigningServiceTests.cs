@@ -741,6 +741,11 @@ public sealed class SigningServiceTests : IDisposable
         );
 
         // Assert
+        cachedInstanceMutator.Verify(x => x.Instance);
+        cachedInstanceMutator.Verify(x => x.TaskId);
+
+        // The signing data (signee state and signatures) must be left untouched - only the delegated rights are revoked
+        cachedInstanceMutator.VerifyNoOtherCalls();
         _signingDelegationService.Verify(
             x =>
                 x.RevokeSigneeRights(
@@ -753,6 +758,7 @@ public sealed class SigningServiceTests : IDisposable
                 ),
             Times.Once
         );
+        _signingDelegationService.VerifyNoOtherCalls();
     }
 
     [Fact]
