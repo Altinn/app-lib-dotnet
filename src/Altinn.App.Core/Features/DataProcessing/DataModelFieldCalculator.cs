@@ -54,7 +54,7 @@ internal sealed class DataModelFieldCalculator
         }
     }
 
-    internal async Task CalculateFormData(
+    private async Task CalculateFormData(
         IInstanceDataAccessor dataAccessor,
         DataElement dataElement,
         string rawCalculationConfig
