@@ -6,7 +6,7 @@ using Altinn.App.Core.Models;
 
 namespace Altinn.App.Core.Tests.Features.Signing.Helpers;
 
-public class SigningNotificationHelpers
+public class SigningNotificationHelperTests
 {
     [Theory]
     [InlineData(NotificationChoice.None, "Default - Email")]
@@ -150,6 +150,65 @@ public class SigningNotificationHelpers
         Assert.NotNull(notification);
         Assert.False(notification.OverrideRegisteredContactInformation);
         Assert.Null(notification.CustomRecipients);
+    }
+
+    [Fact]
+    public void CreateNotification_EmptyEmailWithValidMobile_DropsEmptyEmailButStillOverrides()
+    {
+        // Arrange: an empty-string email is treated as "not provided" (IsNullOrEmpty),
+        // so only the mobile number survives as a custom recipient.
+        ContentWrapper contentWrapper = CreateContentWrapper(
+            NotificationChoice.SmsAndEmail,
+            emailAddress: "",
+            mobileNumber: "12345678"
+        );
+
+        // Act
+        CorrespondenceNotification? notification = SigningNotificationHelper.CreateNotification(contentWrapper);
+
+        // Assert
+        Assert.NotNull(notification);
+        Assert.True(notification.OverrideRegisteredContactInformation);
+        Assert.NotNull(notification.CustomRecipients);
+        CorrespondenceNotificationRecipient recipient = Assert.Single(notification.CustomRecipients);
+        Assert.Equal("12345678", recipient.MobileNumber);
+        Assert.True(string.IsNullOrEmpty(recipient.EmailAddress));
+    }
+
+    [Fact]
+    public void CreateNotification_EmptyEmailAndMobile_AddsNoCustomRecipientsAndDoesNotOverride()
+    {
+        // Arrange: both channels empty -> nothing to override with. We leave CustomRecipients unset
+        // and let Correspondence resolve contact information from the recipient identifier (KRR).
+        ContentWrapper contentWrapper = CreateContentWrapper(
+            NotificationChoice.SmsAndEmail,
+            emailAddress: "",
+            mobileNumber: ""
+        );
+
+        // Act
+        CorrespondenceNotification? notification = SigningNotificationHelper.CreateNotification(contentWrapper);
+
+        // Assert
+        Assert.NotNull(notification);
+        Assert.False(notification.OverrideRegisteredContactInformation);
+        Assert.Null(notification.CustomRecipients);
+    }
+
+    [Fact]
+    public void GetNotificationChoiceIfNotSet_EmptyStringAddress_IsTreatedAsPresent()
+    {
+        // Documents a known quirk: choice detection checks for non-null, not non-empty, so an
+        // empty-string address still selects a channel - even though MaybeWithRecipientOverrides
+        // would later drop that empty value. This is benign in practice: SigneeContextsManager
+        // normalizes empty strings to a register value or null before this runs.
+        Notification notification = new()
+        {
+            Email = new Email { EmailAddress = "" },
+            Sms = null,
+        };
+
+        Assert.Equal(NotificationChoice.Email, SigningNotificationHelper.GetNotificationChoiceIfNotSet(notification));
     }
 
     private static int CountIdentifiers(CorrespondenceNotificationRecipient recipient)
