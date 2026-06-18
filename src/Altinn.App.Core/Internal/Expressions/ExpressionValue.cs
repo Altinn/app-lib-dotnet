@@ -260,7 +260,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     {
         get
         {
-            ThrowIfNotOfKind(JsonValueKind.String);
+            ThrowIfNotOfKind(JsonValueKind.String, nameof(String));
             return _stringValueNotNull;
         }
     }
@@ -272,7 +272,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     {
         get
         {
-            ThrowIfNotOfKind(JsonValueKind.Number);
+            ThrowIfNotOfKind(JsonValueKind.Number, nameof(Number));
             return _numberValue;
         }
     }
@@ -301,7 +301,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     {
         get
         {
-            ThrowIfNotOfKind(JsonValueKind.Object);
+            ThrowIfNotOfKind(JsonValueKind.Object, nameof(JsonObject));
             return JsonNode.Parse(_stringValueNotNull)?.AsObject()
                 ?? throw new UnreachableException("JsonObject value is null when ValueKind is Object");
         }
@@ -312,7 +312,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     {
         get
         {
-            ThrowIfNotOfKind(JsonValueKind.Array);
+            ThrowIfNotOfKind(JsonValueKind.Array, nameof(JsonArray));
             return JsonNode.Parse(_stringValueNotNull)?.AsArray()
                 ?? throw new UnreachableException("JsonArray value is null when ValueKind is Array");
         }
@@ -684,11 +684,11 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
             || type == typeof(sbyte);
     }
 
-    private void ThrowIfNotOfKind(JsonValueKind jsonValueKind)
+    private void ThrowIfNotOfKind(JsonValueKind jsonValueKind, string accessorName)
     {
         if (ValueKind != jsonValueKind)
             throw new InvalidCastException(
-                $"The .JsonObject property can't be used on an expression value that represent a {ValueKind}"
+                $"The .{accessorName} property can't be used on an expression value that represent a {ValueKind}"
             );
     }
 
