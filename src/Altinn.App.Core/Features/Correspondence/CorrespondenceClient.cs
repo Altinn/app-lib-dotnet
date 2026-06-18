@@ -403,29 +403,36 @@ internal sealed class CorrespondenceClient : ICorrespondenceClient
         CorrespondenceNotificationRecipient recipient
     )
     {
-        if (recipient.EmailAddress is not null)
+        string? nin = recipient.NationalIdentityNumber?.ToUrnFormattedString();
+        string? orgNumber = recipient.OrganizationNumber?.ToUrnFormattedString();
+        string? email = recipient.EmailAddress;
+        string? mobile = recipient.MobileNumber;
+
+        if (nin is null && orgNumber is null && email is null && mobile is null)
         {
-            yield return new CorrespondenceNotificationRecipientRequest { EmailAddress = recipient.EmailAddress };
+            throw new CorrespondenceArgumentException(
+                "Each custom notification recipient must have at least one identifier populated (email address, mobile number, organisation number or national identity number)."
+            );
         }
 
-        if (recipient.MobileNumber is not null)
+        if (email is not null)
         {
-            yield return new CorrespondenceNotificationRecipientRequest { MobileNumber = recipient.MobileNumber };
+            yield return new CorrespondenceNotificationRecipientRequest { EmailAddress = email };
         }
 
-        string? organizationNumber = recipient.OrganizationNumber?.ToUrnFormattedString();
-        if (organizationNumber is not null)
+        if (mobile is not null)
         {
-            yield return new CorrespondenceNotificationRecipientRequest { OrganizationNumber = organizationNumber };
+            yield return new CorrespondenceNotificationRecipientRequest { MobileNumber = mobile };
         }
 
-        string? nationalIdentityNumber = recipient.NationalIdentityNumber?.ToUrnFormattedString();
-        if (nationalIdentityNumber is not null)
+        if (orgNumber is not null)
         {
-            yield return new CorrespondenceNotificationRecipientRequest
-            {
-                NationalIdentityNumber = nationalIdentityNumber,
-            };
+            yield return new CorrespondenceNotificationRecipientRequest { OrganizationNumber = orgNumber };
+        }
+
+        if (nin is not null)
+        {
+            yield return new CorrespondenceNotificationRecipientRequest { NationalIdentityNumber = nin };
         }
     }
 

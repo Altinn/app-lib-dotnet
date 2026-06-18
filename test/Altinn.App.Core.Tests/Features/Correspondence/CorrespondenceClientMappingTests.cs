@@ -6,6 +6,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Features.Correspondence;
 using Altinn.App.Core.Features.Correspondence.Builder;
+using Altinn.App.Core.Features.Correspondence.Exceptions;
 using Altinn.App.Core.Features.Correspondence.Models;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Models;
@@ -275,6 +276,43 @@ public class CorrespondenceClientMappingTests
         customRecipients.GetArrayLength().Should().Be(2);
         customRecipients[0].GetProperty("emailAddress").GetString().Should().Be("override@example.com");
         customRecipients[1].GetProperty("mobileNumber").GetString().Should().Be("+4799999999");
+    }
+
+    [Fact]
+    public async Task Send_WithCustomRecipientWithoutIdentifiers_ThrowsCorrespondenceArgumentException()
+    {
+        // Arrange: a custom recipient that carries no identifier is invalid and must not be silently dropped.
+        await using var fixture = Fixture.Create();
+        var mockHttpClient = new Mock<HttpClient>();
+
+        var request = CorrespondenceRequestBuilder
+            .Create()
+            .WithResourceId("resource-id")
+            .WithSendersReference("senders-ref")
+            .WithRecipient(OrganisationOrPersonIdentifier.Create(TestHelpers.GetOrganisationNumber(1)))
+            .WithContent(
+                CorrespondenceContentBuilder
+                    .Create()
+                    .WithLanguage(LanguageCode<Iso6391>.Parse("nb"))
+                    .WithTitle("message-title")
+                    .WithSummary("message-summary")
+                    .WithBody("message-body")
+            )
+            .WithNotification(
+                CorrespondenceNotificationBuilder
+                    .Create()
+                    .WithNotificationTemplate(CorrespondenceNotificationTemplate.CustomMessage)
+                    .WithNotificationChannel(CorrespondenceNotificationChannel.EmailPreferred)
+                    .WithCustomRecipients([new CorrespondenceNotificationRecipient()])
+            )
+            .Build();
+
+        var payload = new SendCorrespondencePayload(request, CorrespondenceAuthenticationMethod.Default());
+
+        fixture.HttpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<CorrespondenceArgumentException>(() => fixture.CorrespondenceClient.Send(payload));
     }
 
     [Fact]
