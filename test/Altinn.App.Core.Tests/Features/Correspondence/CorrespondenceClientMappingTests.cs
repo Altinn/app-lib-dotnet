@@ -195,8 +195,12 @@ public class CorrespondenceClientMappingTests
         customRecipients[1].GetProperty("mobileNumber").GetString().Should().Be("+4799999999");
     }
 
-    [Fact]
-    public async Task Send_WithRecipientOverrides_MapsToCustomRecipientsJsonAndSetsOverrideFlag()
+    [Theory]
+    [InlineData(true)] // Override mode: only the custom recipients are notified.
+    [InlineData(false)] // Additive mode: custom recipients are notified alongside the registered contact information.
+    public async Task Send_WithCustomRecipients_MapsToCustomRecipientsJsonAndOverrideFlag(
+        bool overrideRegisteredContactInformation
+    )
     {
         // Arrange
         await using var fixture = Fixture.Create();
@@ -227,7 +231,7 @@ public class CorrespondenceClientMappingTests
                         new CorrespondenceNotificationRecipient { EmailAddress = "override@example.com" },
                         new CorrespondenceNotificationRecipient { MobileNumber = "+4799999999" },
                     ])
-                    .WithOverrideRegisteredContactInformation(true)
+                    .WithOverrideRegisteredContactInformation(overrideRegisteredContactInformation)
             )
             .Build();
 
@@ -261,93 +265,16 @@ public class CorrespondenceClientMappingTests
         using var doc = JsonDocument.Parse(capturedJson);
         var notification = doc.RootElement.GetProperty("correspondence").GetProperty("notification");
 
-        notification.GetProperty("overrideRegisteredContactInformation").GetBoolean().Should().BeTrue();
+        notification
+            .GetProperty("overrideRegisteredContactInformation")
+            .GetBoolean()
+            .Should()
+            .Be(overrideRegisteredContactInformation);
 
         var customRecipients = notification.GetProperty("customRecipients");
         customRecipients.GetArrayLength().Should().Be(2);
         customRecipients[0].GetProperty("emailAddress").GetString().Should().Be("override@example.com");
         customRecipients[1].GetProperty("mobileNumber").GetString().Should().Be("+4799999999");
-
-        // The new field is independent of the deprecated singular property, which is not populated here.
-        if (notification.TryGetProperty("customRecipient", out var legacyRecipient))
-        {
-            legacyRecipient.ValueKind.Should().Be(JsonValueKind.Null);
-        }
-    }
-
-    [Fact]
-    public async Task Send_WithCustomRecipients_MapsToCustomRecipientsJsonWithoutOverrideFlag()
-    {
-        // Arrange
-        await using var fixture = Fixture.Create();
-        var mockHttpClient = new Mock<HttpClient>();
-
-        string? capturedJson = null;
-        var orgRecipient = TestHelpers.GetOrganisationNumber(1);
-
-        var request = CorrespondenceRequestBuilder
-            .Create()
-            .WithResourceId("resource-id")
-            .WithSendersReference("senders-ref")
-            .WithRecipient(OrganisationOrPersonIdentifier.Create(orgRecipient))
-            .WithContent(
-                CorrespondenceContentBuilder
-                    .Create()
-                    .WithLanguage(LanguageCode<Iso6391>.Parse("nb"))
-                    .WithTitle("message-title")
-                    .WithSummary("message-summary")
-                    .WithBody("message-body")
-            )
-            .WithNotification(
-                CorrespondenceNotificationBuilder
-                    .Create()
-                    .WithNotificationTemplate(CorrespondenceNotificationTemplate.CustomMessage)
-                    .WithNotificationChannel(CorrespondenceNotificationChannel.EmailPreferred)
-                    .WithCustomRecipients([
-                        new CorrespondenceNotificationRecipient { EmailAddress = "additional@example.com" },
-                    ])
-            )
-            .Build();
-
-        var payload = new SendCorrespondencePayload(request, CorrespondenceAuthenticationMethod.Default());
-
-        fixture.HttpClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
-        mockHttpClient
-            .Setup(c => c.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
-            .Callback(
-                (HttpRequestMessage req, CancellationToken _) =>
-                {
-                    if (req.Method == HttpMethod.Post && req.RequestUri!.AbsolutePath.EndsWith("/correspondence"))
-                        capturedJson = ReadBody(req.Content);
-                }
-            )
-            .ReturnsAsync(
-                (HttpRequestMessage req, CancellationToken _) =>
-                    (req.Method, req.RequestUri!.AbsolutePath) switch
-                    {
-                        (var m, var path) when m == HttpMethod.Post && path.EndsWith("/correspondence") =>
-                            TestHelpers.ResponseMessageFactory(TestHelpers.DummySendCorrespondenceResponse),
-                        _ => throw FailException.ForFailure($"Unexpected request: {req.Method} {req.RequestUri}"),
-                    }
-            );
-
-        // Act
-        await fixture.CorrespondenceClient.Send(payload);
-
-        // Assert
-        Assert.NotNull(capturedJson);
-        using var doc = JsonDocument.Parse(capturedJson);
-        var notification = doc.RootElement.GetProperty("correspondence").GetProperty("notification");
-
-        // Additive mode: custom recipients are sent, but registered contact information is NOT overridden.
-        notification.GetProperty("overrideRegisteredContactInformation").GetBoolean().Should().BeFalse();
-        notification.GetProperty("customRecipients").GetArrayLength().Should().Be(1);
-        notification
-            .GetProperty("customRecipients")[0]
-            .GetProperty("emailAddress")
-            .GetString()
-            .Should()
-            .Be("additional@example.com");
     }
 
     [Fact]
