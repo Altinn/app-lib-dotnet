@@ -268,44 +268,61 @@ internal sealed class SigningService(
         CancellationToken ct
     )
     {
-        List<SigneeContext> signeeContexts = await GetSigneeContexts(
-            instanceDataMutator,
-            signatureConfiguration,
-            ct: ct
-        );
-        List<SigneeContext> signeeContextsWithDelegation =
-        [
-            .. signeeContexts.Where(x => x.SigneeState.IsAccessDelegated),
-        ];
-
-        if (signeeContextsWithDelegation.IsNullOrEmpty())
+        try
         {
-            _logger.LogInformation("Didn't find any signee contexts with delegated access rights. Nothing to revoke.");
-            return;
-        }
-
-        string instanceIdCombo = instanceDataMutator.Instance.Id;
-        InstanceOwner instanceOwner = instanceDataMutator.Instance.InstanceOwner;
-        Party instanceOwnerParty =
-            await GetInstanceOwnerParty(instanceOwner)
-            ?? throw new SigningException("Failed to lookup instance owner party. Unable to revoke signing rights.");
-
-        Guid instanceOwnerPartyUuid =
-            instanceOwnerParty.PartyUuid
-            ?? throw new SigningException(
-                "PartyUuid was missing on instance owner party. Unable to revoke signing rights."
+            List<SigneeContext> signeeContexts = await GetSigneeContexts(
+                instanceDataMutator,
+                signatureConfiguration,
+                ct: ct
             );
+            List<SigneeContext> signeeContextsWithDelegation =
+            [
+                .. signeeContexts.Where(x => x.SigneeState.IsAccessDelegated),
+            ];
 
-        AppIdentifier appIdentifier = new(instanceDataMutator.Instance.AppId);
+            if (signeeContextsWithDelegation.IsNullOrEmpty())
+            {
+                _logger.LogInformation(
+                    "Didn't find any signee contexts with delegated access rights. Nothing to revoke."
+                );
+                return;
+            }
 
-        await signingDelegationService.RevokeSigneeRights(
-            taskId,
-            instanceIdCombo,
-            instanceOwnerPartyUuid,
-            appIdentifier,
-            signeeContextsWithDelegation,
-            ct
-        );
+            string instanceIdCombo = instanceDataMutator.Instance.Id;
+            InstanceOwner instanceOwner = instanceDataMutator.Instance.InstanceOwner;
+            Party instanceOwnerParty =
+                await GetInstanceOwnerParty(instanceOwner)
+                ?? throw new SigningException(
+                    "Failed to lookup instance owner party. Unable to revoke signing rights."
+                );
+
+            Guid instanceOwnerPartyUuid =
+                instanceOwnerParty.PartyUuid
+                ?? throw new SigningException(
+                    "PartyUuid was missing on instance owner party. Unable to revoke signing rights."
+                );
+
+            AppIdentifier appIdentifier = new(instanceDataMutator.Instance.AppId);
+
+            await signingDelegationService.RevokeSigneeRights(
+                taskId,
+                instanceIdCombo,
+                instanceOwnerPartyUuid,
+                appIdentifier,
+                signeeContextsWithDelegation,
+                ct
+            );
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // Revocation failure shouldn't block the process from progressing past task end/abandon.
+            // Any remaining delegated rights can be cleaned up by a later run or out-of-band.
+            _logger.LogError(ex, "Failed to revoke delegated signee rights for task {TaskId}.", taskId);
+        }
     }
 
     private async Task<Party?> GetInstanceOwnerParty(InstanceOwner instanceOwner)
