@@ -207,7 +207,6 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
         Assert.Throws<InvalidCastException>(() => _ = nullValue.JsonArray);
         Assert.Null(nullValue.JsonNode);
         Assert.Equal(JsonValueKind.Null, nullValue.JsonElement.ValueKind);
-        Assert.Equal(JsonValueKind.Null, nullValue.JsonElement.ValueKind);
     }
 
     [Fact]
