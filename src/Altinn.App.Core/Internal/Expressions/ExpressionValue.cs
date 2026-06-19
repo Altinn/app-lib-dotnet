@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
@@ -623,7 +624,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                     return false;
                 }
             }
-            case JsonValueKind.Array when underlyingType.IsAssignableTo(typeof(IEnumerable<>)):
+            case JsonValueKind.Array when underlyingType.IsAssignableTo(typeof(IEnumerable)):
             case JsonValueKind.Object:
                 try
                 {

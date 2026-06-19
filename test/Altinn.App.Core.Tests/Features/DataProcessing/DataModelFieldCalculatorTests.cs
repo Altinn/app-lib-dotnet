@@ -136,6 +136,7 @@ public sealed class DataModelFieldCalculatorTests
         var dataAccessor = Setup(testCase);
 
         await _dataModelFieldCalculator.Calculate(dataAccessor, TaskId);
+        Assert.Empty(_logger.Collector.GetSnapshot());
 
         foreach (var expected in testCase.Expects)
         {
