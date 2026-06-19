@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Altinn.App.Core.Extensions;
+using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Models;
 
 namespace Altinn.App.Api.Helpers;
@@ -17,6 +18,28 @@ internal static class PartySsnMasking
     // The properties we copy when cloning. Cached once per type so we don't reflect on every call.
     private static readonly PropertyInfo[] _partyProperties = CopyableProperties(typeof(Party));
     private static readonly PropertyInfo[] _personProperties = CopyableProperties(typeof(Person));
+    private static readonly PropertyInfo[] _userProfileProperties = CopyableProperties(typeof(UserProfile));
+
+    /// <summary>
+    /// Returns a copy of <paramref name="profile"/> with the SSN masked on its nested
+    /// <see cref="UserProfile.Party"/> (including that party's <see cref="Party.Person"/> and
+    /// <see cref="Party.ChildParties"/>). Returns <c>null</c> if <paramref name="profile"/> is <c>null</c>.
+    /// </summary>
+    [return: NotNullIfNotNull(nameof(profile))]
+    public static UserProfile? MaskUserProfile(UserProfile? profile)
+    {
+        if (profile is null)
+        {
+            return null;
+        }
+
+        UserProfile clone = new UserProfile();
+        CopyProperties(_userProfileProperties, profile, clone);
+
+        clone.Party = MaskParty(profile.Party);
+
+        return clone;
+    }
 
     /// <summary>
     /// Returns a new list where every party is a masked copy of the corresponding input party.

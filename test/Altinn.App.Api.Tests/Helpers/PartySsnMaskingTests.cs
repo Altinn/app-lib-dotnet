@@ -1,4 +1,5 @@
 using Altinn.App.Api.Helpers;
+using Altinn.Platform.Profile.Models;
 using Altinn.Platform.Register.Enums;
 using Altinn.Platform.Register.Models;
 
@@ -89,5 +90,40 @@ public class PartySsnMaskingTests
 
         Assert.Equal("123456*****", masked[0].SSN);
         Assert.Equal("109876*****", masked[1].SSN);
+    }
+
+    [Fact]
+    public void MaskUserProfile_MasksSsnOnTheNestedParty_AndKeepsOtherFields()
+    {
+        var profile = new UserProfile
+        {
+            UserId = 2029633,
+            Email = "nullstilt@altinn.xyz",
+            PartyId = 51005394,
+            Party = new Party
+            {
+                PartyId = 51005394,
+                PartyTypeName = PartyType.Person,
+                Name = "GRENSE TROVERDIG",
+                SSN = "26917699894",
+                Person = new Person { SSN = "26917699894", Name = "GRENSE TROVERDIG" },
+            },
+        };
+
+        UserProfile masked = PartySsnMasking.MaskUserProfile(profile);
+
+        Assert.Equal("269176*****", masked.Party.SSN);
+        Assert.Equal("269176*****", masked.Party.Person.SSN);
+
+        // Non-SSN fields are copied unchanged.
+        Assert.Equal(2029633, masked.UserId);
+        Assert.Equal("nullstilt@altinn.xyz", masked.Email);
+        Assert.Equal(51005394, masked.PartyId);
+        Assert.Equal("GRENSE TROVERDIG", masked.Party.Name);
+
+        // The masking returns copies; the original keeps its full SSN.
+        Assert.Equal("26917699894", profile.Party.SSN);
+        Assert.NotSame(profile, masked);
+        Assert.NotSame(profile.Party, masked.Party);
     }
 }
