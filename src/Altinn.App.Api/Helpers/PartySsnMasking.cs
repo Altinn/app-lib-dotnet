@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using Altinn.App.Core.Extensions;
 using Altinn.Platform.Register.Models;
 
 namespace Altinn.App.Api.Helpers;
@@ -7,15 +8,12 @@ namespace Altinn.App.Api.Helpers;
 /// <summary>
 /// Produces copies of <see cref="Party"/> objects with their social security numbers (SSNs) masked,
 /// so the full SSN is never leaked in HTTP responses (e.g. "12345678901" becomes "123456*****").
-/// The original objects (which may be cached and used server-side) are never modified.
+/// The masking rule itself lives in <see cref="NationalIdentityNumberExtensions.Mask"/>; this type only
+/// applies it across the party graph. The original objects (which may be cached and used server-side)
+/// are never modified.
 /// </summary>
 internal static class PartySsnMasking
 {
-    /// <summary>
-    /// Number of leading characters kept visible; everything after is replaced with '*'.
-    /// </summary>
-    private const int VisibleDigits = 6;
-
     // The properties we copy when cloning. Cached once per type so we don't reflect on every call.
     private static readonly PropertyInfo[] _partyProperties = CopyableProperties(typeof(Party));
     private static readonly PropertyInfo[] _personProperties = CopyableProperties(typeof(Person));
@@ -51,34 +49,11 @@ internal static class PartySsnMasking
         Party clone = new Party();
         CopyProperties(_partyProperties, party, clone);
 
-        clone.SSN = Mask(party.SSN);
+        clone.SSN = NationalIdentityNumberExtensions.Mask(party.SSN);
         clone.Person = MaskPerson(party.Person);
         clone.ChildParties = MaskChildParties(party.ChildParties);
 
         return clone;
-    }
-
-    /// <summary>
-    /// Masks an SSN by keeping the first <see cref="VisibleDigits"/> characters visible and replacing
-    /// the rest with '*', e.g. "12345678901" becomes "123456*****". Values of <see cref="VisibleDigits"/>
-    /// characters or fewer are fully masked, and <c>null</c>/empty values are returned as-is.
-    /// </summary>
-    public static string? Mask(string? ssn)
-    {
-        if (string.IsNullOrEmpty(ssn))
-        {
-            return ssn;
-        }
-
-        if (ssn.Length <= VisibleDigits)
-        {
-            // Too short to keep any part visible, so mask the whole thing.
-            return new string('*', ssn.Length);
-        }
-
-        string visiblePart = ssn.Substring(0, VisibleDigits);
-        string maskedPart = new string('*', ssn.Length - VisibleDigits);
-        return visiblePart + maskedPart;
     }
 
     private static List<Party>? MaskChildParties(List<Party>? childParties)
@@ -105,7 +80,7 @@ internal static class PartySsnMasking
         Person clone = new Person();
         CopyProperties(_personProperties, person, clone);
 
-        clone.SSN = Mask(person.SSN);
+        clone.SSN = NationalIdentityNumberExtensions.Mask(person.SSN);
 
         return clone;
     }

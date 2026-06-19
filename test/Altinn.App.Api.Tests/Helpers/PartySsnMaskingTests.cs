@@ -6,18 +6,6 @@ namespace Altinn.App.Api.Tests.Helpers;
 
 public class PartySsnMaskingTests
 {
-    [Theory]
-    [InlineData("12345678901", "123456*****")] // ordinary 11-digit SSN
-    [InlineData("1234567", "123456*")] // one extra char masked
-    [InlineData("123456", "******")] // exactly the visible length -> fully masked
-    [InlineData("123", "***")] // shorter than visible length -> fully masked
-    [InlineData("", "")] // empty returned as-is
-    [InlineData(null, null)] // null returned as-is
-    public void Mask_MasksAllButFirstSixCharacters(string? input, string? expected)
-    {
-        Assert.Equal(expected, PartySsnMasking.Mask(input));
-    }
-
     [Fact]
     public void MaskParty_MasksSsnOnParty_Person_AndChildParties()
     {
