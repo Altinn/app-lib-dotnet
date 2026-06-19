@@ -1053,7 +1053,7 @@ public static partial class ExpressionEvaluator
     {
         return JmespathFunctionEvaluator.Evaluate(args);
     }
-  
+
     private static double? Average(ExpressionValue[] args)
     {
         var expressionValue = args.FirstOrDefault();
@@ -1061,16 +1061,16 @@ public static partial class ExpressionEvaluator
         {
             throw new ExpressionEvaluatorTypeErrorException("Expected a list as the only argument");
         }
-        if (expressionValue.Array.Count == 0)
+        if (expressionValue.JsonArray.Count == 0)
         {
             return 0;
         }
 
-        var doubles = expressionValue.Array.Select(PrepareNumericArg).ToArray();
+        var doubles = expressionValue.JsonArray.Select(PrepareNumericArg).ToArray();
         var aggregatedSum = PerformArithmeticWithReducer(doubles, (x, y) => x + y);
         return (double)(aggregatedSum / doubles.Length);
     }
-  
+
     /// <summary>
     /// Performs arithmetic operation using decimal precision to avoid floating point precision issues.
     /// Converts doubles to decimal, performs the operation, and converts back to double.

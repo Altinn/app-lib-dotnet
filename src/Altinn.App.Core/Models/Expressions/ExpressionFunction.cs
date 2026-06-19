@@ -240,7 +240,7 @@ public enum ExpressionFunction
     /// Run a Jmespath query on the arguments
     /// </summary>
     jmespath,
-    
+
     /// <summary>
     /// Calculate the average. Must be numeric values in a list.
     /// </summary>
