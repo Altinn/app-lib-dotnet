@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Reflection;
 using Altinn.App.Core.Extensions;
 using Altinn.Platform.Register.Models;
@@ -91,16 +92,10 @@ internal static class PartySsnMasking
     /// </summary>
     private static PropertyInfo[] CopyableProperties(Type type)
     {
-        List<PropertyInfo> copyable = new List<PropertyInfo>();
-        foreach (PropertyInfo property in type.GetProperties())
-        {
-            if (property.CanRead && property.CanWrite && property.GetIndexParameters().Length == 0)
-            {
-                copyable.Add(property);
-            }
-        }
-
-        return copyable.ToArray();
+        return type
+            .GetProperties()
+            .Where(property => property.CanRead && property.CanWrite && property.GetIndexParameters().Length == 0)
+            .ToArray();
     }
 
     private static void CopyProperties(PropertyInfo[] properties, object source, object destination)
