@@ -237,6 +237,11 @@ public enum ExpressionFunction
 #pragma warning restore CA1720
 
     /// <summary>
+    /// Run a Jmespath query on the arguments
+    /// </summary>
+    jmespath,
+    
+    /// <summary>
     /// Calculate the average. Must be numeric values in a list.
     /// </summary>
     average,

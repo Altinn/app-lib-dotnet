@@ -2,7 +2,7 @@
 using System.Text.Json.Nodes;
 using Altinn.App.Core.Models.Expressions;
 
-namespace Altinn.App.Core.Internal.Expressions;
+namespace Altinn.App.Core.Internal.Expressions.FunctionEvaluators;
 
 internal static class ObjectFunctionEvaluator
 {

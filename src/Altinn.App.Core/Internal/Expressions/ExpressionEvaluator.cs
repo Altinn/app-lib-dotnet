@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Expressions.FunctionEvaluators;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
@@ -78,7 +79,17 @@ public static partial class ExpressionEvaluator
     {
         var positionalArgumentUnions = positionalArguments?.Select(ExpressionValue.FromObject).ToArray();
         var result = await EvaluateExpression_internal(state, expr, context, positionalArgumentUnions);
-        return result.ToObject();
+        return result.ValueKind switch
+        {
+            JsonValueKind.Null => null,
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.String => result.String,
+            JsonValueKind.Number => result.Number,
+            JsonValueKind.Object => result.JsonElement,
+            JsonValueKind.Array => result.JsonElement,
+            _ => throw new InvalidOperationException("Invalid value kind"),
+        };
     }
 
     /// <summary>
@@ -148,6 +159,7 @@ public static partial class ExpressionEvaluator
             ExpressionFunction.divide => Divide(args),
             ExpressionFunction.list => List(args),
             ExpressionFunction.@object => Object(args),
+            ExpressionFunction.jmespath => Jmespath(args),
             ExpressionFunction.average => Average(args),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
                 $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
@@ -1037,6 +1049,11 @@ public static partial class ExpressionEvaluator
         return ObjectFunctionEvaluator.Evaluate(args);
     }
 
+    private static ExpressionValue Jmespath(ExpressionValue[] args)
+    {
+        return JmespathFunctionEvaluator.Evaluate(args);
+    }
+  
     private static double? Average(ExpressionValue[] args)
     {
         var expressionValue = args.FirstOrDefault();
@@ -1053,7 +1070,7 @@ public static partial class ExpressionEvaluator
         var aggregatedSum = PerformArithmeticWithReducer(doubles, (x, y) => x + y);
         return (double)(aggregatedSum / doubles.Length);
     }
-
+  
     /// <summary>
     /// Performs arithmetic operation using decimal precision to avoid floating point precision issues.
     /// Converts doubles to decimal, performs the operation, and converts back to double.

@@ -238,10 +238,14 @@ public class TestFunctions
         await RunTestCase(testName, new ExpressionTestCaseRoot(testCaseItem));
 
     [Theory]
+    [SharedTest("jmespath")]
+    public async Task Jmespath_Theory(string testName, string folder) => await RunTestCase(testName, folder);
+  
+    [Theory]
     [SharedTestCases("average")]
     public async Task Average_Theory(string testName, ExpressionTestCaseRoot.TestCaseItem testCaseItem) =>
         await RunTestCase(testName, new ExpressionTestCaseRoot(testCaseItem));
-
+    
     private static async Task<ExpressionTestCaseRoot> LoadTestCase(string file, string folder)
     {
         ExpressionTestCaseRoot testCase = new();
