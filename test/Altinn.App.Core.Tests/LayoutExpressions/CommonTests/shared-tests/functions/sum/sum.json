@@ -12,7 +12,7 @@
       "expects": -4.3
     },
     {
-      "name": "Should return 0 when all numbers in the array is null",
+      "name": "Should return 0 when all numbers in the array are null",
       "expression": ["sum", ["list", null, null, null]],
       "expects": 0
     },
@@ -22,7 +22,7 @@
       "expects": 4.3
     },
     {
-      "name": "Should add all numbers that is not null in the array together",
+      "name": "Should add all numbers that are not null in the array together",
       "expression": ["sum", ["list", 4.3, null, 3.1]],
       "expects": 7.4
     },
@@ -89,12 +89,12 @@
     {
       "name": "Should fail when no arguments are provided",
       "expression": ["sum"],
-      "expectsFailure": "Expected a list as the only argument"
+      "expectsFailure": "Expected 1 argument(s), got 0"
     },
     {
       "name": "Should fail when non-array argument is provided",
       "expression": ["sum", 10],
-      "expectsFailure": "Expected a list as the only argument"
+      "expectsFailure": "Expected argument to be list, got number"
     },
     {
       "name": "Should sum single element array",
