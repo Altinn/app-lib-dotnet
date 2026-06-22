@@ -6,7 +6,6 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Altinn.App.Core.Helpers.Extensions;
 
 namespace Altinn.App.Core.Internal.Expressions;
 
@@ -14,7 +13,7 @@ namespace Altinn.App.Core.Internal.Expressions;
 /// Discriminated union for the JSON types that can be arguments and result of expressions
 /// </summary>
 [JsonConverter(typeof(ExpressionTypeUnionConverter))]
-[DebuggerDisplay("{ToString(),nq}")]
+[DebuggerDisplay("{ToStringForText(),nq}")]
 public readonly struct ExpressionValue : IEquatable<ExpressionValue>
 {
     private readonly string? _stringValue = null;
@@ -24,10 +23,10 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     private readonly double _numberValue = 0;
 
     /// <summary>
-    /// Constructor for NULL value (structs require a public parameterless constructor)
+    /// Constructor for Undefined value (structs require a public parameterless constructor)
     /// </summary>
     public ExpressionValue()
-        : this(JsonValueKind.Null) { }
+        : this(JsonValueKind.Undefined) { }
 
     private ExpressionValue(JsonValueKind valueKind)
     {
@@ -753,7 +752,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                 break;
             case JsonValueKind.Object:
             case JsonValueKind.Array:
-                writer.WriteRawFormattedValue(_stringValueNotNull);
+                // writer.WriteRawFormattedValue(_stringValueNotNull);
+                JsonSerializer.Serialize(writer, JsonElement);
                 break;
             default:
                 throw new JsonException();
