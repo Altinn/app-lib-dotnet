@@ -537,6 +537,23 @@ public class AppResourcesSI : IAppResources
             filedata = File.ReadAllText(filename, Encoding.UTF8);
         }
 
-        return filedata;
+        return filedata;    
+    }
+
+    /// <inheritdoc />
+    public string? GetCalculationConfiguration(string dataTypeId)
+    {
+        using var activity = _telemetry?.StartGetCalculationConfigurationActivity();
+        string legalPath = Path.Join(_settings.AppBasePath, _settings.ModelsFolder);
+        string filename = Path.Join(legalPath, $"{dataTypeId}.{_settings.CalculationConfigurationFileName}");
+        PathHelper.EnsureLegalPath(legalPath, filename);
+
+        string? fileData = null;
+        if (File.Exists(filename))
+        {
+            fileData = File.ReadAllText(filename, Encoding.UTF8);
+        }
+
+        return fileData;
     }
 }

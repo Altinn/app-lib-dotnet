@@ -225,4 +225,19 @@ public enum ExpressionFunction
     /// Divide numbers. Must be numeric values.
     /// </summary>
     divide,
+
+    /// <summary>Create a list from the arguments.</summary>
+    list,
+
+    /// <summary>
+    /// Create a dictionary from the arguments, which must be alternating keys and values.
+    /// </summary>
+#pragma warning disable CA1720
+    @object,
+#pragma warning restore CA1720
+
+    /// <summary>
+    /// Run a Jmespath query on the arguments
+    /// </summary>
+    jmespath,
 }

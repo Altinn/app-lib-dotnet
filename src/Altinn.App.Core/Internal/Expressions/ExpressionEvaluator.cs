@@ -1,7 +1,10 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Altinn.App.Core.Features;
+using Altinn.App.Core.Internal.Expressions.FunctionEvaluators;
 using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
@@ -52,6 +55,19 @@ public static partial class ExpressionEvaluator
     }
 
     /// <summary>
+    /// Evaluate a <see cref="Expression" /> from a given <see cref="IInstanceDataAccessor" /> in a <see cref="ComponentContext" />
+    /// </summary>
+    public static async Task<ExpressionValue> EvaluateExpressionToExpressionValue(
+        IInstanceDataAccessor state,
+        Expression expr,
+        ComponentContext context,
+        ExpressionValue[]? positionalArguments = null
+    )
+    {
+        return await EvaluateExpression_internal(state.GetLayoutEvaluatorState(), expr, context, positionalArguments);
+    }
+
+    /// <summary>
     /// Evaluate a <see cref="Expression" /> from a given <see cref="LayoutEvaluatorState" /> in a <see cref="ComponentContext" />
     /// </summary>
     public static async Task<object?> EvaluateExpression(
@@ -63,7 +79,17 @@ public static partial class ExpressionEvaluator
     {
         var positionalArgumentUnions = positionalArguments?.Select(ExpressionValue.FromObject).ToArray();
         var result = await EvaluateExpression_internal(state, expr, context, positionalArgumentUnions);
-        return result.ToObject();
+        return result.ValueKind switch
+        {
+            JsonValueKind.Null => null,
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.String => result.String,
+            JsonValueKind.Number => result.Number,
+            JsonValueKind.Object => result.JsonElement,
+            JsonValueKind.Array => result.JsonElement,
+            _ => throw new InvalidOperationException("Invalid value kind"),
+        };
     }
 
     /// <summary>
@@ -131,6 +157,9 @@ public static partial class ExpressionEvaluator
             ExpressionFunction.minus => Minus(args),
             ExpressionFunction.multiply => Multiply(args),
             ExpressionFunction.divide => Divide(args),
+            ExpressionFunction.list => List(args),
+            ExpressionFunction.@object => Object(args),
+            ExpressionFunction.jmespath => Jmespath(args),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
                 $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
             ),
@@ -995,6 +1024,21 @@ public static partial class ExpressionEvaluator
         }
 
         return positionalArguments[index.Value];
+    }
+
+    private static ExpressionValue List(ExpressionValue[] args)
+    {
+        return new JsonArray(args.Select(a => JsonSerializer.SerializeToNode(a)).ToArray());
+    }
+
+    private static ExpressionValue Object(ExpressionValue[] args)
+    {
+        return ObjectFunctionEvaluator.Evaluate(args);
+    }
+
+    private static ExpressionValue Jmespath(ExpressionValue[] args)
+    {
+        return JmespathFunctionEvaluator.Evaluate(args);
     }
 
     /// <summary>
