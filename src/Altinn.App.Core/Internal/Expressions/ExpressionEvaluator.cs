@@ -1057,7 +1057,9 @@ public static partial class ExpressionEvaluator
 
         if (expressionValue.ValueKind != JsonValueKind.Array)
         {
-            throw new ExpressionEvaluatorTypeErrorException($"Expected argument to be list, got {expressionValue.ValueKind}");
+            throw new ExpressionEvaluatorTypeErrorException(
+                $"Expected argument to be list, got {expressionValue.ValueKind}"
+            );
         }
 
         if (expressionValue.JsonArray.Count == 0)
