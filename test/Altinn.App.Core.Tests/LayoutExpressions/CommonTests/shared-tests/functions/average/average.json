@@ -84,12 +84,12 @@
     {
       "name": "Should fail when no arguments are provided",
       "expression": ["average"],
-      "expectsFailure": "Expected a list as the only argument"
+      "expectsFailure": "Expected 1 argument(s), got 0"
     },
     {
       "name": "Should fail when non-array argument is provided",
       "expression": ["average", 10],
-      "expectsFailure": "Expected a list as the only argument"
+      "expectsFailure": "Expected argument to be list, got number"
     },
     {
       "name": "Should calculate average of single element array",

@@ -869,14 +869,7 @@ public static partial class ExpressionEvaluator
 
     private static double? PrepareNumericArg(JsonNode? arg)
     {
-        return arg?.GetValueKind() switch
-        {
-            JsonValueKind.True or JsonValueKind.False or JsonValueKind.Array or JsonValueKind.Object =>
-                throw new ExpressionEvaluatorTypeErrorException($"Expected number, got value {arg}"),
-            JsonValueKind.String => ParseNumber(arg.GetValue<string>(), throwException: true),
-            JsonValueKind.Number => arg.GetValue<double>(),
-            _ => null,
-        };
+        return PrepareNumericArg(ExpressionValue.FromObject(arg));
     }
 
     private static double?[] PrepareNumericArgs(ExpressionValue[] args)
@@ -1057,10 +1050,16 @@ public static partial class ExpressionEvaluator
     private static double? Average(ExpressionValue[] args)
     {
         var expressionValue = args.FirstOrDefault();
-        if (args.Length != 1 || expressionValue.ValueKind != JsonValueKind.Array)
+        if (args.Length != 1)
         {
-            throw new ExpressionEvaluatorTypeErrorException("Expected a list as the only argument");
+            throw new ExpressionEvaluatorTypeErrorException($"Expected 1 argument(s), got {args.Length}");
         }
+
+        if (expressionValue.ValueKind != JsonValueKind.Array)
+        {
+            throw new ExpressionEvaluatorTypeErrorException($"Expected argument to be list, got {expressionValue.ValueKind}");
+        }
+
         if (expressionValue.JsonArray.Count == 0)
         {
             return 0;
