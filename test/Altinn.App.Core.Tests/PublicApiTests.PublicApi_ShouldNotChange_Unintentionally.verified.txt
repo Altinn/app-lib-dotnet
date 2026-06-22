@@ -4770,6 +4770,7 @@ namespace Altinn.App.Core.Models.Expressions
         list = 41,
         @object = 42,
         jmespath = 43,
+        sum = 44,
     }
 }
 namespace Altinn.App.Core.Models.Layout.Components.Base
