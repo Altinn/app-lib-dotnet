@@ -3269,7 +3269,7 @@ namespace Altinn.App.Core.Internal.Expressions
         public ExpressionEvaluatorTypeErrorException(string msg) { }
         public ExpressionEvaluatorTypeErrorException(string msg, System.Exception innerException) { }
     }
-    [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+    [System.Diagnostics.DebuggerDisplay("{ToStringForText(),nq}")]
     [System.Text.Json.Serialization.JsonConverter(typeof(Altinn.App.Core.Internal.Expressions.ExpressionTypeUnionConverter))]
     public readonly struct ExpressionValue : System.IEquatable<Altinn.App.Core.Internal.Expressions.ExpressionValue>
     {
@@ -4368,6 +4368,7 @@ namespace Altinn.App.Core.Models
         public System.Collections.Generic.IEnumerable<Altinn.App.Core.Models.BinaryDataChange> BinaryDataChanges { get; }
         public System.Collections.Generic.IEnumerable<Altinn.App.Core.Models.FormDataChange> FormDataChanges { get; }
     }
+    [System.Text.Json.Serialization.JsonConverter(typeof(Altinn.App.Core.Models.DataElementIdentifier.DataElementIdentifierConverter))]
     public readonly struct DataElementIdentifier : System.IEquatable<Altinn.App.Core.Models.DataElementIdentifier>
     {
         public DataElementIdentifier(Altinn.Platform.Storage.Interface.Models.DataElement dataElement) { }
@@ -4384,6 +4385,12 @@ namespace Altinn.App.Core.Models
         public static Altinn.App.Core.Models.DataElementIdentifier? op_Implicit(Altinn.Platform.Storage.Interface.Models.DataElement? dataElement) { }
         public static bool operator !=(Altinn.App.Core.Models.DataElementIdentifier left, Altinn.App.Core.Models.DataElementIdentifier right) { }
         public static bool operator ==(Altinn.App.Core.Models.DataElementIdentifier left, Altinn.App.Core.Models.DataElementIdentifier right) { }
+        public class DataElementIdentifierConverter : System.Text.Json.Serialization.JsonConverter<Altinn.App.Core.Models.DataElementIdentifier>
+        {
+            public DataElementIdentifierConverter() { }
+            public override Altinn.App.Core.Models.DataElementIdentifier Read(ref System.Text.Json.Utf8JsonReader reader, System.Type typeToConvert, System.Text.Json.JsonSerializerOptions options) { }
+            public override void Write(System.Text.Json.Utf8JsonWriter writer, Altinn.App.Core.Models.DataElementIdentifier value, System.Text.Json.JsonSerializerOptions options) { }
+        }
     }
     public class DataList
     {
