@@ -1,0 +1,11 @@
+{
+    "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/calculation/calculation.schema.v1.json",
+    "calculations": {
+        "price": {
+            "expression": 200
+        },
+        "total": {
+            "expression": ["multiply", ["dataModel", "price"], ["dataModel", "quantity"]]
+        }
+    }
+}
