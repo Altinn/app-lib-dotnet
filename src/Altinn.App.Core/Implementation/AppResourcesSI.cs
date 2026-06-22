@@ -537,7 +537,7 @@ public class AppResourcesSI : IAppResources
             filedata = File.ReadAllText(filename, Encoding.UTF8);
         }
 
-        return filedata;    
+        return filedata;
     }
 
     /// <inheritdoc />

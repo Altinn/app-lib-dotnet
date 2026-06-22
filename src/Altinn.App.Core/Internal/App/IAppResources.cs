@@ -172,7 +172,7 @@ public interface IAppResources
     /// </summary>
     /// <param name="modelId">Unique identifier for the model.</param>
     string? GetXsdSchema(string modelId);
-  
+
     /// <summary>
     /// Gets the calculation configuration for a given data type
     /// </summary>
