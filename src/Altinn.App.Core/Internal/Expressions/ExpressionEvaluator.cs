@@ -855,6 +855,11 @@ public static partial class ExpressionEvaluator
         return (a, b);
     }
 
+    private static double? PrepareNumericArg(JsonNode arg)
+    {
+        return PrepareNumericArg(ExpressionValue.FromObject(arg));
+    }
+
     private static double? PrepareNumericArg(ExpressionValue arg)
     {
         return arg.ValueKind switch
@@ -934,7 +939,7 @@ public static partial class ExpressionEvaluator
     private static double Plus(ExpressionValue[] args)
     {
         double?[] numbers = PrepareNumericArgs(args);
-        return PerformArithmeticWithReducer(numbers, (x, y) => x + y);
+        return (double)PerformArithmeticWithReducer(numbers, (x, y) => x + y);
     }
 
     private static double Minus(ExpressionValue[] args)
@@ -946,7 +951,7 @@ public static partial class ExpressionEvaluator
     private static double Multiply(ExpressionValue[] args)
     {
         double?[] numbers = PrepareNumericArgs(args);
-        return PerformArithmeticWithReducer(numbers, (x, y) => x * y);
+        return (double)PerformArithmeticWithReducer(numbers, (x, y) => x * y);
     }
 
     private static double Divide(ExpressionValue[] args)
@@ -1045,12 +1050,12 @@ public static partial class ExpressionEvaluator
 
     private static double? Sum(ExpressionValue[] args)
     {
-        var expressionValue = args.FirstOrDefault();
         if (args.Length != 1)
         {
             throw new ExpressionEvaluatorTypeErrorException($"Expected 1 argument(s), got {args.Length}");
         }
 
+        var expressionValue = args.FirstOrDefault();
         if (expressionValue.ValueKind != JsonValueKind.Array)
         {
             throw new ExpressionEvaluatorTypeErrorException(
