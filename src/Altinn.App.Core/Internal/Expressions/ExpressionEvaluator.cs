@@ -855,7 +855,7 @@ public static partial class ExpressionEvaluator
         return (a, b);
     }
 
-    private static double? PrepareNumericArg(JsonNode arg)
+    private static double? PrepareNumericArg(JsonNode? arg)
     {
         return PrepareNumericArg(ExpressionValue.FromObject(arg));
     }
@@ -1074,22 +1074,32 @@ public static partial class ExpressionEvaluator
             throw new ExpressionEvaluatorTypeErrorException($"Expected 2 argument(s), got {args.Length}");
         }
 
-        var expressionValue = args.FirstOrDefault();
-        if (expressionValue.ValueKind != JsonValueKind.Array)
+        try
+        {
+            var expressionValue = args.Single(x => x.ValueKind == JsonValueKind.Array);
+            if (expressionValue.ValueKind != JsonValueKind.Array)
+            {
+                throw new ExpressionEvaluatorTypeErrorException(
+                    $"Expected argument to be list, got {expressionValue.ValueKind}"
+                );
+            }
+
+            if (expressionValue.JsonArray.Count == 0)
+            {
+                return 0;
+            }
+
+
+
+            var doubles = expressionValue.JsonArray.Select(PrepareNumericArg).ToArray();
+            var aggregatedSum = PerformArithmeticWithReducer(doubles, (x, y) => x + y);
+            return (double)(aggregatedSum / doubles.Length);
+        } catch (InvalidOperationException)
         {
             throw new ExpressionEvaluatorTypeErrorException(
-                $"Expected argument to be list, got {expressionValue.ValueKind}"
+                $"Expected 1 of the arguments to be list"
             );
         }
-
-        if (expressionValue.JsonArray.Count == 0)
-        {
-            return 0;
-        }
-
-        var doubles = expressionValue.JsonArray.Select(PrepareNumericArg).ToArray();
-        var aggregatedSum = PerformArithmeticWithReducer(doubles, (x, y) => x + y);
-        return (double)(aggregatedSum / doubles.Length);
     }
 
     /// <summary>
