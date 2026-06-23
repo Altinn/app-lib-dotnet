@@ -75,12 +75,12 @@ public enum ExpressionFunction
     lowerCase,
 
     /// <summary>
-    ///  Capitalize the first letter of a string
+    /// Capitalize the first letter of a string
     /// </summary>
     upperCaseFirst,
 
     /// <summary>
-    ///  Lowercase the first letter of a string
+    /// Lowercase the first letter of a string
     /// </summary>
     lowerCaseFirst,
 
@@ -240,6 +240,11 @@ public enum ExpressionFunction
     /// Run a Jmespath query on the arguments
     /// </summary>
     jmespath,
+
+    /// <summary>
+    /// Adding numbers. Must be numeric values in a list.
+    /// </summary>
+    sum,
 
     /// <summary>
     /// Calculate the average. Must be numeric values in a list.
