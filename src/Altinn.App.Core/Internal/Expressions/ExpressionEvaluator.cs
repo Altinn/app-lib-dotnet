@@ -1049,12 +1049,12 @@ public static partial class ExpressionEvaluator
 
     private static double? Average(ExpressionValue[] args)
     {
-        var expressionValue = args.FirstOrDefault();
-        if (args.Length != 1)
+        if (args.Length != 2)
         {
-            throw new ExpressionEvaluatorTypeErrorException($"Expected 1 argument(s), got {args.Length}");
+            throw new ExpressionEvaluatorTypeErrorException($"Expected 2 argument(s), got {args.Length}");
         }
 
+        var expressionValue = args.FirstOrDefault();
         if (expressionValue.ValueKind != JsonValueKind.Array)
         {
             throw new ExpressionEvaluatorTypeErrorException(
