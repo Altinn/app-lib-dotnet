@@ -855,11 +855,6 @@ public static partial class ExpressionEvaluator
         return (a, b);
     }
 
-    private static double? PrepareNumericArg(JsonNode? arg)
-    {
-        return PrepareNumericArg(ExpressionValue.FromObject(arg));
-    }
-
     private static double? PrepareNumericArg(ExpressionValue arg)
     {
         return arg.ValueKind switch
@@ -871,6 +866,11 @@ public static partial class ExpressionEvaluator
 
             _ => null,
         };
+    }
+
+    private static double? PrepareNumericArg(JsonNode? arg)
+    {
+        return PrepareNumericArg(ExpressionValue.FromObject(arg));
     }
 
     private static double?[] PrepareNumericArgs(ExpressionValue[] args)
