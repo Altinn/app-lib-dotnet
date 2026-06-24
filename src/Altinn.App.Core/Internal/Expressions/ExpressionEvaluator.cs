@@ -1055,7 +1055,7 @@ public static partial class ExpressionEvaluator
             throw new ExpressionEvaluatorTypeErrorException($"Expected 1 argument(s), got {args.Length}");
         }
 
-        var expressionValue = args.FirstOrDefault();
+        var expressionValue = args[0];
         if (expressionValue.ValueKind != JsonValueKind.Array)
         {
             throw new ExpressionEvaluatorTypeErrorException(
