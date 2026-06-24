@@ -247,7 +247,8 @@ public enum ExpressionFunction
     sum,
 
     /// <summary>
-    /// Calculate the average. Must be numeric values in a list.
+    /// Calculate the average of the numeric values in a list (first argument).
+    /// The mandatory second argument is the value (a number or null) returned when the list is empty.
     /// </summary>
     average,
 }

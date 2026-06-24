@@ -1074,32 +1074,25 @@ public static partial class ExpressionEvaluator
             throw new ExpressionEvaluatorTypeErrorException($"Expected 2 argument(s), got {args.Length}");
         }
 
-        try
-        {
-            var expressionValue = args.Single(x => x.ValueKind == JsonValueKind.Array);
-            if (expressionValue.ValueKind != JsonValueKind.Array)
-            {
-                throw new ExpressionEvaluatorTypeErrorException(
-                    $"Expected argument to be list, got {expressionValue.ValueKind}"
-                );
-            }
-
-            if (expressionValue.JsonArray.Count == 0)
-            {
-                return 0;
-            }
-
-
-
-            var doubles = expressionValue.JsonArray.Select(PrepareNumericArg).ToArray();
-            var aggregatedSum = PerformArithmeticWithReducer(doubles, (x, y) => x + y);
-            return (double)(aggregatedSum / doubles.Length);
-        } catch (InvalidOperationException)
+        var arrayExpressionValue = args[0];
+        if (arrayExpressionValue.ValueKind != JsonValueKind.Array)
         {
             throw new ExpressionEvaluatorTypeErrorException(
-                $"Expected 1 of the arguments to be list"
+                $"Expected first argument to be list, got {arrayExpressionValue.ValueKind}"
             );
         }
+
+        // The second argument defines the value to return when the list is empty. Must be a number or null.
+        var emptyValue = PrepareNumericArg(args[1]);
+
+        if (arrayExpressionValue.JsonArray.Count == 0)
+        {
+            return emptyValue;
+        }
+
+        var doubles = arrayExpressionValue.JsonArray.Select(PrepareNumericArg).ToArray();
+        var aggregatedSum = PerformArithmeticWithReducer(doubles, (x, y) => x + y);
+        return (double)(aggregatedSum / doubles.Length);
     }
 
     /// <summary>
