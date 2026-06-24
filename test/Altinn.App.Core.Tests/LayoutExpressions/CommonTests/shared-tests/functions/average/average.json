@@ -67,19 +67,24 @@
       "expects": 10
     },
     {
-      "name": "Should return the empty value when the array is empty",
+      "name": "Should return the empty value (0) when the array is empty",
       "expression": ["average", ["list"], 0],
       "expects": 0
     },
     {
-      "name": "Should return the configured empty value when the array is empty",
+      "name": "Should return the empty value (42) when the array is empty",
       "expression": ["average", ["list"], 42],
       "expects": 42
     },
     {
-      "name": "Should return null when the array is empty and the empty value is null",
+      "name": "Should return the empty value (null) when the array is empty",
       "expression": ["average", ["list"], null],
       "expects": null
+    },
+    {
+      "name": "Should fail with non-numeric empty value",
+      "expression": ["average", ["list", 1, 2], "not a number"],
+      "expectsFailure": "Expected number, got value \"not a number\""
     },
     {
       "name": "Should ignore the empty value when the array is not empty",
@@ -95,11 +100,6 @@
       "name": "Should fail with boolean in array",
       "expression": ["average", ["list", 10, true, 5], 0],
       "expectsFailure": "Expected number, got value true"
-    },
-    {
-      "name": "Should fail with non-numeric empty value",
-      "expression": ["average", ["list", 1, 2], "not a number"],
-      "expectsFailure": "Expected number, got value \"not a number\""
     },
     {
       "name": "Should fail when no arguments are provided",
