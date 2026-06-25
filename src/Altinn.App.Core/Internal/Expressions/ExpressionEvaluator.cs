@@ -1078,16 +1078,15 @@ public static partial class ExpressionEvaluator
         if (arrayExpressionValue.ValueKind != JsonValueKind.Array)
         {
             throw new ExpressionEvaluatorTypeErrorException(
-                $"Expected first argument to be list, got {arrayExpressionValue.ValueKind}"
+                $"Expected argument to be list, got {arrayExpressionValue.ValueKind}"
             );
         }
 
-        // The second argument defines the value to return when the list is empty. Must be a number or null.
-        var emptyValue = PrepareNumericArg(args[1]);
+        var fallbackForEmptyList = PrepareNumericArg(args[1]);
 
         if (arrayExpressionValue.JsonArray.Count == 0)
         {
-            return emptyValue;
+            return fallbackForEmptyList;
         }
 
         var doubles = arrayExpressionValue.JsonArray.Select(PrepareNumericArg).ToArray();

@@ -114,7 +114,7 @@
     {
       "name": "Should fail when non-array first argument is provided",
       "expression": ["average", 10, 0],
-      "expectsFailure": "Expected first argument to be list, got number"
+      "expectsFailure": "Expected argument to be list, got number"
     },
     {
       "name": "Should calculate average of single element array",
