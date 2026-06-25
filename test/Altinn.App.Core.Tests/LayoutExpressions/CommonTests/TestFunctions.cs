@@ -246,6 +246,11 @@ public class TestFunctions
     public async Task Sum_Theory(string testName, ExpressionTestCaseRoot.TestCaseItem testCaseItem) =>
         await RunTestCase(testName, new ExpressionTestCaseRoot(testCaseItem));
 
+    [Theory]
+    [SharedTestCases("average")]
+    public async Task Average_Theory(string testName, ExpressionTestCaseRoot.TestCaseItem testCaseItem) =>
+        await RunTestCase(testName, new ExpressionTestCaseRoot(testCaseItem));
+
     private static async Task<ExpressionTestCaseRoot> LoadTestCase(string file, string folder)
     {
         ExpressionTestCaseRoot testCase = new();
@@ -290,7 +295,7 @@ public class TestFunctions
         List<DataType> dataTypes = new();
         if (test.DataModels is null)
         {
-            dataTypes.Add(new DataType() { Id = "default" });
+            dataTypes.Add(new DataType { Id = "default" });
         }
         else
         {
