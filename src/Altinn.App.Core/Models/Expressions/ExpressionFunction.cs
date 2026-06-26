@@ -245,4 +245,10 @@ public enum ExpressionFunction
     /// Adding numbers. Must be numeric values in a list.
     /// </summary>
     sum,
+
+    /// <summary>
+    /// Calculate the average of the numeric values in a list (first argument).
+    /// The mandatory second argument is the value (a number or null) returned when the list is empty.
+    /// </summary>
+    average,
 }

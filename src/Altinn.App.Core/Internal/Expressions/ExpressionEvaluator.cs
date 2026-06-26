@@ -161,6 +161,7 @@ public static partial class ExpressionEvaluator
             ExpressionFunction.@object => Object(args),
             ExpressionFunction.jmespath => Jmespath(args),
             ExpressionFunction.sum => Sum(args),
+            ExpressionFunction.average => Average(args),
             ExpressionFunction.INVALID => throw new ExpressionEvaluatorTypeErrorException(
                 $"Function {expr.Args.FirstOrDefault()} not implemented in backend {expr}"
             ),
@@ -1049,12 +1050,12 @@ public static partial class ExpressionEvaluator
 
     private static double? Sum(ExpressionValue[] args)
     {
-        var expressionValue = args.FirstOrDefault();
         if (args.Length != 1)
         {
             throw new ExpressionEvaluatorTypeErrorException($"Expected 1 argument(s), got {args.Length}");
         }
 
+        var expressionValue = args[0];
         if (expressionValue.ValueKind != JsonValueKind.Array)
         {
             throw new ExpressionEvaluatorTypeErrorException(
@@ -1064,6 +1065,33 @@ public static partial class ExpressionEvaluator
 
         var doubles = expressionValue.JsonArray.Select(PrepareNumericArg).ToArray();
         return doubles.Length != 0 ? (double)PerformArithmeticWithReducer(doubles, (x, y) => x + y) : 0;
+    }
+
+    private static double? Average(ExpressionValue[] args)
+    {
+        if (args.Length != 2)
+        {
+            throw new ExpressionEvaluatorTypeErrorException($"Expected 2 argument(s), got {args.Length}");
+        }
+
+        var arrayExpressionValue = args[0];
+        if (arrayExpressionValue.ValueKind != JsonValueKind.Array)
+        {
+            throw new ExpressionEvaluatorTypeErrorException(
+                $"Expected argument to be list, got {arrayExpressionValue.ValueKind}"
+            );
+        }
+
+        var fallbackForEmptyList = PrepareNumericArg(args[1]);
+
+        if (arrayExpressionValue.JsonArray.Count == 0)
+        {
+            return fallbackForEmptyList;
+        }
+
+        var doubles = arrayExpressionValue.JsonArray.Select(PrepareNumericArg).ToArray();
+        var aggregatedSum = PerformArithmeticWithReducer(doubles, (x, y) => x + y);
+        return (double)(aggregatedSum / doubles.Length);
     }
 
     /// <summary>
