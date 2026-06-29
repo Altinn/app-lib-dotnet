@@ -3,7 +3,8 @@
   "Features": {
     "footer": true,
     "processActions": true,
-    "jsonObjectInDataResponse": false
+    "jsonObjectInDataResponse": false,
+    "addInstanceIdentifierToLayoutRequests": false
   },
   "OnEntry": {
     "InstanceSelection": null,
