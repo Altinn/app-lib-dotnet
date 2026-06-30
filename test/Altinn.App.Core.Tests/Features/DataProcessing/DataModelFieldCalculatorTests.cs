@@ -7,6 +7,7 @@ using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Internal.Texts;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Calculation;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Tests.LayoutExpressions.CommonTests;
 using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
@@ -78,11 +79,12 @@ public sealed class DataModelFieldCalculatorTests
                   ],
                   "calculationConfig": {
                       "$schema": "https://altinncdn.no/toolkits/altinn-app-frontend/4/schemas/json/calculation/calculation.schema.v1.json",
-                      "calculations": {
-                          "form.formDataWrapperThrows": {
+                      "calculations": [
+                          {
+                            "field": "form.formDataWrapperThrows",
                             "expression": ["noneExistingExpression"]
                           }
-                      }
+                      ]
                   },
                   "formData": {
                       "form": {
@@ -178,7 +180,7 @@ public sealed class DataModelFieldCalculatorTests
             );
         _appResources
             .Setup(ar => ar.GetCalculationConfiguration(It.IsAny<string>()))
-            .Returns(JsonSerializer.Serialize(testCase.CalculationConfig, _jsonSerializerOptions));
+            .Returns(testCase.CalculationConfig);
 
         if (testCase.DataModels is not null)
         {
@@ -237,7 +239,7 @@ public sealed class DataModelFieldCalculatorTests
         public required Expected[] Expects { get; set; }
 
         [JsonPropertyName("calculationConfig")]
-        public required JsonElement CalculationConfig { get; set; }
+        public required CalculationSchema CalculationConfig { get; set; }
 
         // A single data element. Either this or <see cref="DataModels"/> must be set.
         [JsonPropertyName("formData")]

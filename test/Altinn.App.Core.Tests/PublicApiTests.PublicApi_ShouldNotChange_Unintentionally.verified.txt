@@ -2435,7 +2435,7 @@ namespace Altinn.App.Core.Implementation
         public Altinn.Platform.Storage.Interface.Models.Application GetApplication() { }
         public string? GetApplicationBPMNProcess() { }
         public string? GetApplicationXACMLPolicy() { }
-        public string? GetCalculationConfiguration(string dataTypeId) { }
+        public Altinn.App.Core.Models.Calculation.CalculationSchema? GetCalculationConfiguration(string dataTypeId) { }
         public string GetClassRefForLogicDataType(string dataType) { }
         public System.Threading.Tasks.Task<string?> GetFooter() { }
         [System.Obsolete("Use GetLayoutModelForTask instead")]
@@ -3000,7 +3000,7 @@ namespace Altinn.App.Core.Internal.App
         [System.Obsolete("GetApplication is scheduled for removal. Use Altinn.App.Core.Internal.App.IAppMet" +
             "adata.GetApplicationXACMLPolicy instead", false)]
         string? GetApplicationXACMLPolicy();
-        string? GetCalculationConfiguration(string dataTypeId);
+        Altinn.App.Core.Models.Calculation.CalculationSchema? GetCalculationConfiguration(string dataTypeId);
         string GetClassRefForLogicDataType(string dataType);
         System.Threading.Tasks.Task<string?> GetFooter();
         [System.Obsolete("Use GetLayoutModelForTask instead", false)]
@@ -4662,6 +4662,24 @@ namespace Altinn.App.Core.Models
         public int UserId { get; set; }
         public string UserName { get; set; }
         public Altinn.Platform.Register.Models.Party UserParty { get; set; }
+    }
+}
+namespace Altinn.App.Core.Models.Calculation
+{
+    public class CalculationItem
+    {
+        public CalculationItem() { }
+        [System.Text.Json.Serialization.JsonPropertyName("expression")]
+        public required Altinn.App.Core.Models.Expressions.Expression Expression { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("field")]
+        public required string Field { get; init; }
+    }
+    public class CalculationSchema
+    {
+        public CalculationSchema() { }
+        public required System.Collections.Generic.List<Altinn.App.Core.Models.Calculation.CalculationItem> Calculations { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("$schema")]
+        public string Schema { get; }
     }
 }
 namespace Altinn.App.Core.Models.Expressions
