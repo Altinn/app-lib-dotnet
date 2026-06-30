@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
@@ -12,7 +13,7 @@ namespace Altinn.App.Core.Internal.Expressions;
 /// Discriminated union for the JSON types that can be arguments and result of expressions
 /// </summary>
 [JsonConverter(typeof(ExpressionTypeUnionConverter))]
-[DebuggerDisplay("{ToString(),nq}")]
+[DebuggerDisplay("{ToStringForText(),nq}")]
 public readonly struct ExpressionValue : IEquatable<ExpressionValue>
 {
     private readonly string? _stringValue = null;
@@ -22,10 +23,10 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     private readonly double _numberValue = 0;
 
     /// <summary>
-    /// Constructor for NULL value (structs require a public parameterless constructor)
+    /// Constructor for Undefined value (structs require a public parameterless constructor)
     /// </summary>
     public ExpressionValue()
-        : this(JsonValueKind.Null) { }
+        : this(JsonValueKind.Undefined) { }
 
     private ExpressionValue(JsonValueKind valueKind)
     {
@@ -622,6 +623,28 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                     return false;
                 }
             }
+            case JsonValueKind.Array when underlyingType.IsAssignableTo(typeof(IEnumerable)):
+            case JsonValueKind.Object:
+                try
+                {
+                    // For complex types we serialize the expressionValue to json
+                    // and then deserialize to the target type.
+                    // This allows us to leverage the normal JSON deserialization rules and also handle cases where the
+                    // ValueKind doesn't exactly match the target type (e.g., deserialize a JsonObject to a Dictionary<string, object> or similar)
+                    var json = JsonSerializer.SerializeToUtf8Bytes(this);
+                    result = JsonSerializer.Deserialize(json, type);
+                    return true;
+                }
+                catch (JsonException)
+                {
+                    result = null;
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    result = null;
+                    return false;
+                }
         }
 
         // Add special handling for bool to support loose conversion rules
@@ -707,7 +730,7 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
         return new(doc.RootElement);
     }
 
-    internal void WriteJson(Utf8JsonWriter writer, JsonSerializerOptions options)
+    internal void WriteJson(Utf8JsonWriter writer)
     {
         switch (ValueKind)
         {
@@ -729,7 +752,8 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                 break;
             case JsonValueKind.Object:
             case JsonValueKind.Array:
-                writer.WriteRawValue(_stringValueNotNull);
+                // writer.WriteRawFormattedValue(_stringValueNotNull);
+                JsonSerializer.Serialize(writer, JsonElement);
                 break;
             default:
                 throw new JsonException();
@@ -768,5 +792,5 @@ internal class ExpressionTypeUnionConverter : JsonConverter<ExpressionValue>
 
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, ExpressionValue value, JsonSerializerOptions options) =>
-        value.WriteJson(writer, options);
+        value.WriteJson(writer);
 }

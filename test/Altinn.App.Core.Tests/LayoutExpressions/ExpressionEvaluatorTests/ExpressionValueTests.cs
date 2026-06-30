@@ -1,5 +1,7 @@
 using System.Globalization;
+using System.Numerics;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Altinn.App.Core.Internal.Expressions;
 using Xunit.Abstractions;
 
@@ -286,5 +288,293 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
             Assert.Equal(expected, result);
             Assert.False(success);
         }
+    }
+
+    [Fact]
+    public void FromObject_CoversAllSupportedClrTypes()
+    {
+        // ExpressionValue passes through unchanged
+        ExpressionValue existing = "passthrough";
+        Assert.Equal(JsonValueKind.String, ExpressionValue.FromObject(existing).ValueKind);
+        Assert.Equal("passthrough", ExpressionValue.FromObject(existing).String);
+
+        // null
+        Assert.Equal(JsonValueKind.Null, ExpressionValue.FromObject(null).ValueKind);
+
+        // bool
+        Assert.True(ExpressionValue.FromObject(true).Bool);
+        Assert.False(ExpressionValue.FromObject(false).Bool);
+
+        // string
+        Assert.Equal("test", ExpressionValue.FromObject("test").String);
+
+        // every numeric CLR type maps to a Number
+        Assert.Equal(JsonValueKind.Number, ExpressionValue.FromObject((float)1.5).ValueKind);
+        Assert.Equal(JsonValueKind.Number, ExpressionValue.FromObject(2.5d).ValueKind);
+        Assert.Equal(123, ExpressionValue.FromObject((byte)123).Number);
+        Assert.Equal(-12, ExpressionValue.FromObject((sbyte)-12).Number);
+        Assert.Equal(1234, ExpressionValue.FromObject((short)1234).Number);
+        Assert.Equal(1234, ExpressionValue.FromObject((ushort)1234).Number);
+        Assert.Equal(123456, ExpressionValue.FromObject(123456).Number);
+        Assert.Equal(123456, ExpressionValue.FromObject((uint)123456).Number);
+        Assert.Equal(123456789, ExpressionValue.FromObject((long)123456789).Number);
+        Assert.Equal(123456789, ExpressionValue.FromObject((ulong)123456789).Number);
+        Assert.Equal(123.456, ExpressionValue.FromObject((decimal)123.456).Number);
+
+        // date/time types are serialized to their unquoted string representation
+        Assert.Equal(
+            "2020-02-03T12:34:56Z",
+            ExpressionValue.FromObject(DateTime.Parse("2020-02-03T12:34:56Z").ToUniversalTime()).String
+        );
+        Assert.Equal(
+            "2020-02-03T12:34:56+00:00",
+            ExpressionValue.FromObject(DateTimeOffset.Parse("2020-02-03T12:34:56+00:00")).String
+        );
+        Assert.Equal("12:34:56", ExpressionValue.FromObject(new TimeSpan(12, 34, 56)).String);
+        Assert.Equal("12:34:56", ExpressionValue.FromObject(new TimeOnly(12, 34, 56)).String);
+        Assert.Equal("2020-02-03", ExpressionValue.FromObject(new DateOnly(2020, 2, 3)).String);
+
+        // BigInteger -> string
+        Assert.Equal(
+            "123456789012345678901234567890",
+            ExpressionValue.FromObject(BigInteger.Parse("123456789012345678901234567890")).String
+        );
+
+        // JsonNode -> matching value kind
+        // NB: must be a double-backed node, see comment on JsonNode constructor fragility
+        JsonNode node = JsonValue.Create(42.0);
+        Assert.Equal(JsonValueKind.Number, ExpressionValue.FromObject(node).ValueKind);
+        Assert.Equal(42.0, ExpressionValue.FromObject(node).Number);
+
+        // fallback: arbitrary objects go through JsonSerializer
+        var fallback = ExpressionValue.FromObject(new { a = 1, b = "x" });
+        Assert.Equal(JsonValueKind.Object, fallback.ValueKind);
+        Assert.Equal("1", fallback.JsonObject["a"]!.ToString());
+        Assert.Equal("x", fallback.JsonObject["b"]!.ToString());
+    }
+
+    [Fact]
+    public void NullConstructors_ProduceNullValueKind()
+    {
+        bool? nullBool = null;
+        double? nullDouble = null;
+        string? nullString = null;
+        ExpressionValue fromBool = nullBool;
+        ExpressionValue fromDouble = nullDouble;
+        ExpressionValue fromString = nullString;
+        Assert.Equal(JsonValueKind.Null, fromBool.ValueKind);
+        Assert.Equal(JsonValueKind.Null, fromDouble.ValueKind);
+        Assert.Equal(JsonValueKind.Null, fromString.ValueKind);
+    }
+
+    [Fact]
+    public void ParameterlessConstructor_IsUndefined()
+    {
+        Assert.Equal(JsonValueKind.Undefined, new ExpressionValue().ValueKind);
+    }
+
+    [Fact]
+    public void ImplicitOperators_JsonNodeAndJsonElement()
+    {
+        JsonNode nodeObject = JsonNode.Parse("""{"a":1}""")!;
+        ExpressionValue fromNode = nodeObject;
+        Assert.Equal(JsonValueKind.Object, fromNode.ValueKind);
+
+        JsonNode nodeArray = JsonNode.Parse("""[1,2,3]""")!;
+        fromNode = nodeArray;
+        Assert.Equal(JsonValueKind.Array, fromNode.ValueKind);
+
+        using var docObject = JsonDocument.Parse("""{"a":1}""");
+        ExpressionValue fromElement = docObject.RootElement;
+        Assert.Equal(JsonValueKind.Object, fromElement.ValueKind);
+
+        using var docArray = JsonDocument.Parse("[1,2,3]");
+        fromElement = docArray.RootElement;
+        Assert.Equal(JsonValueKind.Array, fromElement.ValueKind);
+    }
+
+    [Fact]
+    public void JsonNodeConstructor_CoversAllValueKinds()
+    {
+        Assert.Equal(JsonValueKind.String, ((ExpressionValue)JsonNode.Parse("\"s\"")!).ValueKind);
+        Assert.Equal(JsonValueKind.Number, ((ExpressionValue)JsonNode.Parse("42")!).ValueKind);
+        Assert.Equal(JsonValueKind.True, ((ExpressionValue)JsonNode.Parse("true")!).ValueKind);
+        Assert.Equal(JsonValueKind.False, ((ExpressionValue)JsonNode.Parse("false")!).ValueKind);
+        Assert.Equal(JsonValueKind.Object, ((ExpressionValue)JsonNode.Parse("{}")!).ValueKind);
+        Assert.Equal(JsonValueKind.Array, ((ExpressionValue)JsonNode.Parse("[]")!).ValueKind);
+    }
+
+    [Fact]
+    public void FromJsonString_ParsesAllKinds()
+    {
+        Assert.Equal(JsonValueKind.String, ExpressionValue.FromJsonString("\"hello\"").ValueKind);
+        Assert.Equal("hello", ExpressionValue.FromJsonString("\"hello\"").String);
+        Assert.Equal(42, ExpressionValue.FromJsonString("42").Number);
+        Assert.Equal(JsonValueKind.True, ExpressionValue.FromJsonString("true").ValueKind);
+        Assert.Equal(JsonValueKind.False, ExpressionValue.FromJsonString("false").ValueKind);
+        Assert.Equal(JsonValueKind.Null, ExpressionValue.FromJsonString("null").ValueKind);
+        Assert.Equal(JsonValueKind.Object, ExpressionValue.FromJsonString("{\"a\":1}").ValueKind);
+        Assert.Equal(JsonValueKind.Array, ExpressionValue.FromJsonString("[1,2]").ValueKind);
+    }
+
+    [Fact]
+    public void JsonNodeProperty_CoversAllValueKinds()
+    {
+        Assert.Equal("test", ((ExpressionValue)"test").JsonNode!.GetValue<string>());
+        Assert.Equal(123.0, ((ExpressionValue)(double?)123).JsonNode!.GetValue<double>());
+        Assert.True(ExpressionValue.True.JsonNode!.GetValue<bool>());
+        Assert.False(ExpressionValue.False.JsonNode!.GetValue<bool>());
+        Assert.Null(ExpressionValue.Null.JsonNode);
+        Assert.Null(ExpressionValue.Undefined.JsonNode);
+        Assert.IsAssignableFrom<JsonObject>(ExpressionValue.FromJsonString("{\"a\":1}").JsonNode);
+        Assert.IsAssignableFrom<JsonArray>(ExpressionValue.FromJsonString("[1,2]").JsonNode);
+    }
+
+    [Fact]
+    public void JsonObjectAndJsonArray_ReturnParsedNodes()
+    {
+        var obj = ExpressionValue.FromJsonString("{\"a\":1,\"b\":2}").JsonObject;
+        Assert.Equal(2, obj.Count);
+        Assert.Equal(1, obj["a"]!.GetValue<int>());
+
+        var arr = ExpressionValue.FromJsonString("[1,2,3]").JsonArray;
+        Assert.Equal(3, arr.Count);
+    }
+
+    [Fact]
+    public void JsonElementProperty_CoversAllValueKinds()
+    {
+        Assert.Equal(JsonValueKind.String, ((ExpressionValue)"s").JsonElement.ValueKind);
+        Assert.Equal(JsonValueKind.Number, ((ExpressionValue)(double?)1).JsonElement.ValueKind);
+        Assert.Equal(JsonValueKind.True, ExpressionValue.True.JsonElement.ValueKind);
+        Assert.Equal(JsonValueKind.False, ExpressionValue.False.JsonElement.ValueKind);
+        Assert.Equal(JsonValueKind.Null, ExpressionValue.Null.JsonElement.ValueKind);
+        Assert.Equal(JsonValueKind.Undefined, ExpressionValue.Undefined.JsonElement.ValueKind);
+        Assert.Equal(JsonValueKind.Object, ExpressionValue.FromJsonString("{\"a\":1}").JsonElement.ValueKind);
+        Assert.Equal(JsonValueKind.Array, ExpressionValue.FromJsonString("[1,2]").JsonElement.ValueKind);
+    }
+
+    [Fact]
+    public void ToString_CoversAllValueKinds()
+    {
+        Assert.Equal("null", ExpressionValue.Null.ToString());
+        Assert.Equal("undefined", ExpressionValue.Undefined.ToString());
+        Assert.Equal("true", ExpressionValue.True.ToString());
+        Assert.Equal("false", ExpressionValue.False.ToString());
+        Assert.Equal("\"s\"", ((ExpressionValue)"s").ToString());
+        Assert.Equal("1.5", ((ExpressionValue)(double?)1.5).ToString());
+        Assert.Equal("{\"a\":1}", ExpressionValue.FromJsonString("{\"a\":1}").ToString());
+        Assert.Equal("[1,2]", ExpressionValue.FromJsonString("[1,2]").ToString());
+    }
+
+    [Fact]
+    public void ToStringForText_CoversAllValueKinds()
+    {
+        Assert.Null(ExpressionValue.Null.ToStringForText());
+        Assert.Equal("undefined", ExpressionValue.Undefined.ToStringForText());
+        Assert.Equal("true", ExpressionValue.True.ToStringForText());
+        Assert.Equal("false", ExpressionValue.False.ToStringForText());
+        // String is returned unquoted (different from ToString)
+        Assert.Equal("s", ((ExpressionValue)"s").ToStringForText());
+        Assert.Equal("1.5", ((ExpressionValue)(double?)1.5).ToStringForText());
+        Assert.Equal("{\"a\":1}", ExpressionValue.FromJsonString("{\"a\":1}").ToStringForText());
+    }
+
+    [Fact]
+    public void ToStringForEquals_CoversAllValueKinds()
+    {
+        Assert.Null(ExpressionValue.Null.ToStringForEquals());
+        Assert.Null(ExpressionValue.Undefined.ToStringForEquals());
+        Assert.Equal("true", ExpressionValue.True.ToStringForEquals());
+        Assert.Equal("false", ExpressionValue.False.ToStringForEquals());
+        Assert.Equal("1.5", ((ExpressionValue)(double?)1.5).ToStringForEquals());
+        // Strings that look like primitives are normalized (case-insensitive)
+        Assert.Equal("true", ((ExpressionValue)"TruE").ToStringForEquals());
+        Assert.Equal("false", ((ExpressionValue)"FALSE").ToStringForEquals());
+        Assert.Null(((ExpressionValue)"NULL").ToStringForEquals());
+        Assert.Equal("other", ((ExpressionValue)"other").ToStringForEquals());
+        Assert.Equal("{\"a\":1}", ExpressionValue.FromJsonString("{\"a\":1}").ToStringForEquals());
+        Assert.Equal("[1,2]", ExpressionValue.FromJsonString("[1,2]").ToStringForEquals());
+    }
+
+    [Fact]
+    public void Equals_ReturnsFalseForNonExpressionValue()
+    {
+        // Equals(object) short-circuits before the throwing Equals(ExpressionValue) overload
+        Assert.False(ExpressionValue.Null.Equals((object)"not an expression value"));
+        Assert.False(ExpressionValue.Null.Equals((object?)null));
+    }
+
+    [Fact]
+    public void ToBoolLoose_CoversAllValueKinds()
+    {
+        Assert.False(ExpressionValue.Null.ToBoolLoose());
+        Assert.Null(ExpressionValue.Undefined.ToBoolLoose());
+        Assert.True(ExpressionValue.True.ToBoolLoose());
+        Assert.False(ExpressionValue.False.ToBoolLoose());
+        Assert.True(((ExpressionValue)"true").ToBoolLoose());
+        Assert.False(((ExpressionValue)"false").ToBoolLoose());
+        Assert.True(((ExpressionValue)"1").ToBoolLoose());
+        Assert.False(((ExpressionValue)"0").ToBoolLoose());
+        Assert.True(((ExpressionValue)"TRUE").ToBoolLoose());
+        Assert.False(((ExpressionValue)"FALSE").ToBoolLoose());
+        Assert.Null(((ExpressionValue)"maybe").ToBoolLoose());
+        // Strings that aren't literally "1"/"0" but parse numerically to 1/0 hit the ParseNumber fallback
+        Assert.True(((ExpressionValue)"1.0").ToBoolLoose());
+        Assert.False(((ExpressionValue)"0.0").ToBoolLoose());
+        Assert.Null(((ExpressionValue)"7").ToBoolLoose());
+        Assert.True(((ExpressionValue)(double?)1).ToBoolLoose());
+        Assert.False(((ExpressionValue)(double?)0).ToBoolLoose());
+        Assert.Null(((ExpressionValue)(double?)5).ToBoolLoose());
+        // Object/Array are not boolean-convertible
+        Assert.Null(ExpressionValue.FromJsonString("{}").ToBoolLoose());
+        Assert.Null(ExpressionValue.FromJsonString("[]").ToBoolLoose());
+    }
+
+    [Fact]
+    public void TryDeserialize_ArraysAndObjects()
+    {
+        // Array into a List<int>
+        Assert.True(ExpressionValue.FromJsonString("[1,2,3]").TryDeserialize<List<int>>(out var list));
+        Assert.Equal(new List<int> { 1, 2, 3 }, list);
+
+        // Array into a non-enumerable type fails (falls through all branches)
+        Assert.False(ExpressionValue.FromJsonString("[1,2,3]").TryDeserialize<int>(out _));
+
+        // Object into a Dictionary
+        Assert.True(
+            ExpressionValue.FromJsonString("{\"a\":1,\"b\":2}").TryDeserialize<Dictionary<string, int>>(out var dict)
+        );
+        Assert.Equal(2, dict!["b"]);
+
+        // Object into an incompatible shape fails gracefully (caught JsonException)
+        Assert.False(ExpressionValue.FromJsonString("{\"a\":1}").TryDeserialize<List<int>>(out _));
+
+        // Deserializing an object to an unsupported (abstract) type triggers the caught NotSupportedException
+        Assert.False(ExpressionValue.FromJsonString("{\"a\":1}").TryDeserialize<Stream>(out _));
+    }
+
+    [Fact]
+    public void TryDeserialize_NonNullableValueTypeFromNullOrUndefined_Fails()
+    {
+        Assert.False(ExpressionValue.Null.TryDeserialize<int>(out _));
+        Assert.False(ExpressionValue.Undefined.TryDeserialize<int>(out _));
+    }
+
+    [Fact]
+    public void TryDeserialize_StringToUnsupportedType_Fails()
+    {
+        // The string fallback path serializes the value and deserializes to the target type;
+        // a target type with no supported converter (System.Type) surfaces a NotSupportedException
+        // that is caught and reported as failure
+        Assert.False(((ExpressionValue)"hello").TryDeserialize<Type>(out _));
+    }
+
+    [Fact]
+    public void ToObject_NullReturnsNull()
+    {
+#pragma warning disable CS0618 // ToObject is obsolete
+        Assert.Null(ExpressionValue.Null.ToObject());
+#pragma warning restore CS0618
     }
 }
