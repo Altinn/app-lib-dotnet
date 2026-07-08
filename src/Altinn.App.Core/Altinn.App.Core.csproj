@@ -62,4 +62,10 @@
     <InternalsVisibleTo Include="Altinn.Application.For.IntegrationTesting" />
     <InternalsVisibleTo Include="Altinn.Application.For.IntegrationTesting.Scenario" />
   </ItemGroup>
+
+  <!-- Installs Husky.Net git hooks (see .husky/) on restore so all contributors get the pre-commit csharpier hook. Set HUSKY=0 to skip (e.g. in CI). -->
+  <Target Name="husky" BeforeTargets="Restore;CollectPackageReferences" Condition="'$(HUSKY)' != '0' AND '$(CI)' != 'true'">
+    <Exec Command="dotnet tool restore" StandardOutputImportance="Low" StandardErrorImportance="High" WorkingDirectory="$(MSBuildProjectDirectory)/../.." />
+    <Exec Command="dotnet husky install" StandardOutputImportance="Low" StandardErrorImportance="High" WorkingDirectory="$(MSBuildProjectDirectory)/../.." />
+  </Target>
 </Project>
