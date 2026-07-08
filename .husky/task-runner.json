@@ -1,0 +1,19 @@
+{
+   "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
+   "tasks": [
+      {
+         "name": "csharpier-format",
+         "group": "pre-commit",
+         "command": "dotnet",
+         "args": [ "csharpier", "format", "${staged}" ],
+         "include": [ "**/*" ]
+      },
+      {
+         "name": "csharpier-restage",
+         "group": "pre-commit",
+         "command": "git",
+         "args": [ "add", "${staged}" ],
+         "include": [ "**/*" ]
+      }
+   ]
+}
