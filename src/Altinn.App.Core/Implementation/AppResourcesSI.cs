@@ -5,6 +5,7 @@ using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Calculation;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Layout.Components;
 using Altinn.Platform.Storage.Interface.Models;
@@ -541,19 +542,20 @@ public class AppResourcesSI : IAppResources
     }
 
     /// <inheritdoc />
-    public string? GetCalculationConfiguration(string dataTypeId)
+    public CalculationSchema? GetCalculationConfiguration(string dataTypeId)
     {
         using var activity = _telemetry?.StartGetCalculationConfigurationActivity();
         string legalPath = Path.Join(_settings.AppBasePath, _settings.ModelsFolder);
         string filename = Path.Join(legalPath, $"{dataTypeId}.{_settings.CalculationConfigurationFileName}");
         PathHelper.EnsureLegalPath(legalPath, filename);
 
-        string? fileData = null;
-        if (File.Exists(filename))
+        if (!File.Exists(filename))
         {
-            fileData = File.ReadAllText(filename, Encoding.UTF8);
+            return null;
         }
 
-        return fileData;
+        return System.Text.Json.JsonSerializer.Deserialize<CalculationSchema>(
+            File.ReadAllText(filename, Encoding.UTF8)
+        );
     }
 }

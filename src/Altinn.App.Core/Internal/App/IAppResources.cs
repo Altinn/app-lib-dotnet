@@ -1,4 +1,5 @@
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Calculation;
 using Altinn.App.Core.Models.Layout;
 using Altinn.Platform.Storage.Interface.Models;
 
@@ -177,5 +178,5 @@ public interface IAppResources
     /// Gets the calculation configuration for a given data type
     /// </summary>
     /// <returns>The calculation configuration in JSON format represented as string</returns>
-    string? GetCalculationConfiguration(string dataTypeId);
+    CalculationSchema? GetCalculationConfiguration(string dataTypeId);
 }
