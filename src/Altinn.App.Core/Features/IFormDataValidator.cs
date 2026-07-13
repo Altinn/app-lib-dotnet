@@ -19,6 +19,7 @@ public interface IFormDataValidator
 
     /// <summary>
     /// Used for partial validation to ensure that the validator only runs when relevant fields have changed.
+    /// A default "return true" implementation can be used if the validator is quick and does not call external APIs.
     /// </summary>
     /// <param name="current">The current state of the form data</param>
     /// <param name="previous">The previous state of the form data</param>
