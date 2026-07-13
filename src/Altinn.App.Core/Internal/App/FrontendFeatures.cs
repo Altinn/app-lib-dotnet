@@ -26,6 +26,15 @@ public class FrontendFeatures : IFrontendFeatures
         {
             _features.Add("jsonObjectInDataResponse", false);
         }
+
+        if (featureManager.IsEnabledAsync(FeatureFlags.AddInstanceIdentifierToLayoutRequests).Result)
+        {
+            _features.Add("addInstanceIdentifierToLayoutRequests", true);
+        }
+        else
+        {
+            _features.Add("addInstanceIdentifierToLayoutRequests", false);
+        }
     }
 
     /// <inheritdoc />
