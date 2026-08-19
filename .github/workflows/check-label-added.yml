@@ -1,6 +1,9 @@
 name: "Label Check"
 on:
   pull_request:
+    branches:
+      - "main"
+      - "release/**"
     types: [opened, edited, labeled, unlabeled, synchronize]
 
 jobs:

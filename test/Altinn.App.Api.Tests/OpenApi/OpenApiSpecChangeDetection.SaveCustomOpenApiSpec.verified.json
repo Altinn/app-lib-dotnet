@@ -3741,6 +3741,10 @@
           "hiddenPageNotRemove": {
             "type": "string",
             "nullable": true
+          },
+          "missing-from-xsd": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
