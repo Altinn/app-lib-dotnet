@@ -225,6 +225,7 @@ public class FiksArkivDefaultPayloadGeneratorTest
                         CaseFileId = TestHelpers.BindableValueFactory("custom-case-file-id"),
                         CaseFileTitle = TestHelpers.BindableValueFactory("Custom Case File Title"),
                         JournalEntryTitle = TestHelpers.BindableValueFactory("Custom Journal Entry Title"),
+                        CaseFileAdministrativeUnit = TestHelpers.BindableValueFactory("Custom Administrative Unit"),
                         CaseFileClassifications =
                         [
                             Factories.InstanceOwnerClassification(),

@@ -140,6 +140,13 @@ public sealed record FiksArkivMetadataSettings
     public FiksArkivBindableValue<string>? JournalEntryTitle { get; set; }
 
     /// <summary>
+    /// The administrative unit (administrativEnhet) to use for the generated saksmappe (case file) element in the arkivmelding.xml.
+    /// If no value is provided, the application owner's organization code will be used.
+    /// </summary>
+    [JsonPropertyName("caseFileAdministrativeUnit")]
+    public FiksArkivBindableValue<string>? CaseFileAdministrativeUnit { get; set; }
+
+    /// <summary>
     /// Internal validation based on the requirements of <see cref="FiksArkivDefaultPayloadGenerator"/>
     /// </summary>
     internal void Validate(IReadOnlyList<DataType> dataTypes, IAppModel appModelResolver)
@@ -151,6 +158,11 @@ public sealed record FiksArkivMetadataSettings
         CaseFileId?.Validate($"{propertyName}.{nameof(CaseFileId)}", dataTypes, appModelResolver);
         CaseFileTitle?.Validate($"{propertyName}.{nameof(CaseFileTitle)}", dataTypes, appModelResolver);
         JournalEntryTitle?.Validate($"{propertyName}.{nameof(JournalEntryTitle)}", dataTypes, appModelResolver);
+        CaseFileAdministrativeUnit?.Validate(
+            $"{propertyName}.{nameof(CaseFileAdministrativeUnit)}",
+            dataTypes,
+            appModelResolver
+        );
 
         foreach (var classification in CaseFileClassifications ?? [])
         {

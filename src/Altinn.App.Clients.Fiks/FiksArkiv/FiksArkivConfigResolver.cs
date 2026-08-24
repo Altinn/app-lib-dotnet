@@ -118,8 +118,22 @@ internal sealed class FiksArkivConfigResolver : IFiksArkivConfigResolver
                 x => ParseString(x, nameof(FiksArkivMetadataSettings.CaseFileId)),
                 cancellationToken
             );
+            var caseFileAdministrativeUnit = await GetBindableConfigValue(
+                layoutState,
+                instance,
+                _fiksArkivSettings.Metadata.CaseFileAdministrativeUnit,
+                x => ParseString(x, nameof(FiksArkivMetadataSettings.CaseFileAdministrativeUnit)),
+                cancellationToken
+            );
 
-            return new FiksArkivDocumentMetadata(systemId, ruleId, caseFileId, caseFileTitle, journalEntryTitle);
+            return new FiksArkivDocumentMetadata(
+                systemId,
+                ruleId,
+                caseFileId,
+                caseFileTitle,
+                journalEntryTitle,
+                caseFileAdministrativeUnit
+            );
         }
         catch (Exception e)
         {

@@ -148,18 +148,20 @@ public class FiksArkivConfigResolverTest
     }
 
     [Theory]
-    [InlineData(null, null, null, null, null)]
-    [InlineData("the-system-id", null, null, null, null)]
-    [InlineData(null, "the-rule-id", null, null, null)]
-    [InlineData(null, null, "the-case-file-id", null, null)]
-    [InlineData(null, null, null, "the-case-file-title", null)]
-    [InlineData(null, null, null, null, "the-journal-entry-title")]
+    [InlineData(null, null, null, null, null, null)]
+    [InlineData("the-system-id", null, null, null, null, null)]
+    [InlineData(null, "the-rule-id", null, null, null, null)]
+    [InlineData(null, null, "the-case-file-id", null, null, null)]
+    [InlineData(null, null, null, "the-case-file-title", null, null)]
+    [InlineData(null, null, null, null, "the-journal-entry-title", null)]
+    [InlineData(null, null, null, null, null, "the-case-file-administrative-unit")]
     public async Task GetArchiveDocumentMetadata_ResolvesCorrectly_StaticValues(
         string? systemId,
         string? ruleId,
         string? caseFileId,
         string? caseFileTitle,
-        string? journalEntryTitle
+        string? journalEntryTitle,
+        string? caseFileAdministrativeUnit
     )
     {
         // Arrange
@@ -174,6 +176,9 @@ public class FiksArkivConfigResolverTest
                 JournalEntryTitle = journalEntryTitle is null
                     ? null
                     : TestHelpers.BindableValueFactory(journalEntryTitle),
+                CaseFileAdministrativeUnit = caseFileAdministrativeUnit is null
+                    ? null
+                    : TestHelpers.BindableValueFactory(caseFileAdministrativeUnit),
             },
         };
         await using var fixture = TestFixture.Create(
@@ -191,6 +196,7 @@ public class FiksArkivConfigResolverTest
         Assert.Equal(caseFileId, result?.CaseFileId);
         Assert.Equal(caseFileTitle, result?.CaseFileTitle);
         Assert.Equal(journalEntryTitle, result?.JournalEntryTitle);
+        Assert.Equal(caseFileAdministrativeUnit, result?.CaseFileAdministrativeUnit);
     }
 
     [Fact]
@@ -202,6 +208,7 @@ public class FiksArkivConfigResolverTest
             systemId = "bound-system-id",
             ruleId = "bound-rule-id",
             caseFileId = "bound-case-file-id",
+            caseFileAdministrativeUnit = "bound-case-file-administrative-unit",
             titles = new { caseFile = "bound-case-file-title", journalEntry = "bound-journal-entry-title" },
         };
         var modelDataType = new DataType { Id = "model" };
@@ -217,6 +224,10 @@ public class FiksArkivConfigResolverTest
                 CaseFileId = TestHelpers.BindableValueFactory<string>(modelDataType.Id, "caseFileId"),
                 CaseFileTitle = TestHelpers.BindableValueFactory<string>(modelDataType.Id, "titles.caseFile"),
                 JournalEntryTitle = TestHelpers.BindableValueFactory<string>(modelDataType.Id, "titles.journalEntry"),
+                CaseFileAdministrativeUnit = TestHelpers.BindableValueFactory<string>(
+                    modelDataType.Id,
+                    "caseFileAdministrativeUnit"
+                ),
             },
         };
 
@@ -259,6 +270,7 @@ public class FiksArkivConfigResolverTest
         Assert.Equal(model.caseFileId, result.CaseFileId);
         Assert.Equal(model.titles.caseFile, result.CaseFileTitle);
         Assert.Equal(model.titles.journalEntry, result.JournalEntryTitle);
+        Assert.Equal(model.caseFileAdministrativeUnit, result.CaseFileAdministrativeUnit);
     }
 
     [Fact]

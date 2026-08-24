@@ -29,7 +29,7 @@
     <saksaar>2025</saksaar>
     <saksdato>2025-10-24</saksdato>
     <administrativEnhet>
-      <navn xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">ttd</navn>
+      <navn xmlns="https://ks-no.github.io/standarder/fiks-protokoll/fiks-arkiv/metadatakatalog/v1">Custom Administrative Unit</navn>
     </administrativEnhet>
   </mappe>
   <registrering xsi:type="journalpost">

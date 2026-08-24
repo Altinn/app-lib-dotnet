@@ -80,7 +80,10 @@ internal sealed class FiksArkivDefaultPayloadGenerator : IFiksArkivPayloadGenera
         {
             Tittel = documentMetadata?.CaseFileTitle ?? defaultDocumentTitle,
             OffentligTittel = documentMetadata?.CaseFileTitle ?? defaultDocumentTitle,
-            AdministrativEnhet = new AdministrativEnhet { Navn = documentCreator },
+            AdministrativEnhet = new AdministrativEnhet
+            {
+                Navn = documentMetadata?.CaseFileAdministrativeUnit ?? documentCreator,
+            },
             Saksaar = now.Year,
             Saksdato = now.UtcDateTime,
             ReferanseEksternNoekkel = new EksternNoekkel
