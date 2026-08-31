@@ -17,9 +17,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
         with:
-          dotnet-version:
-            - 8.0.x
-            - 10.0.x
+          dotnet-version: |
+            8.0.x
+            10.0.x
       - name: Set up JDK 11
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
