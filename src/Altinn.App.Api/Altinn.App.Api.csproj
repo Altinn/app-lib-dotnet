@@ -53,8 +53,17 @@
   </ItemGroup>
 
   <Target Name="CreateExperimentalPropsFile" AfterTargets="Build" Condition="'$(MinVerVersionOverride)'!=''">
-    <!-- For PR/experimental builds we need to rename the props file (only happens in CI) -->
-    <Move SourceFiles="packaging/Altinn.App.Api.props" DestinationFiles="packaging/Altinn.App.Api.Experimental.props"/>
+    <!--
+      For PR/experimental builds we need to rename the props file (only happens in CI).
+      Now that this project multi-targets net8.0/net10.0, AfterTargets="Build" fires once per
+      inner per-TFM build, so the source file is already renamed by the time the second one runs.
+      Guard with Exists() to make the rename idempotent.
+    -->
+    <Move
+      SourceFiles="packaging/Altinn.App.Api.props"
+      DestinationFiles="packaging/Altinn.App.Api.Experimental.props"
+      Condition="Exists('packaging/Altinn.App.Api.props')"
+    />
   </Target>
 
   <ItemGroup>
