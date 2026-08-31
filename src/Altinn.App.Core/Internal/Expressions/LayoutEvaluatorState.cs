@@ -235,7 +235,9 @@ public class LayoutEvaluatorState
     public async Task<DataReference[]> GetResolvedKeys(DataReference reference)
     {
         var data = await DataAccessor.GetFormDataWrapper(reference.DataElementIdentifier);
-        return data.GetResolvedKeys(reference);
+        return data.GetResolvedKeys(reference.Field)
+            .Select(resolvedField => reference with { Field = resolvedField })
+            .ToArray();
     }
 
     /// <summary>
@@ -445,7 +447,7 @@ public class LayoutEvaluatorState
         return _componentModel?.DefaultDataType;
     }
 
-    internal LayoutEvaluatorState? WithDataAccessor(IInstanceDataAccessor dataAccessor)
+    internal LayoutEvaluatorState WithDataAccessor(IInstanceDataAccessor dataAccessor)
     {
         return new LayoutEvaluatorState(
             dataAccessor,
