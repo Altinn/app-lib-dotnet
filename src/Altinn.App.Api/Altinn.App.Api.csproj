@@ -52,12 +52,20 @@
     <None Include="packaging/Altinn.App.Api.Experimental.props" Pack="true" PackagePath="build/" Visible="true" Condition="'$(MinVerVersionOverride)'!=''" />
   </ItemGroup>
 
-  <Target Name="CreateExperimentalPropsFile" AfterTargets="Build" Condition="'$(MinVerVersionOverride)'!=''">
+  <Target
+    Name="CreateExperimentalPropsFile"
+    AfterTargets="Build"
+    Condition="'$(MinVerVersionOverride)'!='' AND '$(TargetFramework)'==''"
+  >
     <!--
       For PR/experimental builds we need to rename the props file (only happens in CI).
-      Now that this project multi-targets net8.0/net10.0, AfterTargets="Build" fires once per
-      inner per-TFM build, so the source file is already renamed by the time the second one runs.
-      Guard with Exists() to make the rename idempotent.
+      Now that this project multi-targets net8.0/net10.0, MSBuild runs the inner per-TFM builds
+      in parallel (BuildInParallel defaults to true for cross-targeting builds), so running this
+      from each inner build would race two processes renaming the same source file. Restrict it
+      to the outer cross-targeting build instead (TargetFramework is empty there), which only
+      runs once, after both inner builds have already completed. Keep the Exists() guard too, so
+      re-running `dotnet build` without a clean (source already renamed from a prior run) doesn't
+      fail the build.
     -->
     <Move
       SourceFiles="packaging/Altinn.App.Api.props"
