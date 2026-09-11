@@ -10,7 +10,7 @@ jobs:
     name: Add issue to Team Altinn Studio project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/add-to-project@828acb646a0a199a64596fa740761743d5f01b00 # main
+      - uses: actions/add-to-project@cbad230d1debaae844a2c6f675327ab6c537e0f1 # main
         with:
           project-url: https://github.com/orgs/Altinn/projects/164
           github-token: ${{ secrets.ASSIGN_PROJECT_TOKEN }}
