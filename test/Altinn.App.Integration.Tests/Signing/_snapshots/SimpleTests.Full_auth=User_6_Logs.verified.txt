@@ -1,0 +1,28 @@
+﻿[basic/signing-simple] [INIT INFO] Fixture configuration updated
+[basic/signing-simple] [INIT INFO] Scenario 'signing-simple' specified but no services directory found at /App/scenario-overrides/services
+[basic/signing-simple] [INFO] ### Request: Instances.PostSimplified - User: User/1337/501337, AuthLevel: 3, AuthMethod: BankID
+[basic/signing-simple] [INFO] IInstantiationValidator.Validate
+[basic/signing-simple] [INFO] IProcessTaskStart.Start
+[basic/signing-simple] [INFO] IInstantiationProcessor.DataCreation
+[basic/signing-simple] [INFO] ### Response: Instances.PostSimplified - CreatedResult, StatusCode: 201
+[basic/signing-simple] [INFO] ### Request: Process.NextElement - User: User/1337/501337, AuthLevel: 3, AuthMethod: BankID
+[basic/signing-simple] [INFO] IValidator.Validate
+[basic/signing-simple] [INFO] ITaskValidator.ValidateTask
+[basic/signing-simple] [INFO] IDataElementValidator.ValidateDataElement
+[basic/signing-simple] [INFO] IFormDataValidator.ValidateFormData
+[basic/signing-simple] [INFO] IProcessTaskEnd.End
+[basic/signing-simple] [INFO] IDataProcessor.ProcessDataRead
+[basic/signing-simple] [INFO] IExternalApiClient.GetExternalApiDataAsync
+[basic/signing-simple] [INFO] IProcessEnd.End
+[basic/signing-simple] [INFO] ### Response: Process.NextElement - OkObjectResult, StatusCode: 200
+[basic/signing-simple] [INFO] ### Request: Instances.Get - User: User/1337/501337, AuthLevel: 3, AuthMethod: BankID
+[basic/signing-simple] [INFO] ### Response: Instances.Get - OkObjectResult, StatusCode: 200
+[basic/signing-simple] [INFO] ### Request: ApplicationMetadata.GetAction - User: None/none, AuthLevel: 0, AuthMethod: none
+[basic/signing-simple] [INFO] ### Response: ApplicationMetadata.GetAction - OkObjectResult, StatusCode: 200
+[basic/signing-simple] [INFO] ### Request: Data.Get - User: User/1337/501337, AuthLevel: 3, AuthMethod: BankID
+[basic/signing-simple] [INFO] IDataProcessor.ProcessDataRead
+[basic/signing-simple] [INFO] ### Response: Data.Get - OkObjectResult, StatusCode: 200
+[basic/signing-simple] [INFO] ### Request: Data.Get - User: User/1337/501337, AuthLevel: 3, AuthMethod: BankID
+[basic/signing-simple] [INFO] ### Response: Data.Get - FileStreamResult, StatusCode: 
+[basic/signing-simple] [INFO] ### Request: Data.Get - User: User/1337/501337, AuthLevel: 3, AuthMethod: BankID
+[basic/signing-simple] [INFO] ### Response: Data.Get - FileStreamResult, StatusCode: 
