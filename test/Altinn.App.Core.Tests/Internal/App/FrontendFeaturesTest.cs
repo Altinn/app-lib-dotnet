@@ -17,6 +17,7 @@ public class FrontendFeaturesTest
             { "footer", true },
             { "processActions", true },
             { "jsonObjectInDataResponse", false },
+            { "addInstanceIdentifierToLayoutRequests", false },
         };
         var featureManagerMock = new Mock<IFeatureManager>();
         IFrontendFeatures frontendFeatures = new FrontendFeatures(featureManagerMock.Object);
@@ -34,9 +35,13 @@ public class FrontendFeaturesTest
             { "footer", true },
             { "processActions", true },
             { "jsonObjectInDataResponse", true },
+            { "addInstanceIdentifierToLayoutRequests", true },
         };
         var featureManagerMock = new Mock<IFeatureManager>();
         featureManagerMock.Setup(f => f.IsEnabledAsync(FeatureFlags.JsonObjectInDataResponse)).ReturnsAsync(true);
+        featureManagerMock
+            .Setup(f => f.IsEnabledAsync(FeatureFlags.AddInstanceIdentifierToLayoutRequests))
+            .ReturnsAsync(true);
         IFrontendFeatures frontendFeatures = new FrontendFeatures(featureManagerMock.Object);
         var actual = await frontendFeatures.GetFrontendFeatures();
         actual.Should().BeEquivalentTo(expected);
