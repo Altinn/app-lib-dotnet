@@ -45,11 +45,13 @@
     <!-- <None Include="../Altinn.App.Analyzers/bin/$(Configuration)/netstandard2.0/System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="true" /> -->
     <!-- These MSBuild props are applied to the app when they reference the Altinn.App.Api package. Used for <AdditionalFile /> inclusions etc. -->
     <None Include="packaging/Altinn.App.Api.props" Pack="true" PackagePath="build/" Visible="true" Condition="'$(MinVerVersionOverride)'==''" />
+    <None Include="packaging/Altinn.App.Api.targets" Pack="true" PackagePath="build/" Visible="true" Condition="'$(MinVerVersionOverride)'==''" />
     <!--
       When we do PR builds/experimental releases we set tne MinVerVersionOverride from CI, and we also append '.Experimental' to package IDs.
       The props file name must match the package ID for the package it is included in.
      -->
     <None Include="packaging/Altinn.App.Api.Experimental.props" Pack="true" PackagePath="build/" Visible="true" Condition="'$(MinVerVersionOverride)'!=''" />
+    <None Include="packaging/Altinn.App.Api.Experimental.targets" Pack="true" PackagePath="build/" Visible="true" Condition="'$(MinVerVersionOverride)'!=''" />
   </ItemGroup>
 
   <Target
@@ -58,7 +60,7 @@
     Condition="'$(MinVerVersionOverride)'!='' AND '$(TargetFramework)'==''"
   >
     <!--
-      For PR/experimental builds we need to rename the props file (only happens in CI).
+      For PR/experimental builds we need to rename the props and targets files (only happens in CI).
       Now that this project multi-targets net8.0/net10.0, MSBuild runs the inner per-TFM builds
       in parallel (BuildInParallel defaults to true for cross-targeting builds), so running this
       from each inner build would race two processes renaming the same source file. Restrict it
@@ -68,8 +70,8 @@
       fail the build.
     -->
     <Move
-      SourceFiles="packaging/Altinn.App.Api.props"
-      DestinationFiles="packaging/Altinn.App.Api.Experimental.props"
+      SourceFiles="packaging/Altinn.App.Api.props;packaging/Altinn.App.Api.targets"
+      DestinationFiles="packaging/Altinn.App.Api.Experimental.props;packaging/Altinn.App.Api.Experimental.targets"
       Condition="Exists('packaging/Altinn.App.Api.props')"
     />
   </Target>
