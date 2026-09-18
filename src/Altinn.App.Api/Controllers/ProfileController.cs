@@ -1,4 +1,3 @@
-using Altinn.App.Api.Helpers;
 using Altinn.App.Core.Features.Auth;
 using Altinn.Platform.Profile.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -39,7 +38,7 @@ public class ProfileController : Controller
             case Authenticated.User user:
             {
                 var details = await user.LoadDetails(validateSelectedParty: false);
-                return Ok(PartySsnMasking.MaskUserProfile(details.Profile));
+                return Ok(details.Profile);
             }
             default:
                 return BadRequest($"Unknown authentication context: {context.GetType().Name}");
