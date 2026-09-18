@@ -72,7 +72,15 @@ internal static class Utf8JsonReaderExtensions
                 writer.WriteCommentValue(reader.ValueSpan);
                 break;
             case JsonTokenType.String:
-                writer.WriteStringValue(reader.ValueSpan);
+                if (reader.ValueIsEscaped || reader.HasValueSequence)
+                {
+                    // Utf8JsonWriter can't write raw escaped strings, so we need to get the actual string value
+                    writer.WriteStringValue(reader.GetString());
+                }
+                else
+                {
+                    writer.WriteStringValue(reader.ValueSpan);
+                }
                 break;
             case JsonTokenType.Number:
                 if (reader.HasValueSequence)

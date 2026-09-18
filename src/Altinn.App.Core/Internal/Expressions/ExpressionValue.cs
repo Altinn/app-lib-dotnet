@@ -559,6 +559,21 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
     /// <returns>Whether the conversion was successful</returns>
     public bool TryDeserialize(Type type, out object? result)
     {
+        if (type == typeof(object))
+        {
+            result = ValueKind switch
+            {
+                JsonValueKind.Null => null,
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.String => String,
+                JsonValueKind.Number => Number,
+                JsonValueKind.Object => JsonElement,
+                JsonValueKind.Array => JsonElement,
+                _ => throw new InvalidOperationException("Invalid value kind"),
+            };
+            return true;
+        }
         // Value types can be Nullable<T>, so assign underlyingType accordingly
         Type underlyingType;
         if (type.IsValueType)
@@ -752,7 +767,6 @@ public readonly struct ExpressionValue : IEquatable<ExpressionValue>
                 break;
             case JsonValueKind.Object:
             case JsonValueKind.Array:
-                // writer.WriteRawFormattedValue(_stringValueNotNull);
                 JsonSerializer.Serialize(writer, JsonElement);
                 break;
             default:
