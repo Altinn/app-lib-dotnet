@@ -555,7 +555,8 @@ public class AppResourcesSI : IAppResources
         }
 
         return System.Text.Json.JsonSerializer.Deserialize<CalculationSchema>(
-            File.ReadAllText(filename, Encoding.UTF8)
+            File.ReadAllText(filename, Encoding.UTF8),
+            _jsonSerializerOptions
         );
     }
 }

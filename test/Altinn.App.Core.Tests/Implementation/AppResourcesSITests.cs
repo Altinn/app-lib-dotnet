@@ -1,8 +1,10 @@
+using System.Text.Json;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.ExternalApi;
 using Altinn.App.Core.Implementation;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Models;
+using Altinn.App.Core.Models.Calculation;
 using Altinn.App.Core.Tests.TestUtils;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
@@ -280,6 +282,77 @@ public class AppResourcesSITests
         );
         var actual = appResources.GetApplicationBPMNProcess();
         actual.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetCalculationConfiguration_deserializes_file_from_disk()
+    {
+        IAppResources appResources = GetAppResourcesForCalculation();
+
+        CalculationSchema? actual = appResources.GetCalculationConfiguration("default");
+
+        Assert.NotNull(actual);
+        Assert.Equal(2, actual.Calculations.Count);
+        Assert.Equal("skjema.calculated-fixed-value", actual.Calculations[0].Field);
+        Assert.Equal("skjema.children[].total", actual.Calculations[1].Field);
+        // The expression is a function call and must round-trip as such
+        Assert.Equal(
+            """["concat","Hello ",["dataModel","skjema.name"]]""",
+            JsonSerializer.Serialize(actual.Calculations[0].Expression)
+        );
+    }
+
+    [Fact]
+    public void GetCalculationConfiguration_returns_null_when_file_is_missing()
+    {
+        IAppResources appResources = GetAppResourcesForCalculation();
+
+        CalculationSchema? actual = appResources.GetCalculationConfiguration("does-not-exist");
+
+        Assert.Null(actual);
+    }
+
+    [Fact]
+    public void GetCalculationConfiguration_accepts_comments_in_file()
+    {
+        IAppResources appResources = GetAppResourcesForCalculation();
+
+        CalculationSchema? actual = appResources.GetCalculationConfiguration("comments");
+
+        Assert.NotNull(actual);
+        var calculation = Assert.Single(actual.Calculations);
+        Assert.Equal("skjema.name", calculation.Field);
+        Assert.Equal("\"fixed\"", JsonSerializer.Serialize(calculation.Expression));
+    }
+
+    [Fact]
+    public void GetCalculationConfiguration_throws_on_invalid_json()
+    {
+        IAppResources appResources = GetAppResourcesForCalculation();
+
+        Assert.Throws<JsonException>(() => appResources.GetCalculationConfiguration("invalid"));
+    }
+
+    [Fact]
+    public void GetCalculationConfiguration_throws_on_legacy_dictionary_format()
+    {
+        // Before the "calculations" property became a list it was an object keyed by field name.
+        // Such files are no longer supported and must be rejected rather than silently ignored.
+        IAppResources appResources = GetAppResourcesForCalculation();
+
+        Assert.Throws<JsonException>(() => appResources.GetCalculationConfiguration("legacy"));
+    }
+
+    private IAppResources GetAppResourcesForCalculation()
+    {
+        AppSettings appSettings = new()
+        {
+            AppBasePath = _appBasePath,
+            ModelsFolder = "Calculation" + Path.DirectorySeparatorChar,
+        };
+        var settings = Options.Create(appSettings);
+        IAppMetadata appMetadata = SetupAppMetadata(settings);
+        return new AppResourcesSI(settings, appMetadata, null!, new NullLogger<AppResourcesSI>(), _telemetry.Object);
     }
 
     private AppSettings GetAppSettings(

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Numerics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Altinn.App.Core.Internal.Expressions;
 using Xunit.Abstractions;
 
@@ -576,5 +577,122 @@ public class ExpressionValueTests(ITestOutputHelper outputHelper)
 #pragma warning disable CS0618 // ToObject is obsolete
         Assert.Null(ExpressionValue.Null.ToObject());
 #pragma warning restore CS0618
+    }
+
+    [Fact]
+    public void TryDeserialize_ToObject_ReturnsClrRepresentationForAllKinds()
+    {
+        Assert.True(ExpressionValue.Null.TryDeserialize<object>(out var nullResult));
+        Assert.Null(nullResult);
+        Assert.True(ExpressionValue.True.TryDeserialize<object>(out var trueResult));
+        Assert.Equal(true, trueResult);
+        Assert.True(((ExpressionValue)"text").TryDeserialize<object>(out var stringResult));
+        Assert.Equal("text", stringResult);
+        Assert.True(((ExpressionValue)2.5).TryDeserialize<object>(out var numberResult));
+        Assert.Equal(2.5, numberResult);
+
+        Assert.True(ExpressionValue.FromJsonString("[1,2]").TryDeserialize<object>(out var arrayResult));
+        var arrayElement = Assert.IsType<JsonElement>(arrayResult);
+        Assert.Equal(JsonValueKind.Array, arrayElement.ValueKind);
+
+        Assert.True(ExpressionValue.FromJsonString("{\"a\":1}").TryDeserialize<object>(out var objectResult));
+        var objectElement = Assert.IsType<JsonElement>(objectResult);
+        Assert.Equal(JsonValueKind.Object, objectElement.ValueKind);
+    }
+
+    [Fact]
+    public void TryDeserialize_ArrayAndObject_ToJsonElementBehaveTheSame()
+    {
+        // Object → JsonElement works through the generic JSON round trip
+        Assert.True(ExpressionValue.FromJsonString("{\"a\":1}").TryDeserialize<JsonElement>(out var objectElement));
+        Assert.Equal(JsonValueKind.Object, objectElement.ValueKind);
+
+        // Array → JsonElement should work the same way, but JsonElement is not IEnumerable
+        Assert.True(ExpressionValue.FromJsonString("[1,2]").TryDeserialize<JsonElement>(out var arrayElement));
+        Assert.Equal(JsonValueKind.Array, arrayElement.ValueKind);
+    }
+
+    private sealed class OrderLine
+    {
+        [JsonPropertyName("price")]
+        public decimal? Price { get; set; }
+
+        [JsonPropertyName("quantity")]
+        public int Quantity { get; set; }
+
+        [JsonPropertyName("tags")]
+        public List<string>? Tags { get; set; }
+    }
+
+    [Fact]
+    public void TryDeserialize_ObjectAndArray_ToDataModelTypes()
+    {
+        var orderLine = ExpressionValue.FromJsonString("""{"price":200.5,"quantity":2,"tags":["a","b"]}""");
+        Assert.True(orderLine.TryDeserialize<OrderLine>(out var line));
+        Assert.NotNull(line);
+        Assert.Equal(200.5m, line.Price);
+        Assert.Equal(2, line.Quantity);
+        Assert.Equal(["a", "b"], line.Tags);
+
+        var lines = ExpressionValue.FromJsonString("""[{"price":1,"quantity":1},{"price":2,"quantity":2}]""");
+        Assert.True(lines.TryDeserialize<List<OrderLine>>(out var lineList));
+        Assert.Equal(2, lineList!.Count);
+        Assert.Equal(2m, lineList[1].Price);
+
+        Assert.True(ExpressionValue.FromJsonString("[1.5,2]").TryDeserialize<decimal[]>(out var decimals));
+        Assert.Equal([1.5m, 2m], decimals!);
+
+        // Array into a string target must fail even though string implements IEnumerable
+        Assert.False(ExpressionValue.FromJsonString("[1,2]").TryDeserialize<string>(out _));
+
+        // Wrong element type must fail rather than throw
+        Assert.False(ExpressionValue.FromJsonString("[\"a\"]").TryDeserialize<List<int>>(out _));
+    }
+
+    [Fact]
+    public void Serialize_ObjectAndArray_PreserveRawNumbersAndEscapedStrings()
+    {
+        // Numbers must not be rewritten through double (precision loss, 1.10 → 1.1, big integers rounded),
+        // and strings must be encoded the same way System.Text.Json encodes a JsonElement.
+        const string objectJson = """{"big":12345678901234567890123,"fixed":1.10,"text":"a\"bæ"}""";
+        const string arrayJson = """[12345678901234567890123,1.10,"a\"b"]""";
+
+        var serializedObject = JsonSerializer.Serialize(ExpressionValue.FromJsonString(objectJson));
+        Assert.Equal(JsonSerializer.Serialize(JsonDocument.Parse(objectJson).RootElement), serializedObject);
+        Assert.Contains("12345678901234567890123", serializedObject);
+        Assert.Contains("1.10", serializedObject);
+
+        Assert.Equal(
+            JsonSerializer.Serialize(JsonDocument.Parse(arrayJson).RootElement),
+            JsonSerializer.Serialize(ExpressionValue.FromJsonString(arrayJson))
+        );
+    }
+
+    [Fact]
+    public void Serialize_ObjectAndArray_RespectIndentationOfOuterWriter()
+    {
+        var outer = new Dictionary<string, ExpressionValue>
+        {
+            ["obj"] = ExpressionValue.FromJsonString("""{"a":[1,2],"b":{"c":null}}"""),
+        };
+
+        var indented = JsonSerializer.Serialize(outer, new JsonSerializerOptions { WriteIndented = true });
+
+        var expected = """
+            {
+              "obj": {
+                "a": [
+                  1,
+                  2
+                ],
+                "b": {
+                  "c": null
+                }
+              }
+            }
+            """.ReplaceLineEndings();
+        Assert.Equal(expected, indented.ReplaceLineEndings());
+        // Compact output is unchanged
+        Assert.Equal("""{"obj":{"a":[1,2],"b":{"c":null}}}""", JsonSerializer.Serialize(outer));
     }
 }
