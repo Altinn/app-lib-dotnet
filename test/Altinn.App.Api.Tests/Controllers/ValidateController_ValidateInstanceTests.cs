@@ -172,10 +172,10 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
         var issue = parsedResponse[0];
 
         Assert.Equal(
-            "Et felt bryter reglene satt av XSD. Melding: The element 'melding' has invalid child element 'missing-from-xsd'. List of possible elements expected: 'tag-with-attribute, hidden, SF_test, hiddenNotRemove, hiddenPage, hiddenPageNotRemove'.",
+            "Feltet /Skjema/melding/missing-from-xsd bryter reglene satt av XSD. Melding: The element 'melding' has invalid child element 'missing-from-xsd'. List of possible elements expected: 'tag-with-attribute, hidden, SF_test, hiddenNotRemove, hiddenPage, hiddenPageNotRemove'.",
             issue.Description
         );
-        Assert.Null(issue.Field); // XSD validator does not provide field references, only the data element id (would be nice if that could be fixed)
+        Assert.Null(issue.Field); // XSD validator does not provide field references (data model bindings), only the xml path in the message
         Assert.Equal(DataGuid.ToString(), issue.DataElementId);
         Assert.Equal(ValidationIssueSeverity.Error, issue.Severity);
         Assert.Equal("Xsd", issue.Source);
