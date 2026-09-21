@@ -150,7 +150,7 @@ public static class TestAuthentication
             null,
             false,
             applicationMetadata ?? NewApplicationMetadata(),
-            () => null,
+            () => [],
             _ => Task.FromResult<UserProfile?>(null),
             _ => Task.FromResult<Party?>(null),
             _ => Task.FromResult<Party>(null!),
@@ -218,7 +218,7 @@ public static class TestAuthentication
             null,
             true,
             applicationMetadata ?? NewApplicationMetadata(),
-            getSelectedParty: () => $"{userPartyId}",
+            getSelectedPartyCookieValues: () => [$"{userPartyId}"],
             getUserProfile: uid =>
             {
                 Assert.Equal(userId, uid);
@@ -312,7 +312,7 @@ public static class TestAuthentication
             null,
             true,
             applicationMetadata ?? NewApplicationMetadata(),
-            getSelectedParty: () => $"{partyId}",
+            getSelectedPartyCookieValues: () => [$"{partyId}"],
             getUserProfile: uid =>
             {
                 Assert.Equal(userId, uid);
@@ -412,7 +412,7 @@ public static class TestAuthentication
             null,
             true,
             applicationMetadata ?? NewApplicationMetadata(),
-            getSelectedParty: () => throw new NotImplementedException(),
+            getSelectedPartyCookieValues: () => throw new NotImplementedException(),
             getUserProfile: _ => throw new NotImplementedException(),
             lookupUserParty: _ => throw new NotImplementedException(),
             lookupOrgParty: orgNo =>
@@ -496,7 +496,7 @@ public static class TestAuthentication
             null,
             true,
             applicationMetadata ?? NewApplicationMetadata(org: org),
-            getSelectedParty: () => throw new NotImplementedException(),
+            getSelectedPartyCookieValues: () => throw new NotImplementedException(),
             getUserProfile: _ => throw new NotImplementedException(),
             lookupUserParty: _ => throw new NotImplementedException(),
             lookupOrgParty: orgNo =>
@@ -606,7 +606,7 @@ public static class TestAuthentication
             null,
             true,
             applicationMetadata ?? NewApplicationMetadata(),
-            getSelectedParty: () => throw new NotImplementedException(),
+            getSelectedPartyCookieValues: () => throw new NotImplementedException(),
             getUserProfile: _ => throw new NotImplementedException(),
             lookupUserParty: _ => throw new NotImplementedException(),
             lookupOrgParty: orgNo =>
