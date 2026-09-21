@@ -245,8 +245,8 @@ public sealed class DataModelFieldCalculatorTests
         [JsonPropertyName("formData")]
         public JsonElement? FormData { get; set; }
 
-        // Multiple data elements. The calculation runs against the first element in the list,
-        // but expressions may reference the other data models. Either this or <see cref="FormData"/> must be set.
+        // Multiple data elements. The calculation runs against every element whose data type has a calculation config,
+        // and expressions may reference the other data models. Either this or <see cref="FormData"/> must be set.
         [JsonPropertyName("dataModels")]
         public List<DataModelAndElement>? DataModels { get; set; }
 
