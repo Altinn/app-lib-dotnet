@@ -116,7 +116,8 @@ internal sealed class XsdValidator : IValidator
             {
                 // Validate a DOM instead of a streaming reader so that the validation events carry the
                 // offending node (SourceObject), which lets us report the full path of the invalid field.
-                var document = new XmlDocument { XmlResolver = null };
+                // Whitespace-only text must be kept, otherwise values like "   " would validate as empty strings.
+                var document = new XmlDocument { XmlResolver = null, PreserveWhitespace = true };
                 using (var reader = XmlReader.Create(new MemoryAsStream(serializedFormData), readerSettings))
                 {
                     document.Load(reader);
@@ -151,7 +152,8 @@ internal sealed class XsdValidator : IValidator
             {
                 { "schema", dataType.Id },
                 { "message", message },
-                { "path", path ?? string.Empty },
+                // Fall back to the document itself when the offending node is unknown (e.g. malformed xml)
+                { "path", path ?? "/" },
             },
         };
     }

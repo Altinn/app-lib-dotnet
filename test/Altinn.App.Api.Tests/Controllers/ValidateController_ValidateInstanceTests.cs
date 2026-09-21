@@ -182,4 +182,42 @@ public class ValidateControllerValidateInstanceTests : ApiTestBase, IClassFixtur
 
         _dataProcessorMock.Verify();
     }
+
+    [Fact]
+    public async Task ValidateInstance_WithXsdValidator_WhitespaceOnlyValueIsPreserved()
+    {
+        OverrideServicesForThisTest = (services) =>
+        {
+            services.AddTransient<IValidator, XsdValidator>();
+        };
+
+        TestData.UpdateXmlDataElement(
+            Org,
+            App,
+            InstanceOwnerPartyId,
+            InstanceGuid,
+            DataGuid,
+            new Skjema()
+            {
+                Melding = new()
+                {
+                    Name = "Name is required in layout",
+                    // The xsd requires minLength 1 for random, and whitespace must count as content
+                    Random = "   ",
+                },
+            }
+        );
+
+        var response = await CallValidateInstanceApi();
+        var responseString = await LogResponse(response);
+
+        response.Should().HaveStatusCode(HttpStatusCode.OK);
+        var parsedResponse = ParseResponse<List<ValidationIssue>>(responseString);
+
+        // The nullable missing-from-xsd element is always serialized (xsi:nil) and always fails, but random must not
+        var issue = Assert.Single(parsedResponse);
+        Assert.Equal("/Skjema/melding/missing-from-xsd", issue.CustomTextParameters?["path"]);
+
+        _dataProcessorMock.Verify();
+    }
 }
