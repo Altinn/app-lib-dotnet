@@ -654,6 +654,7 @@
             "name": "optionsId",
             "in": "path",
             "description": "OptionsId from a layout component.",
+            "required": true,
             "schema": {
               "enum": [
                 "fileSourceOptions"
@@ -731,6 +732,7 @@
             "name": "optionsId",
             "in": "path",
             "description": "OptionsId from a layout component.",
+            "required": true,
             "schema": {
               "enum": [
                 "fileSourceOptions"

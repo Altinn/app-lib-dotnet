@@ -779,6 +779,7 @@ public class CustomOpenApiController : Controller
                             {
                                 Name = "optionsId",
                                 Description = "OptionsId from a layout component.",
+                                Required = true,
                                 In = ParameterLocation.Path,
                                 Schema = new OpenApiSchema() { Type = "string", Enum = allOptionsSchemaCollection },
                             },
@@ -846,6 +847,7 @@ public class CustomOpenApiController : Controller
                             {
                                 Name = "optionsId",
                                 Description = "OptionsId from a layout component.",
+                                Required = true,
                                 In = ParameterLocation.Path,
                                 Schema = new OpenApiSchema() { Type = "string", Enum = appOptionsSchemaCollection },
                             },
