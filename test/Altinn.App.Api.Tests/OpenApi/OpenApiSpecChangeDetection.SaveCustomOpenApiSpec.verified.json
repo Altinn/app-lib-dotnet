@@ -3747,6 +3747,10 @@
           "missing-from-xsd": {
             "type": "string",
             "nullable": true
+          },
+          "calculated-fixed-value": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

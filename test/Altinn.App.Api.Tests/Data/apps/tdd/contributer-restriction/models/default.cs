@@ -87,6 +87,14 @@ public class Dummy
     [JsonProperty("missing-from-xsd")]
     [JsonPropertyName("missing-from-xsd")]
     public string? MissingFromXsd { get; set; }
+
+    /// <summary>
+    /// Skjema.calculation.json sets til to "Hello {skjema.name}" to test that the calculation is applied to the field.
+    /// </summary>
+    [XmlElement("calculated-fixed-value", IsNullable = true, Order = 14)]
+    [JsonProperty("calculated-fixed-value")]
+    [JsonPropertyName("calculated-fixed-value")]
+    public string? CalculatedFixedValue { get; set; }
 }
 
 public class TagWithAttribute
