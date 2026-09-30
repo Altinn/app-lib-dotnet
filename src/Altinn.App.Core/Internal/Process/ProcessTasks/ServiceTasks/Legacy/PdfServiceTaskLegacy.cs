@@ -40,8 +40,9 @@ internal class PdfServiceTaskLegacy : IPdfServiceTaskLegacy
         ArgumentNullException.ThrowIfNull(instance);
 
         ApplicationMetadata appMetadata = await _appMetadata.GetApplicationMetadata();
+        // `is not false` compiles against both the current bool and the upcoming bool? property; absent must keep meaning true.
         List<DataType> dataTypesWithPdf = appMetadata.DataTypes.FindAll(dt =>
-            dt.TaskId == taskId && dt.AppLogic?.ClassRef != null && dt.EnablePdfCreation
+            dt.TaskId == taskId && dt.AppLogic?.ClassRef != null && dt.EnablePdfCreation is not false
         );
 
         if (
