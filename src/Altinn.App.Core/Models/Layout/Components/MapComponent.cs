@@ -210,11 +210,11 @@ public sealed record MapGeometriesBinding
     /// <summary>
     /// Parse and validate the geometries bindings of a Map component.
     /// </summary>
+    /// <remarks>
+    /// Row bindings are always resolved against the data element of the <c>geometries</c> binding.
+    /// </remarks>
     /// <returns>null when the component has no <c>geometries</c> binding</returns>
-    /// <exception cref="JsonException">
-    /// A row binding is configured without <c>geometries</c>, has a different <c>dataType</c> than the list,
-    /// or does not point to a property inside the list.
-    /// </exception>
+    /// <exception cref="JsonException">A row binding is configured without <c>geometries</c>.</exception>
     internal static MapGeometriesBinding? Parse(
         IReadOnlyDictionary<string, ModelBinding> dataModelBindings,
         string componentPath
@@ -257,19 +257,23 @@ public sealed record MapGeometriesBinding
                 };
             }
 
-            if (binding.DataType is not null && binding.DataType != geometries.DataType)
-            {
-                throw new JsonException(
-                    $"Component {componentPath} has 'dataModelBindings.{rowBinding.BindingName}' with dataType '{binding.DataType}', which must match the dataType of 'dataModelBindings.{GeometriesBindingName}'."
-                );
-            }
-
-            if (!binding.Field.StartsWith($"{geometries.Field}.", StringComparison.Ordinal))
-            {
-                throw new JsonException(
-                    $"Component {componentPath} has 'dataModelBindings.{rowBinding.BindingName}' = '{binding.Field}', which must point to a property inside the geometries list '{geometries.Field}'."
-                );
-            }
+            // TODO v9: Reject invalid row bindings during parsing. The dataType check needs the default data type of
+            // the layout set, because a binding without dataType and one that names the default data type are the
+            // same binding, and that is not known while parsing. Both checks are disabled until then, so that
+            // layouts that work in the frontend don't fail here.
+            // if (binding.DataType is not null && binding.DataType != geometries.DataType)
+            // {
+            //     throw new JsonException(
+            //         $"Component {componentPath} has 'dataModelBindings.{rowBinding.BindingName}' with dataType '{binding.DataType}', which must match the dataType of 'dataModelBindings.{GeometriesBindingName}'."
+            //     );
+            // }
+            //
+            // if (!binding.Field.StartsWith($"{geometries.Field}.", StringComparison.Ordinal))
+            // {
+            //     throw new JsonException(
+            //         $"Component {componentPath} has 'dataModelBindings.{rowBinding.BindingName}' = '{binding.Field}', which must point to a property inside the geometries list '{geometries.Field}'."
+            //     );
+            // }
 
             return binding;
         }

@@ -383,11 +383,12 @@ public class MapWithGeometriesTests
         Assert.Contains("requires 'dataModelBindings.geometries'", exception.Message);
     }
 
+    // TODO v9: These row bindings should be rejected during parsing. See MapGeometriesBinding.Parse
     [Theory]
     [InlineData("geometryData", "other.data")]
     [InlineData("geometryLabel", "geometriesOther.label")]
     [InlineData("geometryIsEditable", "geometries")]
-    public void Parse_GeometryBindingOutsideGeometries_Throws(string bindingName, string field)
+    public void Parse_GeometryBindingOutsideGeometries_IsAccepted(string bindingName, string field)
     {
         var json = $$"""
             {
@@ -401,32 +402,89 @@ public class MapWithGeometriesTests
             """;
         using var document = JsonDocument.Parse(json);
 
-        var exception = Assert.Throws<JsonException>(() => MapComponent.Parse(document.RootElement, "page", "layout"));
-        Assert.Contains(bindingName, exception.Message);
-        Assert.Contains(field, exception.Message);
-        Assert.Contains("inside the geometries list", exception.Message);
+        var component = MapComponent.Parse(document.RootElement, "page", "layout");
+
+        Assert.Equal(new ModelBinding { Field = field }, component.DataModelBindings[bindingName]);
     }
 
-    [Fact]
-    public void Parse_GeometryBindingWithOtherDataType_Throws()
+    [Theory]
+    // The data type might be the default data type of the layout set, which is unknown while parsing
+    [InlineData("\"geometries\"", "model")]
+    [InlineData("{ \"field\": \"geometries\", \"dataType\": \"model\" }", "otherModel")]
+    public void Parse_GeometryBindingWithOtherDataType_IsAccepted(string geometriesBinding, string dataType)
     {
-        using var document = JsonDocument.Parse(
-            """
+        var json = $$"""
             {
                 "id": "map",
                 "type": "Map",
                 "dataModelBindings": {
-                    "geometries": { "field": "geometries", "dataType": "model" },
-                    "geometryData": { "field": "geometries.data", "dataType": "otherModel" }
+                    "geometries": {{geometriesBinding}},
+                    "geometryData": { "field": "geometries.data", "dataType": "{{dataType}}" }
+                }
+            }
+            """;
+        using var document = JsonDocument.Parse(json);
+
+        var component = MapComponent.Parse(document.RootElement, "page", "layout");
+
+        Assert.NotNull(component.GeometriesBinding);
+        Assert.Equal(
+            new ModelBinding { Field = "geometries.data", DataType = dataType },
+            component.GeometriesBinding.Data
+        );
+    }
+
+    [Fact]
+    public async Task HiddenMap_WithRowBindingNamingTheDefaultDataType_RemovesGeometries()
+    {
+        var collection = new MockedServiceCollection { OutputHelper = _outputHelper };
+        var dataType = collection.AddDataType<SkjemaModel>();
+        collection.AddLayoutSet(
+            dataType,
+            $$"""
+            {
+                "data": {
+                    "layout": [
+                        {
+                            "id": "map",
+                            "type": "Map",
+                            "dataModelBindings": {
+                                "geometries": "geometries",
+                                "geometryData": { "field": "geometries.data", "dataType": "{{dataType.Id}}" }
+                            },
+                            "hidden": ["dataModel", "hideMap"]
+                        }
+                    ]
                 }
             }
             """
         );
+        await using var provider = collection.BuildServiceProvider();
+        var dataMutator = await provider.CreateInstanceDataUnitOfWork(
+            CreateModel(hideMap: true, hideGroup: true),
+            dataType,
+            null
+        );
 
-        var exception = Assert.Throws<JsonException>(() => MapComponent.Parse(document.RootElement, "page", "layout"));
-        Assert.Contains("geometryData", exception.Message);
-        Assert.Contains("otherModel", exception.Message);
-        Assert.Contains("must match the dataType", exception.Message);
+        var state = dataMutator.GetLayoutEvaluatorState();
+        Assert.NotNull(state);
+        var fieldsToRemove = await LayoutEvaluator.GetHiddenFieldsForRemoval(state, evaluateRemoveWhenHidden: false);
+        AssertEqualSets(
+            [
+                "geometries",
+                "geometries[0]",
+                "geometries[0].data",
+                "geometries[0].label",
+                "geometries[0].isEditable",
+                "geometries[0].style",
+                "geometries[1]",
+                "geometries[1].data",
+                "geometries[1].label",
+                "geometries[1].isEditable",
+                "geometries[1].style",
+            ],
+            fieldsToRemove.Select(d => d.Field)
+        );
     }
 
     [Fact]
