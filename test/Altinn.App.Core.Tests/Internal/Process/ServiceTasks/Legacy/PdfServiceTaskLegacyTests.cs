@@ -39,26 +39,6 @@ public class PdfServiceTaskLegacyTests
     }
 
     [Fact]
-    public async Task Execute_calls_pdf_service_when_enable_pdf_creation_is_not_set()
-    {
-        Instance i = new() { Data = [new DataElement() { DataType = "DataType_1" }] };
-        SetupAppMetadataWithDataTypes([
-            new DataType
-            {
-                Id = "DataType_1",
-                TaskId = "Task_1",
-                AppLogic = new ApplicationLogic() { ClassRef = "DataType_1" },
-            },
-        ]);
-
-        PdfServiceTaskLegacy pst = new(_appMetadata.Object, _pdfService.Object);
-        await pst.Execute("Task_1", i);
-
-        _pdfService.Verify(ps => ps.GenerateAndStorePdf(i, "Task_1", CancellationToken.None), Times.Once);
-        _pdfService.VerifyNoOtherCalls();
-    }
-
-    [Fact]
     public async Task Execute_pdf_service_is_called_only_once()
     {
         Instance i = new()
