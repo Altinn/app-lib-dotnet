@@ -2148,8 +2148,9 @@ namespace Altinn.App.Core.Features.Validation.Default
 {
     public class DataAnnotationValidator : Altinn.App.Core.Features.IFormDataValidator
     {
-        public DataAnnotationValidator(Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor, Microsoft.AspNetCore.Mvc.ModelBinding.Validation.IObjectModelValidator objectModelValidator, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.GeneralSettings> generalSettings) { }
+        public DataAnnotationValidator(Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor, Microsoft.AspNetCore.Mvc.ModelBinding.Validation.IObjectModelValidator objectModelValidator, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.GeneralSettings> generalSettings, Microsoft.Extensions.Options.IOptions<Altinn.App.Core.Configuration.AppSettings> appSettings) { }
         public string DataType { get; }
+        public bool ShouldRunAfterRemovingHiddenData { get; }
         public string ValidationSource { get; }
         public bool HasRelevantChanges(object current, object previous) { }
         public System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssue>> ValidateFormData(Altinn.Platform.Storage.Interface.Models.Instance instance, Altinn.Platform.Storage.Interface.Models.DataElement dataElement, object data, string? language) { }
