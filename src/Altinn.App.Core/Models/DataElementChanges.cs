@@ -48,6 +48,11 @@ public abstract class DataElementChange
     }
 
     /// <summary>
+    /// The metadata of the data element
+    /// </summary>
+    private List<KeyValueEntry>? _metadata;
+
+    /// <summary>
     /// The type of update: Create, Update or Delete
     /// </summary>
     public ChangeType Type { get; }
@@ -72,6 +77,37 @@ public abstract class DataElementChange
     /// The contentType of an element in storage
     /// </summary>
     public string ContentType { get; }
+
+    /// <summary>
+    /// The metadata of the data element
+    /// </summary>
+    internal IReadOnlyCollection<KeyValueEntry>? Metadata => _metadata;
+
+    /// <summary>
+    /// If true, no more metadata can be added
+    /// </summary>
+    internal bool Lock { get; set; }
+
+    /// <summary>
+    /// Add metadata to a created data element
+    /// </summary>
+    public void AddMetadata(string key, string value)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentException.ThrowIfNullOrWhiteSpace(value);
+
+        if (Type != ChangeType.Created)
+        {
+            throw new InvalidOperationException("Metadata can only be added to created data elements");
+        }
+
+        if (Lock)
+        {
+            throw new InvalidOperationException("Metadata already locked");
+        }
+        _metadata ??= [];
+        _metadata.Add(new KeyValueEntry { Key = key, Value = value });
+    }
 }
 
 /// <summary>
