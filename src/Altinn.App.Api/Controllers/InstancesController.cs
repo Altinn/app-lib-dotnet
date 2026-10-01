@@ -626,11 +626,45 @@ public class InstancesController : ControllerBase
             );
         }
 
+        Instance? source = null;
+
+        if (isCopyRequest)
+        {
+            string[] sourceSplit =
+                instansiationInstance.SourceInstanceId?.Split("/")
+                ?? throw new ArgumentException("SourceInstanceId is null or not in the correct format");
+            Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
+
+            try
+            {
+                source = await _instanceClient.GetInstance(
+                    app,
+                    org,
+                    party.PartyId,
+                    sourceInstanceGuid,
+                    authenticationMethod: null,
+                    CancellationToken.None
+                );
+            }
+            catch (PlatformHttpException exception)
+            {
+                return StatusCode(
+                    500,
+                    $"Retrieving source instance failed with status code {exception.Response.StatusCode}"
+                );
+            }
+
+            if (source.Status?.IsArchived is not true)
+            {
+                return BadRequest("It is not possible to copy an instance that isn't archived.");
+            }
+        }
+
         Instance instanceTemplate = new()
         {
             InstanceOwner = instansiationInstance.InstanceOwner,
             VisibleAfter = instansiationInstance.VisibleAfter,
-            DueBefore = instansiationInstance.DueBefore,
+            DueBefore = instansiationInstance.DueBefore ?? GetDueBeforeFromSource(application, source),
             Org = application.Org,
         };
 
@@ -667,39 +701,8 @@ public class InstancesController : ControllerBase
 
             processResult = await _processEngine.GenerateProcessStartEvents(request);
 
-            Instance? source = null;
-
-            if (isCopyRequest)
+            if (source is not null)
             {
-                string[] sourceSplit =
-                    instansiationInstance.SourceInstanceId?.Split("/")
-                    ?? throw new ArgumentException("SourceInstanceId is null or not in the correct format");
-                Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
-
-                try
-                {
-                    source = await _instanceClient.GetInstance(
-                        app,
-                        org,
-                        party.PartyId,
-                        sourceInstanceGuid,
-                        authenticationMethod: null,
-                        CancellationToken.None
-                    );
-                }
-                catch (PlatformHttpException exception)
-                {
-                    return StatusCode(
-                        500,
-                        $"Retrieving source instance failed with status code {exception.Response.StatusCode}"
-                    );
-                }
-
-                if (source.Status?.IsArchived is not true)
-                {
-                    return BadRequest("It is not possible to copy an instance that isn't archived.");
-                }
-
                 var copyInstanceValidator = _appImplementationFactory.Get<ICopyInstanceValidator>();
                 if (copyInstanceValidator is not null)
                 {
@@ -730,7 +733,7 @@ public class InstancesController : ControllerBase
                 CancellationToken.None
             );
 
-            if (isCopyRequest && source is not null)
+            if (source is not null)
             {
                 await CopyDataFromSourceInstance(application, instance, source);
             }
@@ -866,6 +869,7 @@ public class InstancesController : ControllerBase
         {
             InstanceOwner = sourceInstance.InstanceOwner,
             VisibleAfter = sourceInstance.VisibleAfter,
+            DueBefore = GetDueBeforeFromSource(application, sourceInstance),
             Status = new() { ReadStatus = ReadStatus.Read },
         };
 
@@ -1288,6 +1292,9 @@ public class InstancesController : ControllerBase
             }
         }
 
+        await CopyIncludedDataValues(application.CopyInstanceSettings, targetInstance, sourceInstance);
+        await CopyIncludedPresentationTexts(application.CopyInstanceSettings, targetInstance, sourceInstance);
+
         if (application.CopyInstanceSettings?.IncludeAttachments != true)
         {
             return;
@@ -1333,6 +1340,88 @@ public class InstancesController : ControllerBase
                 );
             }
         }
+    }
+
+    private static DateTime? GetDueBeforeFromSource(ApplicationMetadata application, Instance? sourceInstance)
+    {
+        if (sourceInstance is null || application.CopyInstanceSettings?.IncludeDueBefore is not true)
+        {
+            return null;
+        }
+
+        return sourceInstance.DueBefore;
+    }
+
+    private async Task CopyIncludedDataValues(
+        CopyInstanceSettings? copyInstanceSettings,
+        Instance targetInstance,
+        Instance sourceInstance
+    )
+    {
+        var values = SelectIncludedValues(copyInstanceSettings?.IncludedDataValues, sourceInstance.DataValues);
+        if (values is null)
+        {
+            return;
+        }
+
+        await _instanceClient.UpdateDataValues(
+            int.Parse(targetInstance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
+            Guid.Parse(targetInstance.Id.Split("/")[1]),
+            new DataValues { Values = values },
+            authenticationMethod: null,
+            CancellationToken.None
+        );
+    }
+
+    private async Task CopyIncludedPresentationTexts(
+        CopyInstanceSettings? copyInstanceSettings,
+        Instance targetInstance,
+        Instance sourceInstance
+    )
+    {
+        var texts = SelectIncludedValues(
+            copyInstanceSettings?.IncludedPresentationTexts,
+            sourceInstance.PresentationTexts
+        );
+        if (texts is null)
+        {
+            return;
+        }
+
+        await _instanceClient.UpdatePresentationTexts(
+            int.Parse(targetInstance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
+            Guid.Parse(targetInstance.Id.Split("/")[1]),
+            new PresentationTexts { Texts = texts },
+            authenticationMethod: null,
+            CancellationToken.None
+        );
+    }
+
+    /// <summary>
+    /// Picks the entries from <paramref name="sourceValues"/> whose keys are listed in <paramref name="includedKeys"/>.
+    /// Returns null when there is nothing to copy.
+    /// </summary>
+    private static Dictionary<string, string>? SelectIncludedValues(
+        List<string>? includedKeys,
+        Dictionary<string, string>? sourceValues
+    )
+    {
+        if (includedKeys is null || includedKeys.Count == 0 || sourceValues is null || sourceValues.Count == 0)
+        {
+            return null;
+        }
+
+        Dictionary<string, string>? selected = null;
+        foreach (string key in includedKeys)
+        {
+            if (sourceValues.TryGetValue(key, out string? value) && value is not null)
+            {
+                selected ??= new Dictionary<string, string>(includedKeys.Count);
+                selected[key] = value;
+            }
+        }
+
+        return selected;
     }
 
     private ActionResult ExceptionResponse(Exception exception, string message)
