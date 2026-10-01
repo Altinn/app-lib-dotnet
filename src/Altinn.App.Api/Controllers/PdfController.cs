@@ -28,7 +28,6 @@ public class PdfController : ControllerBase
 #pragma warning disable CS0618 // Type or member is obsolete
     private readonly IPdfFormatter _pdfFormatter;
     private readonly IAppResources _resources;
-    private readonly IAppModel _appModel;
     private readonly IDataClient _dataClient;
     private readonly IPdfService _pdfService;
 
@@ -38,7 +37,7 @@ public class PdfController : ControllerBase
     /// <param name="instanceClient">The instance client</param>
     /// <param name="pdfFormatter">The pdf formatter service</param>
     /// <param name="resources">The app resource service</param>
-    /// <param name="appModel">The app model service</param>
+    /// <param name="appModel">Unused, kept so the constructor signature does not change</param>
     /// <param name="dataClient">The data client</param>
     /// <param name="pdfService">The PDF service</param>
     public PdfController(
@@ -54,7 +53,6 @@ public class PdfController : ControllerBase
         _instanceClient = instanceClient;
         _pdfFormatter = pdfFormatter;
         _resources = resources;
-        _appModel = appModel;
         _dataClient = dataClient;
         _pdfService = pdfService;
     }
@@ -132,9 +130,6 @@ public class PdfController : ControllerBase
             return NotFound("Did not find data element");
         }
 
-        string appModelclassRef = _resources.GetClassRefForLogicDataType(dataElement.DataType);
-        Type dataType = _appModel.GetModelType(appModelclassRef);
-
         string layoutSetsString = _resources.GetLayoutSets();
         LayoutSets? layoutSets = null;
         LayoutSet? layoutSet = null;
@@ -170,12 +165,10 @@ public class PdfController : ControllerBase
         layoutSettings.Components.ExcludeFromPdf ??= new();
 
         object data = await _dataClient.GetFormData(
-            instanceGuid,
-            dataType,
-            org,
-            app,
-            instanceOwnerPartyId,
-            new Guid(dataElement.Id)
+            instance,
+            dataElement,
+            authenticationMethod: null,
+            CancellationToken.None
         );
 
         layoutSettings = await _pdfFormatter.FormatPdf(layoutSettings, data, instance, layoutSet);
