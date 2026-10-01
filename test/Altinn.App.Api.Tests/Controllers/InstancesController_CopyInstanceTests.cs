@@ -362,8 +362,13 @@ public class InstancesController_CopyInstanceTests
 
     [Theory]
     [InlineData(null)]
+    [InlineData("")]
     [InlineData("*/*")]
+    [InlineData("application/json")]
     [InlineData("application/json, text/html;q=0.9")]
+    [InlineData("text/html;q=0.9, */*")]
+    [InlineData("text/*;q=0.5, application/*")]
+    [InlineData("text/plain")]
     public async Task CopyInstance_CopyInstanceValidationFails_ReturnsJsonWhenHtmlNotPreferred(string? acceptHeader)
     {
         // Arrange
@@ -441,6 +446,9 @@ public class InstancesController_CopyInstanceTests
     [InlineData("text/html")]
     [InlineData("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")]
     [InlineData("application/json;q=0.5, text/html")]
+    [InlineData("text/*")]
+    [InlineData("text/html, */*;q=0.1")]
+    [InlineData("application/json;q=0.2, */*")]
     public async Task CopyInstance_CopyInstanceValidationFails_ReturnsHtmlWhenHtmlPreferred(string acceptHeader)
     {
         // Arrange

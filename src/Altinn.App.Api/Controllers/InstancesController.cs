@@ -42,6 +42,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
+using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 
 namespace Altinn.App.Api.Controllers;
@@ -1775,29 +1776,46 @@ public class InstancesController : ControllerBase
         };
     }
 
+    private static readonly MediaTypeHeaderValue _htmlMediaType = MediaTypeHeaderValue.Parse("text/html");
+    private static readonly MediaTypeHeaderValue _jsonMediaType = MediaTypeHeaderValue.Parse("application/json");
+
     private bool RequestPrefersHtml()
     {
-        if (!Microsoft.Net.Http.Headers.MediaTypeHeaderValue.TryParseList(Request.Headers.Accept, out var accept))
+        if (!MediaTypeHeaderValue.TryParseList(Request.Headers.Accept, out var accept))
         {
             return false;
         }
 
-        double htmlQuality = 0;
-        double jsonQuality = 0;
-        foreach (var mediaType in accept)
+        return AcceptQuality(accept, _htmlMediaType) > AcceptQuality(accept, _jsonMediaType);
+    }
+
+    /// <summary>
+    /// Finds the quality the Accept header assigns to <paramref name="mediaType"/>, using the most specific
+    /// matching media range (exact type, then type wildcard, then */*) as described in RFC 7231 section 5.3.2.
+    /// </summary>
+    private static double AcceptQuality(IList<MediaTypeHeaderValue> accept, MediaTypeHeaderValue mediaType)
+    {
+        double quality = 0;
+        int bestSpecificity = -1;
+        foreach (var range in accept)
         {
-            double quality = mediaType.Quality ?? 1;
-            if (mediaType.MediaType.Equals("text/html", StringComparison.OrdinalIgnoreCase))
+            if (!mediaType.IsSubsetOf(range))
             {
-                htmlQuality = Math.Max(htmlQuality, quality);
+                continue;
             }
-            else if (mediaType.MediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase))
+
+            int specificity =
+                range.MatchesAllTypes ? 0
+                : range.MatchesAllSubTypes ? 1
+                : 2;
+            if (specificity > bestSpecificity)
             {
-                jsonQuality = Math.Max(jsonQuality, quality);
+                bestSpecificity = specificity;
+                quality = range.Quality ?? 1;
             }
         }
 
-        return htmlQuality > jsonQuality;
+        return quality;
     }
 
     private async Task TranslateValidationResult(InstantiationValidationResult validationResult, string? language)
