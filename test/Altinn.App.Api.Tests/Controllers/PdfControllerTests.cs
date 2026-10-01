@@ -373,25 +373,10 @@ public class PdfControllerTests
         var result = await pdfController.GetPdfFormat(_org, _app, _partyId, _instanceId, dataGuid);
 
         Assert.IsType<OkObjectResult>(result);
+        // Only the instance overload returns formData; the obsolete one would hand FormatPdf null.
         _pdfFormatter.Verify(
             f => f.FormatPdf(It.IsAny<LayoutSettings>(), formData, instance, It.IsAny<LayoutSet?>()),
             Times.Once
         );
-#pragma warning disable CS0618 // Type or member is obsolete
-        _dataClient.Verify(
-            d =>
-                d.GetFormData(
-                    It.IsAny<Guid>(),
-                    It.IsAny<Type>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<int>(),
-                    It.IsAny<Guid>(),
-                    It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Never
-        );
-#pragma warning restore CS0618 // Type or member is obsolete
     }
 }
