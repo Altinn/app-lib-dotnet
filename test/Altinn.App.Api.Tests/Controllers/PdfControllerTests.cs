@@ -11,6 +11,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Language;
 using Altinn.App.Core.Internal.Pdf;
 using Altinn.App.Core.Internal.Texts;
+using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -315,5 +316,67 @@ public class PdfControllerTests
                 @"url"":""http://org.apps.tt02.altinn.no/org/app/#/instance/12345/e11e3e0b-a45c-48fb-a968-8d4ddf868c80?pdf=1"
             );
         requestBody.Should().NotContain(@"name"":""frontendVersion");
+    }
+
+    [Fact]
+    public async Task GetPdfFormat_Reads_Form_Data_Through_Instance_Overload()
+    {
+        // The overload taking (instanceGuid, type, org, app, partyId, dataId) throws for data types
+        // that allow application/json, so the format endpoint must use the instance-based one.
+        var dataGuid = Guid.NewGuid();
+        var dataElement = new DataElement { Id = dataGuid.ToString(), DataType = "model" };
+        var instance = new Instance
+        {
+            Org = _org,
+            AppId = $"{_org}/{_app}",
+            Id = $"{_partyId}/{_instanceId}",
+            Process = new ProcessState { CurrentTask = new ProcessElementInfo { ElementId = _taskId } },
+            Data = [dataElement],
+        };
+        _instanceClient
+            .Setup(a =>
+                a.GetInstance(
+                    _app,
+                    _org,
+                    _partyId,
+                    _instanceId,
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(instance);
+
+        var formData = new object();
+        _dataClient
+            .Setup(d =>
+                d.GetFormData(
+                    instance,
+                    dataElement,
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(formData);
+        _pdfFormatter
+            .Setup(f => f.FormatPdf(It.IsAny<LayoutSettings>(), formData, instance, It.IsAny<LayoutSet?>()))
+            .ReturnsAsync((LayoutSettings settings, object _, Instance _, LayoutSet? _) => settings);
+
+        var pdfController = new PdfController(
+            _instanceClient.Object,
+            _pdfFormatter.Object,
+            _appResources.Object,
+            _appModel.Object,
+            _dataClient.Object,
+            new Mock<IPdfService>().Object
+        );
+
+        var result = await pdfController.GetPdfFormat(_org, _app, _partyId, _instanceId, dataGuid);
+
+        Assert.IsType<OkObjectResult>(result);
+        // Only the instance overload returns formData; the obsolete one would hand FormatPdf null.
+        _pdfFormatter.Verify(
+            f => f.FormatPdf(It.IsAny<LayoutSettings>(), formData, instance, It.IsAny<LayoutSet?>()),
+            Times.Once
+        );
     }
 }
