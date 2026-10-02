@@ -1,7 +1,9 @@
+using System.Net;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Features.Notifications.Cancellation;
 using Altinn.App.Core.Features.Notifications.SecretProvider;
+using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -48,7 +50,7 @@ public class NotificationCallbackController(
             return Unauthorized();
         }
 
-        Instance? instance = null;
+        Instance instance;
         try
         {
             instance = await instanceClient.GetInstance(
@@ -59,16 +61,34 @@ public class NotificationCallbackController(
                 StorageAuthenticationMethod.ServiceOwner()
             );
         }
-        catch
+        catch (PlatformHttpException e) when (e.Response.StatusCode == HttpStatusCode.NotFound)
         {
-            logger.LogWarning(
-                "Unable to get instance on notification callback - cannot cancel scheduled notification. Does the app support Maskinporten?"
+            logger.LogInformation(
+                "Instance {InstanceGuid} not found on notification callback - cancelling scheduled notification.",
+                instanceGuid
             );
+            return new NotificationCallbackResponse { SendNotification = false };
+        }
+        catch (Exception e)
+        {
+            // Altinn Notifications retries a failed condition check, and sends the notification if the retry fails too.
+            logger.LogWarning(
+                e,
+                "Unable to get instance {InstanceGuid} on notification callback. Does the app support Maskinporten?",
+                instanceGuid
+            );
+            return StatusCode(StatusCodes.Status500InternalServerError);
         }
 
-        bool shouldSend = instance is null || instantiationNotification.ShouldSend(instance);
+        if (instance.Status?.IsSoftDeleted is true || instance.Status?.IsHardDeleted is true)
+        {
+            return new NotificationCallbackResponse { SendNotification = false };
+        }
 
-        NotificationCallbackResponse response = new() { SendNotification = shouldSend };
+        NotificationCallbackResponse response = new()
+        {
+            SendNotification = instantiationNotification.ShouldSend(instance),
+        };
         return response;
     }
 }
