@@ -23,12 +23,9 @@ jobs:
       - name: dotnet build
         run: dotnet build solutions/All.sln -v m
 
-      # Run one target framework at a time (see dotnet-test.yml).
-      - name: dotnet test (net10.0)
+      # Coverage only needs one target framework; dotnet-test.yml also runs the net8.0 tests.
+      - name: dotnet test
         run: dotnet test solutions/All.sln --no-restore --no-build --results-directory TestResults/ --collect:"XPlat Code Coverage" --filter "Category!=Integration" -v m --framework net10.0
-
-      - name: dotnet test (net8.0)
-        run: dotnet test solutions/MultiTargetTests.slnf --no-restore --no-build --results-directory TestResults/ --collect:"XPlat Code Coverage" --filter "Category!=Integration" -v m --framework net8.0
 
       - name: Generate coverage results
         run: |
