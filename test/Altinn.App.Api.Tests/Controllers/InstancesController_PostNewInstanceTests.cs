@@ -846,8 +846,10 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         TestData.DeleteInstanceAndData(org, app, sourceInstance.Id);
     }
 
-    [Fact]
-    public async Task CopyInstance_SimplifiedEndpoint_CopiesConfiguredValuesFromSource()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CopyInstance_SimplifiedEndpoint_CopiesConfiguredValuesFromSource(bool dueBeforeInRequest)
     {
         var pdfMock = new Mock<IPdfGeneratorClient>(MockBehavior.Strict);
         using var pdfReturnStream = new MemoryStream();
@@ -860,6 +862,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
         DateTime dueBefore = new(2026, 12, 24, 12, 0, 0, DateTimeKind.Utc);
+        DateTime requestDueBefore = new(2027, 1, 15, 12, 0, 0, DateTimeKind.Utc);
         OverrideServicesForThisTest = services =>
         {
             services.AddSingleton(pdfMock.Object);
@@ -868,7 +871,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
                 {
                     app.CopyInstanceSettings!.IncludeDueBefore = true;
                     app.CopyInstanceSettings.IncludedDataValues = ["appVersion", "customerId"];
-                    app.CopyInstanceSettings.IncludedPresentationTexts = ["name"];
+                    app.CopyInstanceSettings.IncludedPresentationTexts = ["name", "Navn"];
                 })
             );
         };
@@ -930,9 +933,18 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
             PatchOperation.Replace(JsonPointer.Create("melding"), JsonNode.Parse("{\"name\": \"Ola Olsen\"}"))
         );
         await UpdateInstanceData(org, app, client, userToken, sourceInstance.Id, dataGuid, patch);
+
+        // "Navn" is derived from melding.name through presentationFields, so the copy must recalculate it from the
+        // copied form data instead of keeping the stale value on the source
+        await instanceClient.UpdatePresentationTexts(
+            instanceOwnerPartyId,
+            sourceInstanceGuid,
+            new PresentationTexts { Texts = new Dictionary<string, string> { ["Navn"] = "Stale name" } }
+        );
         await CompleteInstance(org, app, client, userToken, sourceInstance.Id);
 
         // Copy instance
+        string dueBeforeProperty = dueBeforeInRequest ? $",\"dueBefore\": \"{requestDueBefore:O}\"" : "";
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             AuthorizationSchemes.Bearer,
             userToken
@@ -943,7 +955,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
                     "instanceOwner": {
                         "partyId": "{{instanceOwnerPartyId}}"
                     },
-                    "sourceInstanceId": "{{sourceInstance.Id}}"
+                    "sourceInstanceId": "{{sourceInstance.Id}}"{{dueBeforeProperty}}
                 }
             """;
         using var content = new StringContent(body, Encoding.UTF8, "application/json");
@@ -955,11 +967,12 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         var copiedInstance = JsonSerializer.Deserialize<InstanceResponse>(createResponseContent, JsonSerializerOptions);
         Assert.NotNull(copiedInstance);
         Assert.NotEqual(sourceInstance.Id, copiedInstance.Id);
-        Assert.Equal(dueBefore, copiedInstance.DueBefore);
+        Assert.Equal(dueBeforeInRequest ? requestDueBefore : dueBefore, copiedInstance.DueBefore);
         Assert.Equal("1.2.3", copiedInstance.DataValues["appVersion"]);
         Assert.Equal("42", copiedInstance.DataValues["customerId"]);
         Assert.False(copiedInstance.DataValues.ContainsKey("notCopied"));
         Assert.Equal("Ola Olsen", copiedInstance.PresentationTexts["name"]);
+        Assert.Equal("Ola Olsen", copiedInstance.PresentationTexts["Navn"]);
         Assert.False(copiedInstance.PresentationTexts.ContainsKey("notCopied"));
 
         TestData.DeleteInstanceAndData(org, app, sourceInstance.Id);
