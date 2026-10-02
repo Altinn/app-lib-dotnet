@@ -666,6 +666,11 @@ public class InstancesController : ControllerBase
             VisibleAfter = instansiationInstance.VisibleAfter,
             DueBefore = instansiationInstance.DueBefore ?? GetDueBeforeFromSource(application, source),
             Org = application.Org,
+            DataValues = SelectIncludedValues(application.CopyInstanceSettings?.IncludedDataValues, source?.DataValues),
+            PresentationTexts = SelectIncludedValues(
+                application.CopyInstanceSettings?.IncludedPresentationTexts,
+                source?.PresentationTexts
+            ),
         };
 
         ConditionallySetReadStatus(instanceTemplate);
@@ -870,6 +875,14 @@ public class InstancesController : ControllerBase
             InstanceOwner = sourceInstance.InstanceOwner,
             VisibleAfter = sourceInstance.VisibleAfter,
             DueBefore = GetDueBeforeFromSource(application, sourceInstance),
+            DataValues = SelectIncludedValues(
+                application.CopyInstanceSettings?.IncludedDataValues,
+                sourceInstance.DataValues
+            ),
+            PresentationTexts = SelectIncludedValues(
+                application.CopyInstanceSettings?.IncludedPresentationTexts,
+                sourceInstance.PresentationTexts
+            ),
             Status = new() { ReadStatus = ReadStatus.Read },
         };
 
@@ -1292,9 +1305,6 @@ public class InstancesController : ControllerBase
             }
         }
 
-        await CopyIncludedDataValues(application.CopyInstanceSettings, targetInstance, sourceInstance);
-        await CopyIncludedPresentationTexts(application.CopyInstanceSettings, targetInstance, sourceInstance);
-
         if (application.CopyInstanceSettings?.IncludeAttachments != true)
         {
             return;
@@ -1350,51 +1360,6 @@ public class InstancesController : ControllerBase
         }
 
         return sourceInstance.DueBefore;
-    }
-
-    private async Task CopyIncludedDataValues(
-        CopyInstanceSettings? copyInstanceSettings,
-        Instance targetInstance,
-        Instance sourceInstance
-    )
-    {
-        var values = SelectIncludedValues(copyInstanceSettings?.IncludedDataValues, sourceInstance.DataValues);
-        if (values is null)
-        {
-            return;
-        }
-
-        await _instanceClient.UpdateDataValues(
-            int.Parse(targetInstance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
-            Guid.Parse(targetInstance.Id.Split("/")[1]),
-            new DataValues { Values = values },
-            authenticationMethod: null,
-            CancellationToken.None
-        );
-    }
-
-    private async Task CopyIncludedPresentationTexts(
-        CopyInstanceSettings? copyInstanceSettings,
-        Instance targetInstance,
-        Instance sourceInstance
-    )
-    {
-        var texts = SelectIncludedValues(
-            copyInstanceSettings?.IncludedPresentationTexts,
-            sourceInstance.PresentationTexts
-        );
-        if (texts is null)
-        {
-            return;
-        }
-
-        await _instanceClient.UpdatePresentationTexts(
-            int.Parse(targetInstance.InstanceOwner.PartyId, CultureInfo.InvariantCulture),
-            Guid.Parse(targetInstance.Id.Split("/")[1]),
-            new PresentationTexts { Texts = texts },
-            authenticationMethod: null,
-            CancellationToken.None
-        );
     }
 
     /// <summary>
