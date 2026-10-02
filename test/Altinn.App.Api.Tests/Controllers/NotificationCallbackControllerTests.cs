@@ -1,6 +1,9 @@
 using System.Net;
 using Altinn.App.Api.Controllers;
+using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Maskinporten.Exceptions;
+using Altinn.App.Core.Features.Maskinporten.Models;
 using Altinn.App.Core.Features.Notifications.Cancellation;
 using Altinn.App.Core.Features.Notifications.SecretProvider;
 using Altinn.App.Core.Helpers;
@@ -9,6 +12,9 @@ using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
+using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Language.Flow;
 using Xunit.Abstractions;
@@ -302,11 +308,34 @@ public class NotificationCallbackControllerTests
         Assert.Equal(StatusCodes.Status500InternalServerError, result.StatusCode);
     }
 
-    [Fact]
-    public async Task NotificationCallback_WhenInstanceFetchFails_ReturnsInternalServerError()
+    public static TheoryData<Exception, LogLevel> LookupFailures =>
+        new()
+        {
+            {
+                new OptionsValidationException(
+                    Options.DefaultName,
+                    typeof(MaskinportenSettings),
+                    ["The Authority field is required."]
+                ),
+                LogLevel.Error
+            },
+            { new MaskinportenConfigurationException("No private key configured"), LogLevel.Error },
+            {
+                new OptionsValidationException(Options.DefaultName, typeof(PlatformSettings), ["Invalid settings"]),
+                LogLevel.Warning
+            },
+            { new HttpRequestException("Connection reset"), LogLevel.Warning },
+        };
+
+    [Theory]
+    [MemberData(nameof(LookupFailures))]
+    public async Task NotificationCallback_WhenInstanceFetchFails_ReturnsInternalServerError(
+        Exception exception,
+        LogLevel expectedLevel
+    )
     {
         // Arrange
-        SetupGetInstance().ThrowsAsync(new HttpRequestException("Connection reset"));
+        SetupGetInstance().ThrowsAsync(exception);
         SetupValidCode();
 
         await using var sp = _serviceCollection.BuildStrictServiceProvider();
@@ -324,6 +353,11 @@ public class NotificationCallbackControllerTests
         // Assert
         var result = Assert.IsType<StatusCodeResult>(actionResult.Result);
         Assert.Equal(StatusCodes.Status500InternalServerError, result.StatusCode);
+        var record = Assert.Single(
+            sp.GetRequiredService<FakeLogCollector>().GetSnapshot(),
+            r => r.Exception == exception
+        );
+        Assert.Equal(expectedLevel, record.Level);
     }
 
     [Fact]

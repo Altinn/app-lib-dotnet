@@ -1,6 +1,8 @@
 using System.Net;
 using System.Text.Json.Serialization;
 using Altinn.App.Core.Features;
+using Altinn.App.Core.Features.Maskinporten.Exceptions;
+using Altinn.App.Core.Features.Maskinporten.Models;
 using Altinn.App.Core.Features.Notifications.Cancellation;
 using Altinn.App.Core.Features.Notifications.SecretProvider;
 using Altinn.App.Core.Helpers;
@@ -8,6 +10,7 @@ using Altinn.App.Core.Internal.Instances;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Altinn.App.Api.Controllers;
 
@@ -69,14 +72,19 @@ public class NotificationCallbackController(
             );
             return new NotificationCallbackResponse { SendNotification = false };
         }
+        catch (Exception e) when (IsMaskinportenMisconfigured(e))
+        {
+            logger.LogError(
+                e,
+                "Unable to get instance {InstanceGuid} on notification callback: Maskinporten is not configured for the app, so scheduled notifications can never be cancelled.",
+                instanceGuid
+            );
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
         catch (Exception e)
         {
             // Altinn Notifications retries a failed condition check, and sends the notification if the retry fails too.
-            logger.LogWarning(
-                e,
-                "Unable to get instance {InstanceGuid} on notification callback. Does the app support Maskinporten?",
-                instanceGuid
-            );
+            logger.LogWarning(e, "Unable to get instance {InstanceGuid} on notification callback.", instanceGuid);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
 
@@ -91,6 +99,11 @@ public class NotificationCallbackController(
         };
         return response;
     }
+
+    private static bool IsMaskinportenMisconfigured(Exception e) =>
+        e is MaskinportenConfigurationException
+        || e is OptionsValidationException { OptionsType: var optionsType }
+            && optionsType == typeof(MaskinportenSettings);
 }
 
 /// <summary>
