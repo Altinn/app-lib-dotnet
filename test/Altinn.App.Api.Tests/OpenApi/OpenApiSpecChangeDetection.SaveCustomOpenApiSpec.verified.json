@@ -35,7 +35,12 @@
         "description": "The main api for creating new instances. ",
         "parameters": [
           {
-            "$ref": "#/components/parameters/instanceOwnerPartyId"
+            "name": "instanceOwnerPartyId",
+            "in": "query",
+            "description": "The party id of the instance owner (use either this or an instance document in the body)",
+            "schema": {
+              "type": "integer"
+            }
           },
           {
             "$ref": "#/components/parameters/language"
@@ -1038,9 +1043,6 @@
           "$ref": "#/components/parameters/instanceGuid"
         },
         {
-          "$ref": "#/components/parameters/dataGuid"
-        },
-        {
           "$ref": "#/components/parameters/language"
         }
       ]
@@ -1111,9 +1113,6 @@
         },
         {
           "$ref": "#/components/parameters/instanceGuid"
-        },
-        {
-          "$ref": "#/components/parameters/dataGuid"
         }
       ]
     },
@@ -1183,9 +1182,6 @@
         },
         {
           "$ref": "#/components/parameters/instanceGuid"
-        },
-        {
-          "$ref": "#/components/parameters/dataGuid"
         }
       ]
     },
@@ -1257,9 +1253,6 @@
         },
         {
           "$ref": "#/components/parameters/instanceGuid"
-        },
-        {
-          "$ref": "#/components/parameters/dataGuid"
         }
       ]
     },
@@ -1424,9 +1417,6 @@
         },
         {
           "$ref": "#/components/parameters/instanceGuid"
-        },
-        {
-          "$ref": "#/components/parameters/dataGuid"
         },
         {
           "$ref": "#/components/parameters/language"
@@ -1596,9 +1586,6 @@
           "$ref": "#/components/parameters/instanceGuid"
         },
         {
-          "$ref": "#/components/parameters/dataGuid"
-        },
-        {
           "$ref": "#/components/parameters/language"
         }
       ]
@@ -1764,9 +1751,6 @@
         },
         {
           "$ref": "#/components/parameters/instanceGuid"
-        },
-        {
-          "$ref": "#/components/parameters/dataGuid"
         },
         {
           "$ref": "#/components/parameters/language"
@@ -1936,9 +1920,6 @@
           "$ref": "#/components/parameters/instanceGuid"
         },
         {
-          "$ref": "#/components/parameters/dataGuid"
-        },
-        {
           "$ref": "#/components/parameters/language"
         }
       ]
@@ -2106,9 +2087,6 @@
           "$ref": "#/components/parameters/instanceGuid"
         },
         {
-          "$ref": "#/components/parameters/dataGuid"
-        },
-        {
           "$ref": "#/components/parameters/language"
         }
       ]
@@ -2179,9 +2157,6 @@
         },
         {
           "$ref": "#/components/parameters/instanceGuid"
-        },
-        {
-          "$ref": "#/components/parameters/dataGuid"
         }
       ]
     }
