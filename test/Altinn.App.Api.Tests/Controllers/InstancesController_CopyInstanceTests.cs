@@ -1689,39 +1689,6 @@ public class InstancesController_CopyInstanceTests
         using var fixture = InstancesControllerFixture.Create(auth);
         Func<Instance?> getInstanceTemplate = SetupSuccessfulCopy(fixture, instance, application);
 
-        DataValues? updatedDataValues = null;
-        fixture
-            .Mock<IInstanceClient>()
-            .Setup(i =>
-                i.UpdateDataValues(
-                    instanceOwnerPartyId,
-                    It.IsAny<Guid>(),
-                    It.IsAny<DataValues>(),
-                    It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .Callback<int, Guid, DataValues, StorageAuthenticationMethod?, CancellationToken>(
-                (_, _, dataValues, _, _) => updatedDataValues = dataValues
-            )
-            .ReturnsAsync(instance);
-        PresentationTexts? updatedPresentationTexts = null;
-        fixture
-            .Mock<IInstanceClient>()
-            .Setup(i =>
-                i.UpdatePresentationTexts(
-                    instanceOwnerPartyId,
-                    It.IsAny<Guid>(),
-                    It.IsAny<PresentationTexts>(),
-                    It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .Callback<int, Guid, PresentationTexts, StorageAuthenticationMethod?, CancellationToken>(
-                (_, _, presentationTexts, _, _) => updatedPresentationTexts = presentationTexts
-            )
-            .ReturnsAsync(instance);
-
         // Act
         var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
         ActionResult actual = await controller.CopyInstance(
@@ -1736,15 +1703,12 @@ public class InstancesController_CopyInstanceTests
         Instance? instanceTemplate = getInstanceTemplate();
         Assert.NotNull(instanceTemplate);
         Assert.Equal(dueBefore, instanceTemplate.DueBefore);
-        Assert.NotNull(updatedDataValues);
         Assert.Equal(
             new Dictionary<string, string> { ["appVersion"] = "1.2.3", ["customerId"] = "42" },
-            updatedDataValues.Values
+            instanceTemplate.DataValues
         );
-        Assert.NotNull(updatedPresentationTexts);
-        Assert.Equal(new Dictionary<string, string> { ["name"] = "Ola Olsen" }, updatedPresentationTexts.Texts);
-
-        fixture.Mock<IInstanceClient>().VerifyAll();
+        Assert.Equal(new Dictionary<string, string> { ["name"] = "Ola Olsen" }, instanceTemplate.PresentationTexts);
+        VerifyNoSeparateDataValuesOrPresentationTextsUpdate(fixture);
     }
 
     [Fact]
@@ -1777,6 +1741,13 @@ public class InstancesController_CopyInstanceTests
         Instance? instanceTemplate = getInstanceTemplate();
         Assert.NotNull(instanceTemplate);
         Assert.Null(instanceTemplate.DueBefore);
+        Assert.Null(instanceTemplate.DataValues);
+        Assert.Null(instanceTemplate.PresentationTexts);
+        VerifyNoSeparateDataValuesOrPresentationTextsUpdate(fixture);
+    }
+
+    private static void VerifyNoSeparateDataValuesOrPresentationTextsUpdate(InstancesControllerFixture fixture)
+    {
         fixture
             .Mock<IInstanceClient>()
             .Verify(
