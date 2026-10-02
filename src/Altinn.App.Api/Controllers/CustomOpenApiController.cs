@@ -305,13 +305,14 @@ public class CustomOpenApiController : Controller
                         Description = "The main api for creating new instances. ",
                         Parameters =
                         {
-                            new OpenApiParameter(Snippets.InstanceOwnerPartyIdParameterReference)
+                            new OpenApiParameter()
                             {
-                                // Use snippet, but override
+                                Name = "instanceOwnerPartyId",
                                 Description =
                                     "The party id of the instance owner (use either this or an instance document in the body)",
                                 In = ParameterLocation.Query,
                                 Required = false,
+                                Schema = new OpenApiSchema() { Type = "integer" },
                             },
                             Snippets.LanguageParameterReference,
                         },
@@ -1168,7 +1169,6 @@ public class CustomOpenApiController : Controller
                 [
                     Snippets.InstanceOwnerPartyIdParameterReference,
                     Snippets.InstanceGuidParameterReference,
-                    Snippets.DataGuidParameterReference,
                     Snippets.LanguageParameterReference,
                 ],
             }
@@ -1248,12 +1248,7 @@ public class CustomOpenApiController : Controller
                         Responses = new() { ["201"] = new OpenApiResponse() { Description = "Attachment created" } },
                     },
                 },
-                Parameters =
-                [
-                    Snippets.InstanceOwnerPartyIdParameterReference,
-                    Snippets.InstanceGuidParameterReference,
-                    Snippets.DataGuidParameterReference,
-                ],
+                Parameters = [Snippets.InstanceOwnerPartyIdParameterReference, Snippets.InstanceGuidParameterReference],
             }
         );
     }

@@ -43,11 +43,35 @@ public class OpenApiSpecChangeDetection : ApiTestBase, IClassFixture<WebApplicat
         var reader = new OpenApiStreamReader();
         OpenApiDocument document = reader.Read(stream, out OpenApiDiagnostic diagnostic);
         Assert.Empty(diagnostic.Errors);
+        AssertPathParametersBelongToRoutes(document);
         document.Info.Version = "";
         await VerifyJson(
             document.Serialize(CustomOpenApiController.SpecVersion, CustomOpenApiController.SpecFormat),
             _verifySettings
         );
+    }
+
+    private static void AssertPathParametersBelongToRoutes(OpenApiDocument document)
+    {
+        foreach (var (path, pathItem) in document.Paths)
+        {
+            foreach (var (method, operation) in pathItem.Operations)
+            {
+                foreach (var parameter in pathItem.Parameters.Concat(operation.Parameters))
+                {
+                    OpenApiParameter resolvedParameter = parameter.Reference is { Id: { } id }
+                        ? document.Components.Parameters[id]
+                        : parameter;
+                    if (resolvedParameter.In == ParameterLocation.Path)
+                    {
+                        Assert.True(
+                            path.Contains($"{{{resolvedParameter.Name}}}", StringComparison.Ordinal),
+                            $"{method} {path} declares path parameter '{resolvedParameter.Name}' absent from the route"
+                        );
+                    }
+                }
+            }
+        }
     }
 
     private static VerifySettings _verifySettings

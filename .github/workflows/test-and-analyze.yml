@@ -15,7 +15,7 @@ jobs:
       - name: Enable long paths for git on Windows
         run: git config --system core.longpaths true
       - name: Setup .NET
-        uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: |
             8.0.x
@@ -56,11 +56,13 @@ jobs:
           .\.sonar\scanner\dotnet-sonarscanner begin /k:"Altinn_app-lib-dotnet" /o:"altinn" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.vstest.reportsPaths="**/*.trx" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
 
           dotnet build solutions/All.sln
+          # Analysis and coverage only need one target framework; dotnet-test.yml also runs the net8.0 tests.
           dotnet test solutions/All.sln `
           --no-restore --no-build `
           --results-directory TestResults/ `
           --collect:"XPlat Code Coverage" `
           --filter "Category!=Integration" `
+          --framework net10.0 `
           -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
           .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
