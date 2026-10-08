@@ -1372,6 +1372,11 @@ public class InstancesController : ControllerBase
         Dictionary<string, string> dataValues =
             SelectIncludedValues(application.CopyInstanceSettings?.IncludedDataValues, sourceInstance.DataValues)
             ?? new Dictionary<string, string>(1);
+
+        // Order matters: the included values are selected first, and TryAdd only sets the key when they do not
+        // already contain it. If the app lists the key in IncludedDataValues and the source already has it, the
+        // source is itself a copy, and the value copied from it points to the first instance in the chain. Setting
+        // the id of the source here would make the value point one step back in the chain instead.
         dataValues.TryAdd(DataValueKeys.CopySourceInstanceId, sourceInstance.Id);
         return dataValues;
     }
