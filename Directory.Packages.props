@@ -12,7 +12,7 @@
     <PackageVersion Include="Altinn.Platform.Storage.Interface" Version="4.7.2" />
     <PackageVersion Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.5.2" />
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />
-    <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.9.0" />
+    <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.10.0" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageVersion Include="BenchmarkDotNet.Diagnostics.dotTrace" Version="0.15.8" />
     <PackageVersion Include="Buildalyzer.Workspaces" Version="8.0.0" />
@@ -58,7 +58,7 @@
     <PackageVersion Include="Verify.Moq" Version="2.2.0" />
     <PackageVersion Include="Verify.Xunit" Version="31.12.5" />
     <PackageVersion Include="Verify.Http" Version="6.6.0" />
-    <PackageVersion Include="WireMock.Net" Version="2.18.0" />
+    <PackageVersion Include="WireMock.Net" Version="2.19.0" />
     <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.assert" Version="2.9.3" />
