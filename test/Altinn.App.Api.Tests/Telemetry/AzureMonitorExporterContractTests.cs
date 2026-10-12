@@ -156,14 +156,34 @@ public sealed class AzureMonitorExporterContractTests : IDisposable
         Assert.Empty(capture.Data("RequestData"));
     }
 
-    [Fact]
-    public async Task Owner_Custom_Sampler_After_Altinn_Registration_Is_Used()
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task Owner_Custom_Sampler_Is_Used_Regardless_Of_Registration_Order(
+        bool configureAfter,
+        bool withServiceProvider
+    )
     {
         using var capture = new CaptureTransport();
         var sampler = new OwnerSampler();
+        Action<IServiceCollection> configure = services =>
+        {
+            if (withServiceProvider)
+            {
+                services.AddSingleton(sampler);
+                services.ConfigureOpenTelemetryTracerProvider(
+                    (sp, b) => b.SetSampler(sp.GetRequiredService<OwnerSampler>())
+                );
+            }
+            else
+                services.ConfigureOpenTelemetryTracerProvider(b => b.SetSampler(sampler));
+        };
         await using var services = BuildServices(
             capture,
-            after: services => services.ConfigureOpenTelemetryTracerProvider(b => b.SetSampler(sampler))
+            before: configureAfter ? null : configure,
+            after: configureAfter ? configure : null
         );
         var provider = services.GetRequiredService<TracerProvider>();
         using var source = new ActivitySource(Source);
