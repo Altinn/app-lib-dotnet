@@ -242,7 +242,6 @@ public static class ServiceCollectionExtensions
                 ServiceDescriptor.Singleton<IConfigureOptions<AzureMonitorExporterOptions>>(
                     new ConfigureOptions<AzureMonitorExporterOptions>(options =>
                     {
-                        options.ConnectionString = appInsightsConnectionString;
                         // Preserve the original v8 policy: collect every trace and retain logs independently
                         // of trace sampling. New Azure SDK defaults must not silently reduce telemetry.
                         options.SamplingRatio = 1.0F;
@@ -325,6 +324,12 @@ public static class ServiceCollectionExtensions
         {
             // The LoggerProviderBuilder overload consumes DI options, unlike the logger-options overload.
             services.ConfigureOpenTelemetryLoggerProvider(builder => builder.AddAzureMonitorLogExporter());
+            // AddAzureMonitorTraceExporter above registers the SDK configurator, which reads the AzureMonitorExporter
+            // section and APPLICATIONINSIGHTS_CONNECTION_STRING. Setting the platform connection string after it keeps
+            // those settings from overriding it; owner Configure after AddAltinnAppServices and PostConfigure still win.
+            services.Configure<AzureMonitorExporterOptions>(options =>
+                options.ConnectionString = appInsightsConnectionString
+            );
         }
     }
 

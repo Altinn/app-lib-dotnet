@@ -263,21 +263,53 @@ public sealed class AzureMonitorExporterContractTests : IDisposable
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Owner_Connection_String_Applies_To_All_Three_Signals(bool configureAfter)
+    [InlineData("APPLICATIONINSIGHTS_CONNECTION_STRING")]
+    [InlineData("AzureMonitorExporter__ConnectionString")]
+    public async Task Platform_Connection_String_Overrides_Azure_Settings_For_All_Three_Signals(string variable)
+    {
+        SetEnvironment(variable, $"InstrumentationKey={Guid.NewGuid()}");
+        using var capture = new CaptureTransport();
+        await using var services = BuildServices(capture);
+
+        AssertAllSignalsExportTo(services, capture, Endpoint);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task Owner_Connection_String_Precedence_Applies_To_All_Three_Signals(
+        bool configureAfter,
+        bool postConfigure
+    )
     {
         using var capture = new CaptureTransport();
         const string ownerEndpoint = "https://northeurope-3.in.applicationinsights.azure.com/";
+        var ownerConnectionString = $"InstrumentationKey={Guid.NewGuid()};IngestionEndpoint={ownerEndpoint}";
         Action<IServiceCollection> configure = services =>
-            services.Configure<AzureMonitorExporterOptions>(options =>
-                options.ConnectionString = $"InstrumentationKey={Guid.NewGuid()};IngestionEndpoint={ownerEndpoint}"
-            );
+        {
+            if (postConfigure)
+                services.PostConfigure<AzureMonitorExporterOptions>(options =>
+                    options.ConnectionString = ownerConnectionString
+                );
+            else
+                services.Configure<AzureMonitorExporterOptions>(options =>
+                    options.ConnectionString = ownerConnectionString
+                );
+        };
         await using var services = BuildServices(
             capture,
             configureAfter ? null : configure,
             configureAfter ? configure : null
         );
+
+        // Configure before AddAltinnAppServices runs before Altinn applies the platform connection string.
+        AssertAllSignalsExportTo(services, capture, configureAfter || postConfigure ? ownerEndpoint : Endpoint);
+    }
+
+    private static void AssertAllSignalsExportTo(ServiceProvider services, CaptureTransport capture, string endpoint)
+    {
         var traces = services.GetRequiredService<TracerProvider>();
         var metrics = services.GetRequiredService<MeterProvider>();
         using var source = new ActivitySource(Source);
@@ -298,7 +330,7 @@ public sealed class AzureMonitorExporterContractTests : IDisposable
                     .Any(m => m.GetProperty("name").GetString() == "contract-counter")
         );
         Assert.Contains(capture.Data("MessageData"), d => d.GetProperty("message").GetString() == "contract-error");
-        Assert.All(capture.Requests, uri => Assert.Equal(new Uri(ownerEndpoint).Host, uri.Host));
+        Assert.All(capture.Requests, uri => Assert.Equal(new Uri(endpoint).Host, uri.Host));
     }
 
     private sealed class OwnerEnrichmentProcessor : OpenTelemetry.BaseProcessor<Activity>
