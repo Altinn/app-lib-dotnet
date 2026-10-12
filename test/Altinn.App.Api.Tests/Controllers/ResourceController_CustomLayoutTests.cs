@@ -15,8 +15,11 @@ public class ResourceController_CustomLayoutTests : ApiTestBase, IClassFixture<W
 
     private class CustomLayoutForInstance : ICustomLayoutForInstance
     {
+        public int Calls { get; private set; }
+
         public Task<string?> GetCustomLayoutForInstance(string layoutSetId, int instanceOwnerPartyId, Guid instanceId)
         {
+            Calls++;
             return Task.FromResult<string?>(instanceId.ToString());
         }
 
@@ -26,6 +29,7 @@ public class ResourceController_CustomLayoutTests : ApiTestBase, IClassFixture<W
             Guid instanceId
         )
         {
+            Calls++;
             return Task.FromResult<string?>(instanceId.ToString());
         }
     }
@@ -127,5 +131,48 @@ public class ResourceController_CustomLayoutTests : ApiTestBase, IClassFixture<W
         using var jsonDoc = JsonDocument.Parse(content);
         var root = jsonDoc.RootElement;
         Assert.Equal(JsonValueKind.Object, root.ValueKind);
+    }
+
+    [Theory]
+    [InlineData("layouts")]
+    [InlineData("layoutsettings")]
+    public async Task GetInstanceLayoutResources_Unauthenticated_ReturnsUnauthorized(string resource)
+    {
+        var customLayoutService = new CustomLayoutForInstance();
+        OverrideServicesForThisTest = (services) =>
+        {
+            services.AddSingleton<ICustomLayoutForInstance>(customLayoutService);
+        };
+
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 500600;
+        Guid instanceGuid = Guid.Parse("cff1cb24-5bc1-4888-8e06-c634753c5144");
+        using HttpClient client = GetRootedClient(org, app);
+
+        TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);
+        var response = await client.GetAsync(
+            $"/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/{resource}/default"
+        );
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(0, customLayoutService.Calls);
+    }
+
+    [Theory]
+    [InlineData("layouts")]
+    [InlineData("layoutsettings")]
+    public async Task GetInstanceLayoutResources_InvalidInstanceGuid_ReturnsNotFound(string resource)
+    {
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 500600;
+        using HttpClient client = GetRootedUserClient(org, app, 1337, instanceOwnerPartyId);
+
+        var response = await client.GetAsync(
+            $"/{org}/{app}/instances/{instanceOwnerPartyId}/not-a-guid/{resource}/default"
+        );
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 }

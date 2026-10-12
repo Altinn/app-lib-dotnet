@@ -5500,7 +5500,7 @@
         }
       }
     },
-    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceId}/layouts/{layoutSetId}": {
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/layouts/{layoutSetId}": {
       "get": {
         "tags": [
           "Resource"
@@ -5536,12 +5536,13 @@
             }
           },
           {
-            "name": "instanceId",
+            "name": "instanceGuid",
             "in": "path",
-            "description": "The instance id",
+            "description": "The instance guid",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -5609,7 +5610,7 @@
         "deprecated": true
       }
     },
-    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceId}/layoutsettings/{layoutSetId}": {
+    "/{org}/{app}/instances/{instanceOwnerPartyId}/{instanceGuid}/layoutsettings/{layoutSetId}": {
       "get": {
         "tags": [
           "Resource"
@@ -5645,12 +5646,13 @@
             }
           },
           {
-            "name": "instanceId",
+            "name": "instanceGuid",
             "in": "path",
-            "description": "The instance id",
+            "description": "The instance guid",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {

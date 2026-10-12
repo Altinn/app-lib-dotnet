@@ -1,6 +1,8 @@
+using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Altinn.App.Api.Controllers;
@@ -99,17 +101,18 @@ public class ResourceController : ControllerBase
     /// <param name="org">The application owner short name</param>
     /// <param name="app">The application name</param>
     /// <param name="instanceOwnerPartyId">The instance owner party id</param>
-    /// <param name="instanceId">The instance id</param>
+    /// <param name="instanceGuid">The instance guid</param>
     /// <param name="layoutSetId">The layout set id</param>
     /// <returns>A collection of FormLayout objects in JSON format.</returns>
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "application/json")]
     [HttpGet]
-    [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceId}/layouts/{layoutSetId}")]
+    [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
+    [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/layouts/{layoutSetId}")]
     public async Task<ActionResult> GetInstanceLayouts(
         string org,
         string app,
         int instanceOwnerPartyId,
-        string instanceId,
+        Guid instanceGuid,
         string layoutSetId
     )
     {
@@ -119,7 +122,7 @@ public class ResourceController : ControllerBase
             string? customLayout = await customLayoutService.GetCustomLayoutForInstance(
                 layoutSetId,
                 instanceOwnerPartyId,
-                Guid.Parse(instanceId)
+                instanceGuid
             );
             if (customLayout is not null)
             {
@@ -155,17 +158,18 @@ public class ResourceController : ControllerBase
     /// <param name="org">The application owner short name</param>
     /// <param name="app">The application name</param>
     /// <param name="instanceOwnerPartyId">The instance owner party id</param>
-    /// <param name="instanceId">The instance id</param>
+    /// <param name="instanceGuid">The instance guid</param>
     /// <param name="layoutSetId">The layout set id</param>
     /// <returns>The settings in the form of a string.</returns>
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "application/json")]
     [HttpGet]
-    [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceId}/layoutsettings/{layoutSetId}")]
+    [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
+    [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/layoutsettings/{layoutSetId}")]
     public async Task<ActionResult> GetInstanceLayoutSettings(
         string org,
         string app,
         int instanceOwnerPartyId,
-        string instanceId,
+        Guid instanceGuid,
         string layoutSetId
     )
     {
@@ -175,7 +179,7 @@ public class ResourceController : ControllerBase
             string? customLayoutSettings = await customLayoutService.GetCustomLayoutSettingsForInstance(
                 layoutSetId,
                 instanceOwnerPartyId,
-                Guid.Parse(instanceId)
+                instanceGuid
             );
             if (customLayoutSettings is not null)
             {
