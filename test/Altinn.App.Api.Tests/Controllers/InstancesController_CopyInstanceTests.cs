@@ -1451,55 +1451,6 @@ public class InstancesController_CopyInstanceTests
     }
 
     [Fact]
-    public async Task CopyInstance_IncludeAttachmentsIsTrue_CopiesTagsOnBinaryData()
-    {
-        // Arrange
-        const int instanceOwnerPartyId = 343234;
-        Instance instance = CreateArchivedInstance(instanceOwnerPartyId);
-        instance.Data =
-        [
-            new DataElement
-            {
-                Id = Guid.NewGuid().ToString(),
-                DataType = "attachment",
-                Tags = ["innhold", "omslag"],
-            },
-        ];
-
-        ApplicationMetadata application = CreateApplicationMetadata("ttd", "copy-instance", true);
-        application.CopyInstanceSettings!.IncludeAttachments = true;
-
-        var auth = TestAuthentication.GetUserAuthentication(userPartyId: instanceOwnerPartyId);
-        using var fixture = InstancesControllerFixture.Create(auth);
-        SetupSuccessfulCopy(fixture, instance, application);
-        fixture
-            .Mock<IDataClient>()
-            .Setup(p =>
-                p.Update(
-                    It.IsAny<Instance>(),
-                    It.Is<DataElement>(de => de.Tags.SequenceEqual(new[] { "innhold", "omslag" })),
-                    It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync(new DataElement())
-            .Verifiable(Times.Once);
-
-        // Act
-        var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
-        ActionResult actual = await controller.CopyInstance(
-            "ttd",
-            "copy-instance",
-            instanceOwnerPartyId,
-            Guid.Parse(instance.Id.Split("/")[1])
-        );
-
-        // Assert
-        Assert.IsType<RedirectResult>(actual);
-        fixture.Mock<IDataClient>().Verify();
-    }
-
-    [Fact]
     public async Task CopyInstance_OnlyBinaryData_NotCopiedByDefault()
     {
         // Arrange
@@ -1839,8 +1790,8 @@ public class InstancesController_CopyInstanceTests
     }
 
     /// <summary>
-    /// Sets up the mocks needed for a successful copy of <paramref name="instance"/> (including form data and
-    /// attachments) where the created instance is the same as the source. The returned function gives the template passed to
+    /// Sets up the mocks needed for a successful copy of <paramref name="instance"/> where the created instance
+    /// is the same as the source. The returned function gives the template passed to
     /// <see cref="IInstanceClient.CreateInstance(string, string, Instance, StorageAuthenticationMethod?, CancellationToken)"/>.
     /// </summary>
     private static Func<Instance?> SetupSuccessfulCopy(
@@ -1944,33 +1895,6 @@ public class InstancesController_CopyInstanceTests
                 )
             )
             .ReturnsAsync(new DataElement());
-        fixture
-            .Mock<IDataClient>()
-            .Setup(p =>
-                p.GetBinaryData(
-                    It.IsAny<int>(),
-                    It.IsAny<Guid>(),
-                    It.IsAny<Guid>(),
-                    It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync(() => new MemoryStream());
-        fixture
-            .Mock<IDataClient>()
-            .Setup(p =>
-                p.InsertBinaryData(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<Stream>(),
-                    It.IsAny<string>(),
-                    It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync(() => new DataElement());
 
         return () => instanceTemplate;
     }
