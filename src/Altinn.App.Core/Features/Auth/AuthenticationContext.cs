@@ -9,6 +9,7 @@ using Altinn.Platform.Register.Models;
 using AltinnCore.Authentication.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using Microsoft.Net.Http.Headers;
 
 namespace Altinn.App.Core.Features.Auth;
 
@@ -87,7 +88,11 @@ internal sealed class AuthenticationContext : IAuthenticationContext
                         parsedToken,
                         isAuthenticated: !string.IsNullOrWhiteSpace(token),
                         _appConfigurationCache.ApplicationMetadata,
-                        () => _httpContext.Request.Cookies[_generalSettings.CurrentValue.GetAltinnPartyCookieName],
+                        () =>
+                            ReadSelectedPartyCookieValues(
+                                httpContext.Request,
+                                generalSettings.GetAltinnPartyCookieName
+                            ),
                         _profileClient.GetUserProfile,
                         _altinnPartyClient.GetParty,
                         (string orgNr) => _altinnPartyClient.LookupParty(new PartyLookup { OrgNo = orgNr }),
@@ -103,7 +108,11 @@ internal sealed class AuthenticationContext : IAuthenticationContext
                         parsedToken,
                         isAuthenticated: isAuthenticated,
                         _appConfigurationCache.ApplicationMetadata,
-                        () => _httpContext.Request.Cookies[_generalSettings.CurrentValue.GetAltinnPartyCookieName],
+                        () =>
+                            ReadSelectedPartyCookieValues(
+                                httpContext.Request,
+                                generalSettings.GetAltinnPartyCookieName
+                            ),
                         _profileClient.GetUserProfile,
                         _altinnPartyClient.GetParty,
                         (string orgNr) => _altinnPartyClient.LookupParty(new PartyLookup { OrgNo = orgNr }),
@@ -124,5 +133,33 @@ internal sealed class AuthenticationContext : IAuthenticationContext
             }
             return authInfo;
         }
+    }
+
+    /// <summary>
+    /// Reads every copy of the party selection cookie from the raw Cookie header, in order.
+    /// The framework's cookie collection would keep only the last.
+    /// </summary>
+    internal static IReadOnlyList<string> ReadSelectedPartyCookieValues(HttpRequest request, string cookieName)
+    {
+        if (!CookieHeaderValue.TryParseList(request.Headers.Cookie, out var cookies))
+            return [];
+
+        List<string>? values = null;
+        for (var i = 0; i < cookies.Count; i++)
+        {
+            var cookie = cookies[i];
+            if (!string.Equals(cookie.Name.Value, cookieName, StringComparison.Ordinal))
+                continue;
+
+            var value = cookie.Value.Value;
+            if (string.IsNullOrEmpty(value))
+                continue; // as the framework's cookie collection does
+
+            (values ??= []).Add(value);
+        }
+
+        if (values is null)
+            return [];
+        return values;
     }
 }

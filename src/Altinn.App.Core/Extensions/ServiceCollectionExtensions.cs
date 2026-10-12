@@ -44,6 +44,7 @@ using Altinn.App.Core.Internal.Auth;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Events;
 using Altinn.App.Core.Internal.Expressions;
+using Altinn.App.Core.Internal.Files;
 using Altinn.App.Core.Internal.InstanceLocking;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Language;
@@ -122,7 +123,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IText, TextClient>();
 #pragma warning restore CS0618 // Type or member is obsolete
         services.AddHttpClient<IProcessClient, ProcessClient>();
-        services.AddHttpClient<InstanceLockClient>();
+        services.AddSingleton<InstanceLockClient>();
         services.AddHttpClient<IPersonClient, PersonClient>();
         services.AddHttpClient<IAccessManagementClient, AccessManagementClient>();
 
@@ -188,6 +189,7 @@ public static class ServiceCollectionExtensions
 #pragma warning restore CS0618, CS0612 // Type or member is obsolete
         services.TryAddTransient<IInstantiationProcessor, NullInstantiationProcessor>();
         services.TryAddTransient<IInstantiationValidator, NullInstantiationValidator>();
+        services.TryAddTransient<DataModelFieldCalculator>();
         services.TryAddTransient<IAppModel, DefaultAppModel>();
         services.TryAddTransient<DataListsFactory>();
         services.TryAddTransient<InstanceDataListsFactory>();
@@ -195,6 +197,7 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IDataListsService, DataListsService>();
         services.TryAddTransient<ILayoutEvaluatorStateInitializer, LayoutEvaluatorStateInitializer>();
         services.TryAddTransient<LayoutEvaluatorStateInitializer>();
+        services.AddTransient<IDataWriteProcessor, DataModelFieldCalculatorProcessor>();
         services.AddSingleton<IAuthenticationTokenResolver, AuthenticationTokenResolver>();
         services.AddTransient<IDataService, DataService>();
         services.AddSingleton<ModelSerializationService>();
@@ -203,6 +206,7 @@ public static class ServiceCollectionExtensions
         services.Configure<AccessTokenSettings>(configuration.GetSection("AccessTokenSettings"));
         services.Configure<FrontEndSettings>(configuration.GetSection(nameof(FrontEndSettings)));
         services.Configure<PdfGeneratorSettings>(configuration.GetSection(nameof(PdfGeneratorSettings)));
+        services.AddTransient<IFileService, FileService>();
 
         services.AddRuntimeEnvironment();
         if (env.IsDevelopment())
@@ -251,6 +255,11 @@ public static class ServiceCollectionExtensions
         if (appSettings?.ExpressionValidation is true)
         {
             services.AddTransient<IValidator, ExpressionValidator>();
+        }
+
+        if (appSettings?.XsdValidation is true)
+        {
+            services.AddTransient<IValidator, XsdValidator>();
         }
     }
 
@@ -377,13 +386,12 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IProcessTaskInitializer, ProcessTaskInitializer>();
         services.AddTransient<IProcessTaskFinalizer, ProcessTaskFinalizer>();
         services.AddTransient<IProcessTaskDataLocker, ProcessTaskDataLocker>();
-        services.AddTransient<IProcessTaskCleaner, ProcessTaskCleaner>();
         services.AddTransient<IStartTaskEventHandler, StartTaskEventHandler>();
         services.AddTransient<IEndTaskEventHandler, EndTaskEventHandler>();
         services.AddTransient<IAbandonTaskEventHandler, AbandonTaskEventHandler>();
         services.AddTransient<IEndEventEventHandler, EndEventEventHandler>();
 
-        services.AddScoped<IInstanceLocker, InstanceLocker>();
+        services.AddSingleton<IInstanceLocker, InstanceLocker>();
 
         // Process tasks
         services.AddTransient<IProcessTask, DataProcessTask>();

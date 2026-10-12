@@ -75,8 +75,8 @@ public class DataController_LayoutEvaluatorTests : ApiTestBase, IClassFixture<We
         string org = "tdd";
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 500600;
-        Guid instanceGuid = Guid.Parse("cff1cb24-5bc1-4888-8e06-c634753c5144");
-        Guid dataGuid = Guid.Parse("f3e04c65-aa70-40ec-84df-087cc2583402");
+        Guid instanceGuid = Guid.Parse("7f1a3c0e-4b7d-4e2a-9c61-2d8f5a6b0c13");
+        Guid dataGuid = Guid.Parse("a2e9d1b4-6c3f-4d58-8e7a-1b5c9f0d2e46");
         using HttpClient client = GetRootedUserClient(org, app, 1337, instanceOwnerPartyId);
 
         TestData.PrepareInstance(org, app, instanceOwnerPartyId, instanceGuid);

@@ -105,7 +105,7 @@ public class BasicAppTests(ITestOutputHelper _output, AppFixtureClassFixture _cl
         using var download2 = await fixture.Instances.Download(token, readInstantiationResponse);
         await download2.Verify(verifier);
 
-        await verifier.Verify(fixture.GetSnapshotAppLogs(), snapshotName: "Logs");
+        await verifier.Verify(await fixture.GetSnapshotAppLogs(), snapshotName: "Logs");
     }
 
     [Theory]
@@ -206,7 +206,12 @@ public class BasicAppTests(ITestOutputHelper _output, AppFixtureClassFixture _cl
         Assert.NotNull(port);
         var response = await fixture.Connectivity.Pdf();
         await Verify(response).AddScrubber(sb => sb.Replace(port, "<pdfPort>"));
-        Assert.True(response.Success); // Connectivity is a prereq, so we fail hard here
+        if (!response.Success)
+        {
+            _output.WriteLine(response.ResponseContent ?? "null");
+            _output.WriteLine(response.Exception ?? "null");
+            Assert.True(response.Success); // Connectivity is a prereq, so we fail hard here
+        }
     }
 
     [Fact]

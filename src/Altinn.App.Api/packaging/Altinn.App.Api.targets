@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!--
+    This targets file is included in the Altinn.App.Api nuget package and will
+    apply to the App projects when they reference said nuget package.
+    Targets are imported after the app's project file, so items declared here
+    are added on top of the app's own items.
+   -->
+  <!--
+    The Web SDK only copies *.json and *.config files to the build and publish output by default.
+    The XSD schemas in models/ are read at runtime by the XSD validator (AppSettings:XsdValidation),
+    so they must be copied too, or the validator finds no schema in a published (Docker) app.
+   -->
+  <ItemGroup Condition="'$(IsAltinnApp)' == 'true'">
+    <Content Include="models/**/*.xsd" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <None Remove="models/**/*.xsd" />
+  </ItemGroup>
+</Project>

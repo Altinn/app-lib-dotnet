@@ -123,6 +123,60 @@ public class SigningProcessTaskTests
     }
 
     [Fact]
+    public async Task End_RevokesDelegatedSigneeRights_WhenRuntimeDelegatedSigningConfigured()
+    {
+        // Arrange
+        Instance instance = CreateInstance();
+        string taskId = instance.Process.CurrentTask.ElementId;
+        var altinnTaskExtension = new AltinnTaskExtension { SignatureConfiguration = CreateSigningConfiguration() };
+
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var signingProcessTask = sp.GetRequiredService<SigningProcessTask>();
+
+        _processReaderMock.Setup(x => x.GetAltinnTaskExtension(It.IsAny<string>())).Returns(altinnTaskExtension);
+        _signingServiceMock
+            .Setup(x =>
+                x.RevokeSigneeRightsOnTaskEnd(
+                    It.IsAny<IInstanceDataMutator>(),
+                    altinnTaskExtension.SignatureConfiguration,
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+
+        // Act
+        await signingProcessTask.End(taskId, instance);
+
+        // Assert
+        _signingServiceMock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task End_DoesNotRevokeSigneeRights_WhenRuntimeDelegatedSigningNotConfigured()
+    {
+        // Arrange
+        Instance instance = CreateInstance();
+        string taskId = instance.Process.CurrentTask.ElementId;
+        var altinnTaskExtension = new AltinnTaskExtension
+        {
+            SignatureConfiguration = new AltinnSignatureConfiguration { SignatureDataType = "SignatureDataType" },
+        };
+
+        await using var sp = _serviceCollection.BuildStrictServiceProvider();
+        var signingProcessTask = sp.GetRequiredService<SigningProcessTask>();
+
+        _processReaderMock.Setup(x => x.GetAltinnTaskExtension(It.IsAny<string>())).Returns(altinnTaskExtension);
+
+        // Act
+        // The strict ISigningService mock has no setup for RevokeSigneeRightsOnTaskEnd, so this throws if it's called.
+        await signingProcessTask.End(taskId, instance);
+
+        // Assert
+        _signingServiceMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public async Task Abandon_ShouldDeleteExistingSigningData()
     {
         // Arrange

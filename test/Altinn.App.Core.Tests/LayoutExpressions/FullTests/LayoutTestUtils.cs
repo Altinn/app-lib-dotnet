@@ -11,6 +11,7 @@ using Altinn.App.Core.Tests.LayoutExpressions.TestUtilities;
 using Altinn.App.Core.Tests.TestUtils;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Altinn.App.Core.Tests.LayoutExpressions.FullTests;
@@ -56,40 +57,14 @@ public static class LayoutTestUtils
         var modelType = model.GetType();
         var modelTypeFullName = modelType.FullName!;
         var appMetadata = new Mock<IAppMetadata>(MockBehavior.Strict);
-        var applicationMetadata = new ApplicationMetadata(AppId)
-        {
-            DataTypes =
-            [
-                new()
-                {
-                    Id = DataTypeId,
-                    TaskId = TaskId,
-                    AppLogic = new() { ClassRef = modelTypeFullName },
-                    AllowedContentTypes = ["application/json"],
-                    MaxCount = 1,
-                },
-            ],
-        };
+        var applicationMetadata = CreateApplicationMetadata(modelType);
 
         appMetadata.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(applicationMetadata);
         var appModel = new Mock<IAppModel>(MockBehavior.Strict);
         appModel.Setup(am => am.GetModelType(modelTypeFullName)).Returns(modelType);
 
         var resources = new Mock<IAppResources>();
-        var pages = new List<PageComponent>();
-        var layoutsPath = Path.Join(PathUtils.GetCoreTestsPath(), "LayoutExpressions", "FullTests", folder);
-        foreach (var layoutFile in Directory.GetFiles(layoutsPath, "*.json"))
-        {
-            var layoutBytes = await File.ReadAllBytesAsync(layoutFile);
-            string pageName = Path.GetFileNameWithoutExtension(layoutFile);
-
-            using var document = JsonDocument.Parse(layoutBytes, _options);
-
-            pages.Add(PageComponent.Parse(document.RootElement, pageName, "layout"));
-        }
-        var dataType = new DataType() { Id = DataTypeId };
-        var layout = new LayoutSetComponent(pages, "layout", dataType);
-        var layoutModel = new LayoutModel([layout], null);
+        var layoutModel = await LoadLayoutModel(folder);
 
         resources.Setup(r => r.GetLayoutModelForTask(TaskId)).Returns(layoutModel);
 
@@ -107,8 +82,86 @@ public static class LayoutTestUtils
         using var scope = serviceProvider.CreateScope();
         var initializer = scope.ServiceProvider.GetRequiredService<ILayoutEvaluatorStateInitializer>();
 
-        var dataAccessor = new InstanceDataAccessorFake(_instance, applicationMetadata) { { _dataElement, model } };
+        var dataAccessor = new InstanceDataAccessorFake(
+            _instance,
+            applicationMetadata,
+            scope.ServiceProvider.GetRequiredService<ITranslationService>(),
+            layoutModel,
+            scope.ServiceProvider.GetRequiredService<IOptions<FrontEndSettings>>().Value,
+            null,
+            null
+        )
+        {
+            { _dataElement, model },
+        };
 
         return await initializer.Init(dataAccessor, TaskId);
+    }
+
+    /// <summary>
+    /// Initialize the state through the legacy <see cref="LayoutEvaluatorStateInitializer.Init(Instance, object, string?, string?)"/>
+    /// overload that apps call from <c>IDataProcessor</c>
+    /// </summary>
+    public static async Task<LayoutEvaluatorState> GetLegacyLayoutModelTools(object model, string folder)
+    {
+        var appMetadata = new Mock<IAppMetadata>(MockBehavior.Strict);
+        appMetadata.Setup(am => am.GetApplicationMetadata()).ReturnsAsync(CreateApplicationMetadata(model.GetType()));
+
+        var layoutModel = await LoadLayoutModel(folder);
+        var resources = new Mock<IAppResources>(MockBehavior.Strict);
+#pragma warning disable CS0618 // Type or member is obsolete
+        resources.Setup(r => r.GetLayoutModel("layout")).Returns(layoutModel);
+#pragma warning restore CS0618 // Type or member is obsolete
+
+        var initializer = new LayoutEvaluatorStateInitializer(
+            resources.Object,
+            new Mock<ITranslationService>(MockBehavior.Strict).Object,
+            appMetadata.Object,
+            Options.Create(new FrontEndSettings())
+        );
+
+        var instance = new Instance()
+        {
+            Id = _instance.Id,
+            AppId = _instance.AppId,
+            Org = _instance.Org,
+            InstanceOwner = _instance.InstanceOwner,
+            Data = [_dataElement],
+        };
+        return await initializer.Init(instance, model, "layout");
+    }
+
+    private static ApplicationMetadata CreateApplicationMetadata(Type modelType) =>
+        new(AppId)
+        {
+            DataTypes =
+            [
+                new()
+                {
+                    Id = DataTypeId,
+                    TaskId = TaskId,
+                    AppLogic = new() { ClassRef = modelType.FullName },
+                    AllowedContentTypes = ["application/json"],
+                    MaxCount = 1,
+                },
+            ],
+        };
+
+    private static async Task<LayoutModel> LoadLayoutModel(string folder)
+    {
+        var pages = new List<PageComponent>();
+        var layoutsPath = Path.Join(PathUtils.GetCoreTestsPath(), "LayoutExpressions", "FullTests", folder);
+        foreach (var layoutFile in Directory.GetFiles(layoutsPath, "*.json"))
+        {
+            var layoutBytes = await File.ReadAllBytesAsync(layoutFile);
+            string pageName = Path.GetFileNameWithoutExtension(layoutFile);
+
+            using var document = JsonDocument.Parse(layoutBytes, _options);
+
+            pages.Add(PageComponent.Parse(document.RootElement, pageName, "layout"));
+        }
+        var dataType = new DataType() { Id = DataTypeId };
+        var layout = new LayoutSetComponent(pages, "layout", dataType);
+        return new LayoutModel([layout], null);
     }
 }

@@ -1,4 +1,4 @@
-using System.Globalization;
+using Altinn.App.Api.Helpers;
 using Altinn.App.Core.Configuration;
 using Altinn.App.Core.Features.Auth;
 using Altinn.App.Core.Models.Validation;
@@ -49,25 +49,23 @@ public class PartiesController : ControllerBase
             case Authenticated.User user:
             {
                 var details = await user.LoadDetails(validateSelectedParty: false);
-                return allowedToInstantiateFilter ? Ok(details.PartiesAllowedToInstantiate) : Ok(details.Parties);
+                var parties = allowedToInstantiateFilter ? details.PartiesAllowedToInstantiate : details.Parties;
+                return Ok(PartySsnMasking.MaskParties(parties));
             }
             case Authenticated.Org orgInfo:
             {
                 var details = await orgInfo.LoadDetails();
-                IReadOnlyList<Party> parties = [details.Party];
-                return Ok(parties);
+                return Ok(PartySsnMasking.MaskParties([details.Party]));
             }
             case Authenticated.ServiceOwner serviceOwner:
             {
                 var details = await serviceOwner.LoadDetails();
-                IReadOnlyList<Party> parties = [details.Party];
-                return Ok(parties);
+                return Ok(PartySsnMasking.MaskParties([details.Party]));
             }
             case Authenticated.SystemUser su:
             {
                 var details = await su.LoadDetails();
-                IReadOnlyList<Party> parties = [details.Party];
-                return Ok(parties);
+                return Ok(PartySsnMasking.MaskParties([details.Party]));
             }
             default:
                 throw new Exception($"Unexpected authentication context: {context.GetType().Name}");
@@ -102,7 +100,7 @@ public class PartiesController : ControllerBase
                         {
                             Valid = false,
                             Message = "The user does not represent the supplied party",
-                            ValidParties = details.PartiesAllowedToInstantiate.ToList(),
+                            ValidParties = PartySsnMasking.MaskParties(details.PartiesAllowedToInstantiate),
                         }
                     );
                 }
@@ -114,7 +112,7 @@ public class PartiesController : ControllerBase
                         {
                             Valid = false,
                             Message = "The supplied party is not allowed to instantiate the application",
-                            ValidParties = details.PartiesAllowedToInstantiate.ToList(),
+                            ValidParties = PartySsnMasking.MaskParties(details.PartiesAllowedToInstantiate),
                         }
                     );
                 }
@@ -131,7 +129,7 @@ public class PartiesController : ControllerBase
                         {
                             Valid = false,
                             Message = "The user does not represent the supplied party",
-                            ValidParties = new List<Party> { details.Party },
+                            ValidParties = PartySsnMasking.MaskParties([details.Party]),
                         }
                     );
                 }
@@ -142,7 +140,7 @@ public class PartiesController : ControllerBase
                         {
                             Valid = false,
                             Message = "The supplied party is not allowed to instantiate the application",
-                            ValidParties = new List<Party> { details.Party },
+                            ValidParties = PartySsnMasking.MaskParties([details.Party]),
                         }
                     );
                 }
@@ -163,7 +161,7 @@ public class PartiesController : ControllerBase
                         {
                             Valid = false,
                             Message = "The user does not represent the supplied party",
-                            ValidParties = new List<Party> { details.Party },
+                            ValidParties = PartySsnMasking.MaskParties([details.Party]),
                         }
                     );
                 }
@@ -174,7 +172,7 @@ public class PartiesController : ControllerBase
                         {
                             Valid = false,
                             Message = "The supplied party is not allowed to instantiate the application",
-                            ValidParties = new List<Party> { details.Party },
+                            ValidParties = PartySsnMasking.MaskParties([details.Party]),
                         }
                     );
                 }
@@ -206,11 +204,7 @@ public class PartiesController : ControllerBase
                 if (!details.CanRepresentParty(partyId))
                     return BadRequest($"User {auth.UserId} cannot represent party {partyId}.");
 
-                Response.Cookies.Append(
-                    _settings.GetAltinnPartyCookieName,
-                    partyId.ToString(CultureInfo.InvariantCulture),
-                    new CookieOptions { Domain = _settings.HostName }
-                );
+                PartySelectionCookie.Set(Response, _settings, partyId);
 
                 return Ok("Party successfully updated");
             }
@@ -220,11 +214,7 @@ public class PartiesController : ControllerBase
                 if (details.Party.PartyId != partyId)
                     return BadRequest($"Org {details.Party.OrgNumber} cannot represent party {partyId}.");
 
-                Response.Cookies.Append(
-                    _settings.GetAltinnPartyCookieName,
-                    partyId.ToString(CultureInfo.InvariantCulture),
-                    new CookieOptions { Domain = _settings.HostName }
-                );
+                PartySelectionCookie.Set(Response, _settings, partyId);
 
                 return Ok("Party successfully updated");
             }
@@ -234,11 +224,7 @@ public class PartiesController : ControllerBase
                 if (details.Party.PartyId != partyId)
                     return BadRequest($"Service owner {auth.Name} cannot represent party {partyId}.");
 
-                Response.Cookies.Append(
-                    _settings.GetAltinnPartyCookieName,
-                    partyId.ToString(CultureInfo.InvariantCulture),
-                    new CookieOptions { Domain = _settings.HostName }
-                );
+                PartySelectionCookie.Set(Response, _settings, partyId);
 
                 return Ok("Party successfully updated");
             }
@@ -248,11 +234,7 @@ public class PartiesController : ControllerBase
                 if (details.Party.PartyId != partyId)
                     return BadRequest($"System user {auth.SystemUserId} cannot represent party {partyId}.");
 
-                Response.Cookies.Append(
-                    _settings.GetAltinnPartyCookieName,
-                    partyId.ToString(CultureInfo.InvariantCulture),
-                    new CookieOptions { Domain = _settings.HostName }
-                );
+                PartySelectionCookie.Set(Response, _settings, partyId);
 
                 return Ok("Party successfully updated");
             }

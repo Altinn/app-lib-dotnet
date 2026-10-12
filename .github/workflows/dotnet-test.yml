@@ -6,13 +6,17 @@ on:
       - "main"
       - "release/**"
   pull_request:
-    branches:
-      - "main"
-      - "release/**"
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - edited
   workflow_dispatch:
 
 jobs:
   analyze:
+    # Only run on pull_request edit if the base branch was changed, to avoid running when only description or title was edited.
+    if: github.event.action != 'edited' || github.event.changes.base.ref != null
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
@@ -25,11 +29,12 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: git config --system core.longpaths true
       - name: Setup .NET
-        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: |
             8.0.x
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+            10.0.x
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
       - name: Tool restore
@@ -38,20 +43,21 @@ jobs:
       - name: Build
         run: |
           dotnet build solutions/All.sln -v m
-      - name: Test
-        if: matrix.os != 'ubuntu-latest'
+      # Run one target framework at a time. Multi-targeted test projects would otherwise run their
+      # net8.0 and net10.0 test hosts concurrently, and failures are easier to attribute per framework.
+      # solutions/Net8TestProjects.slnf lists the test projects that also target net8.0.
+      - name: Test (net10.0)
         run: |
-          dotnet test solutions/All.sln -v m --no-restore --no-build --filter "Category!=Integration"
-      - name: Test (main tests)
-        if: matrix.os == 'ubuntu-latest'
+          dotnet test solutions/All.sln -v m --no-restore --no-build --filter "Category!=Integration" --framework net10.0
+      - name: Test (net8.0)
         run: |
-          dotnet test solutions/All.sln -v m --no-restore --no-build --filter "Category!=Integration"
+          dotnet test solutions/Net8TestProjects.slnf -v m --no-restore --no-build --filter "Category!=Integration" --framework net8.0
       - name: Install studioctl
         if: matrix.os == 'ubuntu-latest'
         env:
           STUDIOCTL_HOME: ${{ runner.temp }}/studioctl-home
           STUDIOCTL_INSTALL_DIR: ${{ runner.temp }}/studioctl-bin
-          STUDIOCTL_VERSION: v0.1.0-preview.6
+          STUDIOCTL_VERSION: v0.1.0-preview.9
         run: |
           mkdir -p "$STUDIOCTL_HOME" "$STUDIOCTL_INSTALL_DIR"
           curl -fsSL https://altinn.studio/designer/api/v1/studioctl/install.sh -o "$RUNNER_TEMP/studioctl-install.sh"
@@ -62,5 +68,6 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         env:
           STUDIOCTL_HOME: ${{ runner.temp }}/studioctl-home
+          TEST_STUDIOCTL_COMMAND: ${{ runner.temp }}/studioctl-bin/studioctl
         run: |
           dotnet test solutions/All.sln --no-restore --no-build --logger "console;verbosity=detailed" --filter "Category=Integration"

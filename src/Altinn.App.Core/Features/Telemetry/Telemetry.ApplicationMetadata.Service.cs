@@ -49,6 +49,9 @@ partial class Telemetry
     internal Activity? StartGetValidationConfigurationActivity() =>
         ActivitySource.StartActivity($"{Prefix}.GetValidationConfiguration");
 
+    internal Activity? StartGetCalculationConfigurationActivity() =>
+        ActivitySource.StartActivity($"{Prefix}.GetCalculationConfiguration");
+
     internal Activity? StartGetLayoutModelActivity() => ActivitySource.StartActivity($"{Prefix}.GetLayoutModel");
 
     internal Activity? StartGetClassRefActivity() => ActivitySource.StartActivity($"{Prefix}.GetClassRef");

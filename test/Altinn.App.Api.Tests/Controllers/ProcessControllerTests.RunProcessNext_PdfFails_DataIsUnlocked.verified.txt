@@ -6,11 +6,6 @@
       HasParent: true
     },
     {
-      Name: ApplicationMetadata.Service.GetLayoutModel,
-      IdFormat: W3C,
-      HasParent: true
-    },
-    {
       Name: ApplicationMetadata.Service.GetLayoutSet,
       IdFormat: W3C,
       HasParent: true
@@ -22,26 +17,6 @@
     },
     {
       Name: ApplicationMetadata.Service.GetLayoutSet,
-      IdFormat: W3C,
-      HasParent: true
-    },
-    {
-      Name: ApplicationMetadata.Service.GetLayoutSet,
-      IdFormat: W3C,
-      HasParent: true
-    },
-    {
-      Name: ApplicationMetadata.Service.GetLayoutSet,
-      IdFormat: W3C,
-      HasParent: true
-    },
-    {
-      Name: ApplicationMetadata.Service.GetLayoutSets,
-      IdFormat: W3C,
-      HasParent: true
-    },
-    {
-      Name: ApplicationMetadata.Service.GetLayoutSets,
       IdFormat: W3C,
       HasParent: true
     },
@@ -62,16 +37,6 @@
     },
     {
       Name: ApplicationMetadata.Service.GetLayoutSetsForTask,
-      IdFormat: W3C,
-      HasParent: true
-    },
-    {
-      Name: ApplicationMetadata.Service.GetLayoutSetsForTask,
-      IdFormat: W3C,
-      HasParent: true
-    },
-    {
-      Name: ApplicationMetadata.Service.GetLayoutSettingsForSet,
       IdFormat: W3C,
       HasParent: true
     },
@@ -127,6 +92,16 @@
     },
     {
       Name: InstanceDataAccessor.SaveChanges,
+      IdFormat: W3C,
+      Tags: [
+        {
+          numberOfChangedDataElements: 1
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: InstanceDataAccessor.UpdateInstanceData,
       IdFormat: W3C,
       Tags: [
         {
@@ -240,7 +215,86 @@
       HasParent: true
     },
     {
+      Name: Process.GenerateChangeEvent,
+      IdFormat: W3C,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          process.event.type: process_EndTask
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: Process.GenerateChangeEvent,
+      IdFormat: W3C,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          process.event.type: process_EndEvent
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: Process.GenerateChangeEvent,
+      IdFormat: W3C,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          process.event.type: Submited
+        }
+      ],
+      HasParent: true
+    },
+    {
       Name: Process.HandleEvents,
+      IdFormat: W3C,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: Process.LoadAuthDetails,
+      IdFormat: W3C,
+      Tags: [
+        {
+          user.authentication.type: User
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: Process.LoadAuthDetails,
+      IdFormat: W3C,
+      Tags: [
+        {
+          user.authentication.type: User
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: Process.LoadAuthDetails,
+      IdFormat: W3C,
+      Tags: [
+        {
+          user.authentication.type: User
+        }
+      ],
+      HasParent: true
+    },
+    {
+      Name: Process.MoveToNext,
       IdFormat: W3C,
       Tags: [
         {
@@ -262,6 +316,19 @@
     {
       Name: ProcessClient.GetProcessDefinition,
       IdFormat: W3C,
+      HasParent: true
+    },
+    {
+      Name: ProcessNavigator.GetNextTask,
+      IdFormat: W3C,
+      Tags: [
+        {
+          instance.guid: Guid_1
+        },
+        {
+          process.current.element: Task_1
+        }
+      ],
       HasParent: true
     },
     {

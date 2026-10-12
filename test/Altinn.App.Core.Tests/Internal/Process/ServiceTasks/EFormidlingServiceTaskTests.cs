@@ -57,6 +57,9 @@ public class EFormidlingServiceTaskTests
             null
         );
 
+        var taskExtension = new AltinnTaskExtension { EFormidlingConfiguration = GetConfig() };
+        _processReaderMock.Setup(x => x.GetAltinnTaskExtension("taskId")).Returns(taskExtension);
+
         var instanceMutatorMock = new Mock<IInstanceDataMutator>();
         instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
 
@@ -64,6 +67,34 @@ public class EFormidlingServiceTaskTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ProcessException>(() => serviceTask.Execute(parameters));
+    }
+
+    [Fact]
+    public async Task Execute_Should_SkipExecution_When_BpmnConfigDisabled_AndServiceIsNull()
+    {
+        // Arrange
+        Instance instance = GetInstance();
+
+        var serviceTask = new EFormidlingServiceTask(
+            _loggerMock.Object,
+            _processReaderMock.Object,
+            _hostEnvironmentMock.Object,
+            null
+        );
+
+        var taskExtension = new AltinnTaskExtension { EFormidlingConfiguration = GetConfig(disabled: true) };
+        _processReaderMock.Setup(x => x.GetAltinnTaskExtension("taskId")).Returns(taskExtension);
+
+        var instanceMutatorMock = new Mock<IInstanceDataMutator>();
+        instanceMutatorMock.Setup(x => x.Instance).Returns(instance);
+
+        var parameters = new ServiceTaskContext { InstanceDataMutator = instanceMutatorMock.Object };
+
+        // Act
+        var result = await serviceTask.Execute(parameters);
+
+        // Assert
+        Assert.IsType<ServiceTaskSuccessResult>(result);
     }
 
     [Fact]
@@ -159,7 +190,9 @@ public class EFormidlingServiceTaskTests
                 x.Log(
                     LogLevel.Information,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("EFormidling is disabled for task taskId")),
+                    It.Is<It.IsAnyType>(
+                        (v, t) => v != null && v.ToString()!.Contains("EFormidling is disabled for task taskId")
+                    ),
                     It.IsAny<Exception>(),
                     It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)
                 ),

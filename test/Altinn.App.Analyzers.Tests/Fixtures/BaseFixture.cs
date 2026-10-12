@@ -31,7 +31,7 @@ public abstract class BaseFixture : IDisposable
 
     private static readonly SemaphoreSlim _lck = new SemaphoreSlim(1, 1);
 
-    protected async Task Init(string projectFilePath, string? preBuildTarget = null)
+    protected async Task Init(string projectFilePath)
     {
         if (IsInitialized)
             return;
@@ -47,6 +47,11 @@ public abstract class BaseFixture : IDisposable
             Assert.True(Directory.Exists(ProjectDir));
             StringWriter log = new StringWriter();
             var manager = new AnalyzerManager(new AnalyzerManagerOptions { LogWriter = log });
+            // The projects analyzed here (and their project references, e.g. Altinn.App.Core/Api) now
+            // multi-target net8.0;net10.0. Without pinning TargetFramework, Buildalyzer's build of
+            // multi-targeted project references is ambiguous and can resolve a mismatched framework,
+            // causing CS1705 assembly-version errors when the resulting compilation is analyzed.
+            manager.SetGlobalProperty("TargetFramework", "net8.0");
 
             var logger = manager.LoggerFactory?.CreateLogger<AdhocWorkspace>();
             Workspace = new AdhocWorkspace();
@@ -54,12 +59,7 @@ public abstract class BaseFixture : IDisposable
             Workspace.WorkspaceFailed += (sender, args) => Output.WriteLine("Workspace failed: {0}", args.Diagnostic);
 
             var analyzer = manager.GetProject(projectFilePath);
-            var options = new EnvironmentOptions() { DesignTime = false };
-            options.TargetsToBuild.Clear();
-            var targets = new List<string> { "Clean", "Build" };
-            if (preBuildTarget != null)
-                targets.Insert(1, preBuildTarget);
-            options.TargetsToBuild.AddRange(targets);
+            var options = new EnvironmentOptions();
             var results = analyzer.Build(options);
             var result =
                 results
@@ -67,7 +67,12 @@ public abstract class BaseFixture : IDisposable
                     .FirstOrDefault(r => r.Succeeded)
                 ?? results.First();
             Assert.True(result.Succeeded, log.ToString());
-            Project = result.AddToWorkspace(Workspace);
+            Project = result.AddToWorkspace(Workspace, addProjectReferences: true);
+            Project = RemoveMetadataReferencesDuplicatedByProjectReferences(Project);
+            var projectId = Project.Id;
+            Assert.True(Workspace.TryApplyChanges(Project.Solution));
+            Project = Workspace.CurrentSolution.GetProject(projectId);
+            Assert.NotNull(Project);
 
             Assert.True(Workspace.CanApplyChange(ApplyChangesKind.AddDocument));
             Assert.True(Workspace.CanApplyChange(ApplyChangesKind.RemoveDocument));
@@ -89,6 +94,27 @@ public abstract class BaseFixture : IDisposable
         {
             _lck.Release();
         }
+    }
+
+    private static Project RemoveMetadataReferencesDuplicatedByProjectReferences(Project project)
+    {
+        var referencedAssemblyNames = project
+            .ProjectReferences.Select(reference => project.Solution.GetProject(reference.ProjectId)?.AssemblyName)
+            .Where(assemblyName => !string.IsNullOrWhiteSpace(assemblyName))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var metadataReference in project.MetadataReferences)
+        {
+            if (
+                metadataReference is PortableExecutableReference { FilePath: { } filePath }
+                && referencedAssemblyNames.Contains(Path.GetFileNameWithoutExtension(filePath))
+            )
+            {
+                project = project.RemoveMetadataReference(metadataReference);
+            }
+        }
+
+        return project;
     }
 
     protected async Task<(

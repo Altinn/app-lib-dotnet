@@ -24,24 +24,27 @@ jobs:
           echo "Validating that the tag is in the correct format"
           echo "${{ github.event.release.tag_name }}" | grep -P $REGEX
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Install dotnet8
-        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: |
             8.0.x
+            10.0.x
       - name: Install deps
         run: |
           dotnet restore
       - name: Extract release notes
         id: extract-notes
         run: |
-          echo "Release notes look best on GitHub: ${{ github.event.release.html_url }}" > RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
-          echo "${{ github.event.release.body }}" >> RELEASE_NOTES.md
+          {
+            echo "Release notes look best on GitHub: ${{ github.event.release.html_url }}"
+            echo
+            jq -r '.release.body // ""' "$GITHUB_EVENT_PATH"
+          } > RELEASE_NOTES.md
           cat RELEASE_NOTES.md
       - name: Build
         run: |

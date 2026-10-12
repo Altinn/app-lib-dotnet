@@ -5,7 +5,7 @@ namespace Altinn.App.Core.Features.Correspondence.Models;
 /// <summary>
 /// Represents a notification to be sent to the recipient of a correspondence.
 /// </summary>
-public sealed record CorrespondenceNotification : MultipartCorrespondenceItem
+public sealed record CorrespondenceNotification
 {
     /// <summary>
     /// The notification template for use for notifications.
@@ -87,43 +87,33 @@ public sealed record CorrespondenceNotification : MultipartCorrespondenceItem
     public DateTimeOffset? RequestedSendTime { get; init; }
 
     /// <summary>
-    /// A list of recipients for the notification. If not set, the notification will be sent to the recipient of the Correspondence
+    /// <p>A list of custom recipients for the notification. If not set, the notification will be sent to the recipient of the Correspondence.</p>
+    /// <p>Each recipient must have exactly one identifier populated (one of <see cref="CorrespondenceNotificationRecipient.EmailAddress"/>,
+    /// <see cref="CorrespondenceNotificationRecipient.MobileNumber"/>, <see cref="CorrespondenceNotificationRecipient.OrganizationNumber"/>
+    /// or <see cref="CorrespondenceNotificationRecipient.NationalIdentityNumber"/>). To notify a recipient on multiple channels, add one
+    /// entry per channel.</p>
     /// </summary>
+    /// <remarks>See <see cref="OverrideRegisteredContactInformation"/> for how these recipients interact with the registered contact information in KRR.</remarks>
+    public IReadOnlyList<CorrespondenceNotificationRecipient>? CustomRecipients { get; init; }
+
+    /// <summary>
+    /// <p>Controls how <see cref="CustomRecipients"/> interact with the contact information registered in Kontakt- og reservasjonsregisteret (KRR).</p>
+    /// <p><c>false</c> (default): notifications are sent to both the registered contact information and the <see cref="CustomRecipients"/>.</p>
+    /// <p><c>true</c>: notifications are sent only to the <see cref="CustomRecipients"/>, overriding the registered contact information.</p>
+    /// </summary>
+    /// <remarks>Can only be set to <c>true</c> when <see cref="CustomRecipients"/> is provided.</remarks>
+    public bool OverrideRegisteredContactInformation { get; init; }
+
+    /// <summary>
+    /// A single custom recipient for the notification. If not set, the notification will be sent to the recipient of the Correspondence
+    /// </summary>
+    [Obsolete("This property is deprecated and will be removed in a future version. Use CustomRecipients instead.")]
     public CorrespondenceNotificationRecipient? CustomRecipient { get; init; }
 
     /// <summary>
     /// A list of recipients for the notification. If not set, the notification will be sent to the recipient of the Correspondence
     /// </summary>
     /// <remarks> Only the first recipient in the list will be used for sending the notification. </remarks>
-    [Obsolete("This property is deprecated and will be removed in a future version. Use CustomRecipient instead.")]
+    [Obsolete("This property is deprecated and will be removed in a future version. Use CustomRecipients instead.")]
     public IReadOnlyList<CorrespondenceNotificationRecipientWrapper>? CustomNotificationRecipients { get; init; }
-
-    internal void Serialise(MultipartFormDataContent content)
-    {
-        ValidateAllProperties(nameof(CorrespondenceNotification));
-
-        AddRequired(content, NotificationTemplate.ToString(), "Correspondence.Notification.NotificationTemplate");
-        AddIfNotNull(content, EmailSubject, "Correspondence.Notification.EmailSubject");
-        AddIfNotNull(content, EmailBody, "Correspondence.Notification.EmailBody");
-        AddIfNotNull(content, SmsBody, "Correspondence.Notification.SmsBody");
-        AddIfNotNull(content, SendReminder?.ToString(), "Correspondence.Notification.SendReminder");
-        AddIfNotNull(content, ReminderEmailSubject, "Correspondence.Notification.ReminderEmailSubject");
-        AddIfNotNull(content, ReminderEmailBody, "Correspondence.Notification.ReminderEmailBody");
-        AddIfNotNull(content, ReminderSmsBody, "Correspondence.Notification.ReminderSmsBody");
-        AddIfNotNull(content, NotificationChannel.ToString(), "Correspondence.Notification.NotificationChannel");
-        AddIfNotNull(content, SendersReference, "Correspondence.Notification.SendersReference");
-        CustomRecipient?.Serialise(content);
-        if (CustomRecipient is null)
-        {
-#pragma warning disable CS0618 // Type or member is obsolete
-            CustomNotificationRecipients?[0]?.Serialise(content, 0);
-#pragma warning restore CS0618 // Type or member is obsolete
-        }
-
-        AddIfNotNull(
-            content,
-            ReminderNotificationChannel.ToString(),
-            "Correspondence.Notification.ReminderNotificationChannel"
-        );
-    }
 }
