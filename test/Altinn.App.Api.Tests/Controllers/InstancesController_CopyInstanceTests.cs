@@ -1462,8 +1462,6 @@ public class InstancesController_CopyInstanceTests
             {
                 Id = Guid.NewGuid().ToString(),
                 DataType = "attachment",
-                ContentType = "application/pdf",
-                Filename = "tagged.pdf",
                 Tags = ["innhold", "omslag"],
             },
         ];
@@ -1474,46 +1472,18 @@ public class InstancesController_CopyInstanceTests
         var auth = TestAuthentication.GetUserAuthentication(userPartyId: instanceOwnerPartyId);
         using var fixture = InstancesControllerFixture.Create(auth);
         SetupSuccessfulCopy(fixture, instance, application);
-
-        DataElement copiedDataElement = new() { Id = Guid.NewGuid().ToString(), DataType = "attachment" };
-        fixture
-            .Mock<IDataClient>()
-            .Setup(p =>
-                p.GetBinaryData(
-                    It.IsAny<int>(),
-                    It.IsAny<Guid>(),
-                    It.IsAny<Guid>(),
-                    It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync(new MemoryStream());
-        fixture
-            .Mock<IDataClient>()
-            .Setup(p =>
-                p.InsertBinaryData(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<Stream>(),
-                    It.IsAny<string>(),
-                    It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync(copiedDataElement);
         fixture
             .Mock<IDataClient>()
             .Setup(p =>
                 p.Update(
                     It.IsAny<Instance>(),
-                    copiedDataElement,
+                    It.Is<DataElement>(de => de.Tags.SequenceEqual(new[] { "innhold", "omslag" })),
                     It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(copiedDataElement);
+            .ReturnsAsync(new DataElement())
+            .Verifiable(Times.Once);
 
         // Act
         var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
@@ -1526,19 +1496,7 @@ public class InstancesController_CopyInstanceTests
 
         // Assert
         Assert.IsType<RedirectResult>(actual);
-        Assert.Equal(["innhold", "omslag"], copiedDataElement.Tags);
-        fixture
-            .Mock<IDataClient>()
-            .Verify(
-                p =>
-                    p.Update(
-                        It.IsAny<Instance>(),
-                        copiedDataElement,
-                        It.IsAny<StorageAuthenticationMethod?>(),
-                        It.IsAny<CancellationToken>()
-                    ),
-                Times.Once
-            );
+        fixture.Mock<IDataClient>().Verify();
     }
 
     [Fact]
@@ -1881,8 +1839,8 @@ public class InstancesController_CopyInstanceTests
     }
 
     /// <summary>
-    /// Sets up the mocks needed for a successful copy of <paramref name="instance"/> where the created instance
-    /// is the same as the source. The returned function gives the template passed to
+    /// Sets up the mocks needed for a successful copy of <paramref name="instance"/> (including form data and
+    /// attachments) where the created instance is the same as the source. The returned function gives the template passed to
     /// <see cref="IInstanceClient.CreateInstance(string, string, Instance, StorageAuthenticationMethod?, CancellationToken)"/>.
     /// </summary>
     private static Func<Instance?> SetupSuccessfulCopy(
@@ -1986,6 +1944,33 @@ public class InstancesController_CopyInstanceTests
                 )
             )
             .ReturnsAsync(new DataElement());
+        fixture
+            .Mock<IDataClient>()
+            .Setup(p =>
+                p.GetBinaryData(
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(() => new MemoryStream());
+        fixture
+            .Mock<IDataClient>()
+            .Setup(p =>
+                p.InsertBinaryData(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Stream>(),
+                    It.IsAny<string>(),
+                    It.IsAny<StorageAuthenticationMethod?>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(() => new DataElement());
 
         return () => instanceTemplate;
     }
