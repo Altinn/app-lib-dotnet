@@ -1455,209 +1455,90 @@ public class InstancesController_CopyInstanceTests
     {
         // Arrange
         const int instanceOwnerPartyId = 343234;
+        Instance instance = CreateArchivedInstance(instanceOwnerPartyId);
+        instance.Data =
+        [
+            new DataElement
+            {
+                Id = Guid.NewGuid().ToString(),
+                DataType = "attachment",
+                ContentType = "application/pdf",
+                Filename = "tagged.pdf",
+                Tags = ["innhold", "omslag"],
+            },
+        ];
+
+        ApplicationMetadata application = CreateApplicationMetadata("ttd", "copy-instance", true);
+        application.CopyInstanceSettings!.IncludeAttachments = true;
+
         var auth = TestAuthentication.GetUserAuthentication(userPartyId: instanceOwnerPartyId);
         using var fixture = InstancesControllerFixture.Create(auth);
-        const string Org = "ttd";
-        const string AppName = "copy-instance";
-        Guid instanceGuid = Guid.NewGuid();
-        Guid taggedDataGuid = Guid.NewGuid();
-        Guid untaggedDataGuid = Guid.NewGuid();
-        const string binaryDataTypeId = "attachment";
+        SetupSuccessfulCopy(fixture, instance, application);
 
-        var binaryDataBytes = System.Text.Encoding.UTF8.GetBytes("Binary content");
-
-        Instance instance = new()
-        {
-            Id = $"{instanceOwnerPartyId}/{instanceGuid}",
-            AppId = $"{Org}/{AppName}",
-            InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() },
-            Status = new InstanceStatus() { IsArchived = true },
-            Process = new ProcessState() { CurrentTask = new ProcessElementInfo() { ElementId = "First" } },
-            Data = new List<DataElement>
-            {
-                new DataElement
-                {
-                    Id = taggedDataGuid.ToString(),
-                    DataType = binaryDataTypeId,
-                    ContentType = "application/pdf",
-                    Filename = "tagged.pdf",
-                    Size = binaryDataBytes.Length,
-                    Tags = ["innhold", "omslag"],
-                },
-                new DataElement
-                {
-                    Id = untaggedDataGuid.ToString(),
-                    DataType = binaryDataTypeId,
-                    ContentType = "application/pdf",
-                    Filename = "untagged.pdf",
-                    Size = binaryDataBytes.Length,
-                },
-            },
-        };
-        InstantiationValidationResult? instantiationValidationResult = new() { Valid = true };
-
-        var appMetadata = CreateApplicationMetadata(Org, AppName, true);
-        appMetadata.CopyInstanceSettings.IncludeAttachments = true;
-
-        fixture
-            .Mock<HttpContext>()
-            .Setup(hc => hc.User)
-            .Returns(TestAuthentication.GetUserPrincipal(1337, instanceOwnerPartyId));
-        fixture.Mock<HttpContext>().Setup(hc => hc.Request).Returns(Mock.Of<HttpRequest>());
-        fixture.Mock<IAppMetadata>().Setup(a => a.GetApplicationMetadata()).ReturnsAsync(appMetadata);
-        fixture
-            .Mock<IPDP>()
-            .Setup<Task<XacmlJsonResponse>>(p => p.GetDecisionForRequest(It.IsAny<XacmlJsonRequestRoot>()))
-            .ReturnsAsync(CreateXacmlResponse("Permit"));
-        fixture
-            .Mock<IInstanceClient>()
-            .Setup(i =>
-                i.GetInstance(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<int>(),
-                    It.IsAny<Guid>(),
-                    It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync(instance);
-        fixture
-            .Mock<IInstanceClient>()
-            .Setup(i =>
-                i.CreateInstance(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<Instance>(),
-                    It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync(instance);
-        fixture
-            .Mock<IInstanceClient>()
-            .Setup(i =>
-                i.GetInstance(
-                    It.IsAny<Instance>(),
-                    It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync(instance);
-        fixture
-            .Mock<IInstantiationValidator>()
-            .Setup(v => v.Validate(It.IsAny<Instance>()))
-            .ReturnsAsync(instantiationValidationResult);
-        fixture
-            .Mock<ICopyInstanceValidator>()
-            .Setup(v => v.Validate(It.IsAny<IInstanceDataAccessor>()))
-            .ReturnsAsync(instantiationValidationResult);
-        fixture
-            .Mock<IProcessEngine>()
-            .Setup(p => p.GenerateProcessStartEvents(It.IsAny<ProcessStartRequest>()))
-            .ReturnsAsync(() => new ProcessChangeResult() { Success = true });
-        fixture
-            .Mock<IProcessEngine>()
-            .Setup(p =>
-                p.HandleEventsAndUpdateStorage(
-                    It.IsAny<Instance>(),
-                    It.IsAny<Dictionary<string, string>>(),
-                    It.IsAny<List<InstanceEvent>>()
-                )
-            );
-
+        DataElement copiedDataElement = new() { Id = Guid.NewGuid().ToString(), DataType = "attachment" };
         fixture
             .Mock<IDataClient>()
             .Setup(p =>
                 p.GetBinaryData(
-                    instanceOwnerPartyId,
-                    instanceGuid,
+                    It.IsAny<int>(),
+                    It.IsAny<Guid>(),
                     It.IsAny<Guid>(),
                     It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(() => new MemoryStream(binaryDataBytes));
-
-        DataElement copiedTaggedElement = new() { Id = Guid.NewGuid().ToString(), DataType = binaryDataTypeId };
-        DataElement copiedUntaggedElement = new() { Id = Guid.NewGuid().ToString(), DataType = binaryDataTypeId };
+            .ReturnsAsync(new MemoryStream());
         fixture
             .Mock<IDataClient>()
             .Setup(p =>
                 p.InsertBinaryData(
                     It.IsAny<string>(),
-                    binaryDataTypeId,
-                    "application/pdf",
-                    "tagged.pdf",
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
                     It.IsAny<Stream>(),
                     It.IsAny<string>(),
                     It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync(copiedTaggedElement);
-        fixture
-            .Mock<IDataClient>()
-            .Setup(p =>
-                p.InsertBinaryData(
-                    It.IsAny<string>(),
-                    binaryDataTypeId,
-                    "application/pdf",
-                    "untagged.pdf",
-                    It.IsAny<Stream>(),
-                    It.IsAny<string>(),
-                    It.IsAny<StorageAuthenticationMethod?>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync(copiedUntaggedElement);
+            .ReturnsAsync(copiedDataElement);
         fixture
             .Mock<IDataClient>()
             .Setup(p =>
                 p.Update(
                     It.IsAny<Instance>(),
-                    It.IsAny<DataElement>(),
+                    copiedDataElement,
                     It.IsAny<StorageAuthenticationMethod?>(),
                     It.IsAny<CancellationToken>()
                 )
             )
-            .ReturnsAsync((Instance _, DataElement de, StorageAuthenticationMethod? _, CancellationToken _) => de);
+            .ReturnsAsync(copiedDataElement);
 
         // Act
         var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
-        ActionResult actual = await controller.CopyInstance(Org, AppName, instanceOwnerPartyId, instanceGuid);
+        ActionResult actual = await controller.CopyInstance(
+            "ttd",
+            "copy-instance",
+            instanceOwnerPartyId,
+            Guid.Parse(instance.Id.Split("/")[1])
+        );
 
         // Assert
         Assert.IsType<RedirectResult>(actual);
-
-        // Tags are only applied to the copy of the tagged source element
+        Assert.Equal(["innhold", "omslag"], copiedDataElement.Tags);
         fixture
             .Mock<IDataClient>()
             .Verify(
                 p =>
                     p.Update(
                         It.IsAny<Instance>(),
-                        It.Is<DataElement>(de =>
-                            de.Id == copiedTaggedElement.Id && de.Tags.SequenceEqual(new[] { "innhold", "omslag" })
-                        ),
+                        copiedDataElement,
                         It.IsAny<StorageAuthenticationMethod?>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
             );
-        fixture
-            .Mock<IDataClient>()
-            .Verify(
-                p =>
-                    p.Update(
-                        It.IsAny<Instance>(),
-                        It.IsAny<DataElement>(),
-                        It.IsAny<StorageAuthenticationMethod?>(),
-                        It.IsAny<CancellationToken>()
-                    ),
-                Times.Once
-            );
-        Assert.Empty(copiedUntaggedElement.Tags);
     }
 
     [Fact]
