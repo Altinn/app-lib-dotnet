@@ -157,33 +157,26 @@ public sealed class AzureMonitorExporterContractTests : IDisposable
     }
 
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(false, true)]
-    [InlineData(true, false)]
-    [InlineData(true, true)]
-    public async Task Owner_Custom_Sampler_Is_Used_Regardless_Of_Registration_Order(
-        bool configureAfter,
-        bool withServiceProvider
-    )
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Owner_Custom_Sampler_After_Altinn_Registration_Is_Used(bool withServiceProvider)
     {
         using var capture = new CaptureTransport();
         var sampler = new OwnerSampler();
-        Action<IServiceCollection> configure = services =>
-        {
-            if (withServiceProvider)
-            {
-                services.AddSingleton(sampler);
-                services.ConfigureOpenTelemetryTracerProvider(
-                    (sp, b) => b.SetSampler(sp.GetRequiredService<OwnerSampler>())
-                );
-            }
-            else
-                services.ConfigureOpenTelemetryTracerProvider(b => b.SetSampler(sampler));
-        };
         await using var services = BuildServices(
             capture,
-            before: configureAfter ? null : configure,
-            after: configureAfter ? configure : null
+            after: services =>
+            {
+                if (withServiceProvider)
+                {
+                    services.AddSingleton(sampler);
+                    services.ConfigureOpenTelemetryTracerProvider(
+                        (sp, b) => b.SetSampler(sp.GetRequiredService<OwnerSampler>())
+                    );
+                }
+                else
+                    services.ConfigureOpenTelemetryTracerProvider(b => b.SetSampler(sampler));
+            }
         );
         var provider = services.GetRequiredService<TracerProvider>();
         using var source = new ActivitySource(Source);
@@ -192,6 +185,64 @@ public sealed class AzureMonitorExporterContractTests : IDisposable
         Assert.Equal(1, sampler.Calls);
         Assert.True(provider.ForceFlush());
         Assert.Empty(capture.Data("RequestData"));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Owner_Processor_Enrichment_Precedes_Azure_Metric_Extraction(bool withServiceProvider)
+    {
+        using var capture = new CaptureTransport();
+        var processor = new OwnerEnrichmentProcessor();
+        await using var services = BuildServices(
+            capture,
+            before: services =>
+            {
+                if (withServiceProvider)
+                {
+                    services.AddSingleton(processor);
+                    services.ConfigureOpenTelemetryTracerProvider(
+                        (sp, b) => b.AddProcessor(sp.GetRequiredService<OwnerEnrichmentProcessor>())
+                    );
+                }
+                else
+                    services.ConfigureOpenTelemetryTracerProvider(b => b.AddProcessor(processor));
+            }
+        );
+        var provider = services.GetRequiredService<TracerProvider>();
+        bool? metricSuccess = null;
+        using var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, listener) =>
+        {
+            if (instrument.Name == "RequestDurationStandardMetric")
+                listener.EnableMeasurementEvents(instrument);
+        };
+        listener.SetMeasurementEventCallback<double>(
+            (instrument, value, tags, state) =>
+            {
+                foreach (var tag in tags)
+                    if (tag.Key == "Request.Success")
+                        metricSuccess = (bool)tag.Value!;
+            }
+        );
+        listener.Start();
+        using var source = new ActivitySource(Source);
+        using (var activity = source.StartActivity("contract-request", ActivityKind.Server))
+        {
+            activity!.SetTag("http.request.method", "GET");
+            activity.SetTag("url.scheme", "https");
+            activity.SetTag("server.address", "contract.example");
+            activity.SetTag("url.path", "/contract");
+            activity.SetTag("http.response.status_code", 200);
+        }
+
+        Assert.Equal(false, metricSuccess);
+        Assert.False(processor.SawAzureMetricExtraction);
+        Assert.True(provider.ForceFlush());
+        var request = Assert.Single(capture.Data("RequestData"));
+        Assert.Equal("500", request.GetProperty("responseCode").GetString());
+        Assert.False(request.GetProperty("success").GetBoolean());
+        Assert.Equal("owner-value", request.GetProperty("properties").GetProperty("owner-property").GetString());
     }
 
     [Theory]
@@ -248,6 +299,19 @@ public sealed class AzureMonitorExporterContractTests : IDisposable
         );
         Assert.Contains(capture.Data("MessageData"), d => d.GetProperty("message").GetString() == "contract-error");
         Assert.All(capture.Requests, uri => Assert.Equal(new Uri(ownerEndpoint).Host, uri.Host));
+    }
+
+    private sealed class OwnerEnrichmentProcessor : OpenTelemetry.BaseProcessor<Activity>
+    {
+        public bool SawAzureMetricExtraction { get; private set; }
+
+        public override void OnEnd(Activity activity)
+        {
+            SawAzureMetricExtraction = activity.GetTagItem("_MS.ProcessedByMetricExtractors") is not null;
+            activity.SetTag("http.response.status_code", 500);
+            activity.SetStatus(ActivityStatusCode.Error);
+            activity.SetTag("owner-property", "owner-value");
+        }
     }
 
     private sealed class OwnerSampler : Sampler

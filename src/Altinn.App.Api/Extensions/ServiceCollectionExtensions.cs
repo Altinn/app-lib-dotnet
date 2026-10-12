@@ -237,8 +237,8 @@ public static class ServiceCollectionExtensions
         {
             // Defaults must run before both SDK configuration and service-owner Configure/PostConfigure callbacks,
             // including callbacks registered before AddAltinnAppServices.
-            var azureDefaults = new ServiceCollection();
-            azureDefaults.Add(
+            services.Insert(
+                0,
                 ServiceDescriptor.Singleton<IConfigureOptions<AzureMonitorExporterOptions>>(
                     new ConfigureOptions<AzureMonitorExporterOptions>(options =>
                     {
@@ -251,16 +251,6 @@ public static class ServiceCollectionExtensions
                     })
                 )
             );
-            // The Azure exporter installs its sampler when this SDK callback runs. Compose its full
-            // registration separately so it runs before owner callbacks, even when they were registered
-            // before AddAltinnAppServices. Prepending every descriptor in order preserves SDK dependencies;
-            // all services are still resolved from the app's single service provider. Azure processors also
-            // run before owner processors, so OnEnd enrichment is too late for Azure metric extraction.
-            azureDefaults.ConfigureOpenTelemetryTracerProvider(builder => builder.AddAzureMonitorTraceExporter());
-            for (var i = 0; i < azureDefaults.Count; i++)
-            {
-                services.Insert(i, azureDefaults[i]);
-            }
         }
 
         services
@@ -285,7 +275,11 @@ public static class ServiceCollectionExtensions
                 if (isTest)
                     return;
 
-                if (!useAzureMonitor)
+                if (useAzureMonitor)
+                {
+                    builder = builder.AddAzureMonitorTraceExporter();
+                }
+                else
                 {
                     builder = builder.AddOtlpExporter();
                 }
