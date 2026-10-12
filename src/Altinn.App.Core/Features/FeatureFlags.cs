@@ -13,7 +13,6 @@ public static class FeatureFlags
     /// </summary>
     public const string JsonObjectInDataResponse = "JsonObjectInDataResponse";
 
-    // TODO: write a better summary here
     /// <summary>
     /// Enabling this feature changes backend endpoint used for layouts to
     /// add instance identifier.
