@@ -2,6 +2,9 @@ using Altinn.App.Core.Constants;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Instances;
+using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,6 +18,8 @@ public class ResourceController : ControllerBase
 {
     private readonly IAppResources _appResourceService;
     private readonly AppImplementationFactory _appImplementationFactory;
+    private readonly IInstanceClient _instanceClient;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ResourceController"/> class
@@ -25,6 +30,8 @@ public class ResourceController : ControllerBase
     {
         _appResourceService = appResourcesService;
         _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
+        _instanceClient = serviceProvider.GetRequiredService<IInstanceClient>();
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
     /// <summary>
@@ -96,7 +103,7 @@ public class ResourceController : ControllerBase
 
     /// <summary>
     /// Endpoint for layouts with instance context.
-    /// Uses ICustomLayoutForInstance if implemented with IAppResources as fallback.
+    /// Uses IInstanceLayoutProvider if implemented with IAppResources as fallback.
     /// </summary>
     /// <param name="org">The application owner short name</param>
     /// <param name="app">The application name</param>
@@ -116,17 +123,20 @@ public class ResourceController : ControllerBase
         string layoutSetId
     )
     {
-        ICustomLayoutForInstance? customLayoutService = _appImplementationFactory.Get<ICustomLayoutForInstance>();
-        if (customLayoutService is not null)
+        IInstanceLayoutProvider? layoutProvider = _appImplementationFactory.Get<IInstanceLayoutProvider>();
+        if (layoutProvider is not null)
         {
-            string? customLayout = await customLayoutService.GetCustomLayoutForInstance(
-                layoutSetId,
+            InstanceLayoutContext context = await CreateInstanceLayoutContext(
+                org,
+                app,
                 instanceOwnerPartyId,
-                instanceGuid
+                instanceGuid,
+                layoutSetId
             );
-            if (customLayout is not null)
+            string? instanceLayouts = await layoutProvider.GetLayouts(context);
+            if (instanceLayouts is not null)
             {
-                return Ok(customLayout);
+                return Ok(instanceLayouts);
             }
         }
         string layouts = _appResourceService.GetLayoutsForSet(layoutSetId);
@@ -153,7 +163,7 @@ public class ResourceController : ControllerBase
 
     /// <summary>
     /// Endpoint for layout settings with instance context.
-    /// Uses ICustomLayoutForInstance if implemented with IAppResources as fallback.
+    /// Uses IInstanceLayoutProvider if implemented with IAppResources as fallback.
     /// </summary>
     /// <param name="org">The application owner short name</param>
     /// <param name="app">The application name</param>
@@ -173,21 +183,47 @@ public class ResourceController : ControllerBase
         string layoutSetId
     )
     {
-        ICustomLayoutForInstance? customLayoutService = _appImplementationFactory.Get<ICustomLayoutForInstance>();
-        if (customLayoutService is not null)
+        IInstanceLayoutProvider? layoutProvider = _appImplementationFactory.Get<IInstanceLayoutProvider>();
+        if (layoutProvider is not null)
         {
-            string? customLayoutSettings = await customLayoutService.GetCustomLayoutSettingsForInstance(
-                layoutSetId,
+            InstanceLayoutContext context = await CreateInstanceLayoutContext(
+                org,
+                app,
                 instanceOwnerPartyId,
-                instanceGuid
+                instanceGuid,
+                layoutSetId
             );
-            if (customLayoutSettings is not null)
+            string? instanceLayoutSettings = await layoutProvider.GetLayoutSettings(context);
+            if (instanceLayoutSettings is not null)
             {
-                return Ok(customLayoutSettings);
+                return Ok(instanceLayoutSettings);
             }
         }
         string? settings = _appResourceService.GetLayoutSettingsStringForSet(layoutSetId);
         return Ok(settings);
+    }
+
+    private async Task<InstanceLayoutContext> CreateInstanceLayoutContext(
+        string org,
+        string app,
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        string layoutSetId
+    )
+    {
+        CancellationToken ct = HttpContext.RequestAborted;
+        Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid, ct: ct);
+        InstanceDataUnitOfWork dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(
+            instance,
+            instance.Process?.CurrentTask?.ElementId,
+            language: null
+        );
+        return new InstanceLayoutContext
+        {
+            LayoutSetId = layoutSetId,
+            InstanceDataAccessor = dataAccessor,
+            CancellationToken = ct,
+        };
     }
 
     /// <summary>

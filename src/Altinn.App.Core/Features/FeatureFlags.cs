@@ -12,10 +12,4 @@ public static class FeatureFlags
     /// return validation errors in the response body instead of a string.
     /// </summary>
     public const string JsonObjectInDataResponse = "JsonObjectInDataResponse";
-
-    /// <summary>
-    /// Enabling this feature changes backend endpoint used for layouts to
-    /// add instance identifier.
-    /// </summary>
-    public const string AddInstanceIdentifierToLayoutRequests = "AddInstanceIdentifierToLayoutRequests";
 }

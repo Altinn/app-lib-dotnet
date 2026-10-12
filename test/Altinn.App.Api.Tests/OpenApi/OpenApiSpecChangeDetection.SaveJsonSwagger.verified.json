@@ -5505,7 +5505,7 @@
         "tags": [
           "Resource"
         ],
-        "summary": "Endpoint for layouts with instance context.\nUses ICustomLayoutForInstance if implemented with IAppResources as fallback.",
+        "summary": "Endpoint for layouts with instance context.\nUses IInstanceLayoutProvider if implemented with IAppResources as fallback.",
         "parameters": [
           {
             "name": "org",
@@ -5615,7 +5615,7 @@
         "tags": [
           "Resource"
         ],
-        "summary": "Endpoint for layout settings with instance context.\nUses ICustomLayoutForInstance if implemented with IAppResources as fallback.",
+        "summary": "Endpoint for layout settings with instance context.\nUses IInstanceLayoutProvider if implemented with IAppResources as fallback.",
         "parameters": [
           {
             "name": "org",

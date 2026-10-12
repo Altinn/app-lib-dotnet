@@ -1189,7 +1189,6 @@ namespace Altinn.App.Core.Features
     }
     public static class FeatureFlags
     {
-        public const string AddInstanceIdentifierToLayoutRequests = "AddInstanceIdentifierToLayoutRequests";
         public const string JsonObjectInDataResponse = "JsonObjectInDataResponse";
     }
     public interface IAppOptionsProvider
@@ -1308,6 +1307,11 @@ namespace Altinn.App.Core.Features
         void RemoveDataElement(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier);
         Altinn.App.Core.Models.BinaryDataChange UpdateBinaryDataElement(Altinn.App.Core.Models.DataElementIdentifier dataElementIdentifier, string contentType, System.ReadOnlyMemory<byte> bytes);
     }
+    public interface IInstanceLayoutProvider
+    {
+        System.Threading.Tasks.Task<string?> GetLayoutSettings(Altinn.App.Core.Features.InstanceLayoutContext context);
+        System.Threading.Tasks.Task<string?> GetLayouts(Altinn.App.Core.Features.InstanceLayoutContext context);
+    }
     [System.Obsolete("Use ITaskValidator, IDataElementValidator or IFormDataValidator instead")]
     public interface IInstanceValidator
     {
@@ -1400,6 +1404,13 @@ namespace Altinn.App.Core.Features
         System.Threading.Tasks.Task<bool> HasRelevantChanges(Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor, string taskId, Altinn.App.Core.Models.DataElementChanges changes);
         bool ShouldRunForTask(string taskId);
         System.Threading.Tasks.Task<System.Collections.Generic.List<Altinn.App.Core.Models.Validation.ValidationIssue>> Validate(Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor, string taskId, string? language);
+    }
+    public sealed class InstanceLayoutContext : System.IEquatable<Altinn.App.Core.Features.InstanceLayoutContext>
+    {
+        public InstanceLayoutContext() { }
+        public System.Threading.CancellationToken CancellationToken { get; init; }
+        public required Altinn.App.Core.Features.IInstanceDataAccessor InstanceDataAccessor { get; init; }
+        public required string LayoutSetId { get; init; }
     }
     public sealed class StorageAuthenticationMethod : System.IEquatable<Altinn.App.Core.Features.StorageAuthenticationMethod>
     {
@@ -2978,6 +2989,7 @@ namespace Altinn.App.Core.Internal.App
     public class FrontendFeatures : Altinn.App.Core.Internal.App.IFrontendFeatures
     {
         public FrontendFeatures(Microsoft.FeatureManagement.IFeatureManager featureManager) { }
+        public FrontendFeatures(Microsoft.FeatureManagement.IFeatureManager featureManager, Microsoft.Extensions.DependencyInjection.IServiceProviderIsService serviceProviderIsService) { }
         public System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, bool>> GetFrontendFeatures() { }
     }
     public interface IAppEvents
@@ -3030,11 +3042,6 @@ namespace Altinn.App.Core.Internal.App
     public interface IApplicationClient
     {
         System.Threading.Tasks.Task<Altinn.Platform.Storage.Interface.Models.Application?> GetApplication(string org, string app);
-    }
-    public interface ICustomLayoutForInstance
-    {
-        System.Threading.Tasks.Task<string?> GetCustomLayoutForInstance(string layoutSetId, int instanceOwnerPartyId, System.Guid instanceGuid);
-        System.Threading.Tasks.Task<string?> GetCustomLayoutSettingsForInstance(string layoutSetId, int instanceOwnerPartyId, System.Guid instanceGuid);
     }
     public interface IFrontendFeatures
     {
