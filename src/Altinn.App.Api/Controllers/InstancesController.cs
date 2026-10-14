@@ -626,12 +626,51 @@ public class InstancesController : ControllerBase
             );
         }
 
+        Instance? source = null;
+
+        if (isCopyRequest)
+        {
+            string[] sourceSplit =
+                instansiationInstance.SourceInstanceId?.Split("/")
+                ?? throw new ArgumentException("SourceInstanceId is null or not in the correct format");
+            Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
+
+            try
+            {
+                source = await _instanceClient.GetInstance(
+                    app,
+                    org,
+                    party.PartyId,
+                    sourceInstanceGuid,
+                    authenticationMethod: null,
+                    CancellationToken.None
+                );
+            }
+            catch (PlatformHttpException exception)
+            {
+                return StatusCode(
+                    500,
+                    $"Retrieving source instance failed with status code {exception.Response.StatusCode}"
+                );
+            }
+
+            if (source.Status?.IsArchived is not true)
+            {
+                return BadRequest("It is not possible to copy an instance that isn't archived.");
+            }
+        }
+
         Instance instanceTemplate = new()
         {
             InstanceOwner = instansiationInstance.InstanceOwner,
             VisibleAfter = instansiationInstance.VisibleAfter,
-            DueBefore = instansiationInstance.DueBefore,
+            DueBefore = instansiationInstance.DueBefore ?? GetDueBeforeFromSource(application, source),
             Org = application.Org,
+            DataValues = source is null ? null : SelectCopiedDataValues(application, source),
+            PresentationTexts = SelectIncludedValues(
+                application.CopyInstanceSettings?.IncludedPresentationTexts,
+                source?.PresentationTexts
+            ),
         };
 
         ConditionallySetReadStatus(instanceTemplate);
@@ -667,39 +706,8 @@ public class InstancesController : ControllerBase
 
             processResult = await _processEngine.GenerateProcessStartEvents(request);
 
-            Instance? source = null;
-
-            if (isCopyRequest)
+            if (source is not null)
             {
-                string[] sourceSplit =
-                    instansiationInstance.SourceInstanceId?.Split("/")
-                    ?? throw new ArgumentException("SourceInstanceId is null or not in the correct format");
-                Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
-
-                try
-                {
-                    source = await _instanceClient.GetInstance(
-                        app,
-                        org,
-                        party.PartyId,
-                        sourceInstanceGuid,
-                        authenticationMethod: null,
-                        CancellationToken.None
-                    );
-                }
-                catch (PlatformHttpException exception)
-                {
-                    return StatusCode(
-                        500,
-                        $"Retrieving source instance failed with status code {exception.Response.StatusCode}"
-                    );
-                }
-
-                if (source.Status?.IsArchived is not true)
-                {
-                    return BadRequest("It is not possible to copy an instance that isn't archived.");
-                }
-
                 var copyInstanceValidator = _appImplementationFactory.Get<ICopyInstanceValidator>();
                 if (copyInstanceValidator is not null)
                 {
@@ -730,7 +738,7 @@ public class InstancesController : ControllerBase
                 CancellationToken.None
             );
 
-            if (isCopyRequest && source is not null)
+            if (source is not null)
             {
                 await CopyDataFromSourceInstance(application, instance, source);
             }
@@ -866,6 +874,12 @@ public class InstancesController : ControllerBase
         {
             InstanceOwner = sourceInstance.InstanceOwner,
             VisibleAfter = sourceInstance.VisibleAfter,
+            DueBefore = GetDueBeforeFromSource(application, sourceInstance),
+            DataValues = SelectCopiedDataValues(application, sourceInstance),
+            PresentationTexts = SelectIncludedValues(
+                application.CopyInstanceSettings?.IncludedPresentationTexts,
+                sourceInstance.PresentationTexts
+            ),
             Status = new() { ReadStatus = ReadStatus.Read },
         };
 
@@ -1321,7 +1335,7 @@ public class InstancesController : ControllerBase
                     CancellationToken.None
                 );
 
-                await _dataClient.InsertBinaryData(
+                DataElement newDataElement = await _dataClient.InsertBinaryData(
                     targetInstance.Id,
                     de.DataType,
                     de.ContentType,
@@ -1331,8 +1345,79 @@ public class InstancesController : ControllerBase
                     authenticationMethod: null,
                     CancellationToken.None
                 );
+
+                // Tags (e.g. the file type chosen in FileUploadWithTag) can't be set on insert
+                if (de.Tags is { Count: > 0 })
+                {
+                    newDataElement.Tags = [.. de.Tags];
+                    await _dataClient.Update(
+                        targetInstance,
+                        newDataElement,
+                        authenticationMethod: null,
+                        CancellationToken.None
+                    );
+                }
             }
         }
+    }
+
+    private static DateTime? GetDueBeforeFromSource(ApplicationMetadata application, Instance? sourceInstance)
+    {
+        if (sourceInstance is null || application.CopyInstanceSettings?.IncludeDueBefore is not true)
+        {
+            return null;
+        }
+
+        return sourceInstance.DueBefore;
+    }
+
+    /// <summary>
+    /// Selects the data values to copy from <paramref name="sourceInstance"/> and adds
+    /// <see cref="DataValueKeys.CopySourceInstanceId"/>. If that key is included and set on the source, the copied
+    /// value is kept so that a copy of a copy references the first instance in the chain.
+    /// </summary>
+    private static Dictionary<string, string> SelectCopiedDataValues(
+        ApplicationMetadata application,
+        Instance sourceInstance
+    )
+    {
+        Dictionary<string, string> dataValues =
+            SelectIncludedValues(application.CopyInstanceSettings?.IncludedDataValues, sourceInstance.DataValues)
+            ?? new Dictionary<string, string>(1);
+
+        // Order matters: the included values are selected first, and TryAdd only sets the key when they do not
+        // already contain it. If the app lists the key in IncludedDataValues and the source already has it, the
+        // source is itself a copy, and the value copied from it points to the first instance in the chain. Setting
+        // the id of the source here would make the value point one step back in the chain instead.
+        dataValues.TryAdd(DataValueKeys.CopySourceInstanceId, sourceInstance.Id);
+        return dataValues;
+    }
+
+    /// <summary>
+    /// Picks the entries from <paramref name="sourceValues"/> whose keys are listed in <paramref name="includedKeys"/>.
+    /// Returns null when there is nothing to copy.
+    /// </summary>
+    private static Dictionary<string, string>? SelectIncludedValues(
+        List<string>? includedKeys,
+        Dictionary<string, string>? sourceValues
+    )
+    {
+        if (includedKeys is null || includedKeys.Count == 0 || sourceValues is null || sourceValues.Count == 0)
+        {
+            return null;
+        }
+
+        Dictionary<string, string>? selected = null;
+        foreach (string key in includedKeys)
+        {
+            if (sourceValues.TryGetValue(key, out string? value) && value is not null)
+            {
+                selected ??= new Dictionary<string, string>(includedKeys.Count);
+                selected[key] = value;
+            }
+        }
+
+        return selected;
     }
 
     private ActionResult ExceptionResponse(Exception exception, string message)

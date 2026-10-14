@@ -25,18 +25,18 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 17
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Cache SonarCloud packages
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~\sonar\cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
       - name: Cache SonarCloud scanner
         id: cache-sonar-scanner
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .\.sonar\scanner
           key: ${{ runner.os }}-sonar-scanner
@@ -56,11 +56,13 @@ jobs:
           .\.sonar\scanner\dotnet-sonarscanner begin /k:"Altinn_app-lib-dotnet" /o:"altinn" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.vstest.reportsPaths="**/*.trx" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
 
           dotnet build solutions/All.sln
+          # Analysis and coverage only need one target framework; dotnet-test.yml also runs the net8.0 tests.
           dotnet test solutions/All.sln `
           --no-restore --no-build `
           --results-directory TestResults/ `
           --collect:"XPlat Code Coverage" `
           --filter "Category!=Integration" `
+          --framework net10.0 `
           -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
           .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
