@@ -1,4 +1,5 @@
 using Altinn.App.Core.Helpers;
+using Altinn.App.Core.Models;
 using Altinn.App.Core.Models.Expressions;
 using Altinn.App.Core.Models.Layout;
 using Altinn.App.Core.Models.Validation;
@@ -124,6 +125,110 @@ public static class LayoutEvaluator
         {
             await state.RemoveDataField(dataReference, rowRemovalOption);
         }
+    }
+
+    /// <summary>
+    /// Get the attachments that only belong to hidden FileUpload and FileUploadWithTag components.
+    /// </summary>
+    /// <remarks>
+    /// An attachment belongs to a component the same way as in app-frontend: the data type id is the component id,
+    /// the data type is not a form data type, and it belongs to the task. A component owns the attachments whose ids
+    /// are in its <c>simpleBinding</c> or <c>list</c> binding. A component outside a repeating group without a
+    /// binding value owns all attachments of the data type. Attachments that no component owns are kept.
+    /// Run this before the hidden form data is removed, so the bindings in hidden rows are still there.
+    /// </remarks>
+    internal static async Task<List<DataElementIdentifier>> GetHiddenAttachmentsForRemoval(
+        LayoutEvaluatorState state,
+        string taskId
+    )
+    {
+        // Without layouts for the task there are no components, so nothing can be hidden
+        if (!state.HasComponentModel)
+        {
+            return [];
+        }
+
+        var hiddenAttachments = new HashSet<DataElementIdentifier>();
+        var nonHiddenAttachments = new HashSet<DataElementIdentifier>();
+
+        foreach (var pageContext in await state.GetComponentContexts())
+        {
+            foreach (var context in pageContext.Descendants)
+            {
+                var attachments = await GetAttachmentsOwnedByContext(state, context, taskId);
+                if (attachments.Count == 0)
+                {
+                    continue;
+                }
+
+                if (await context.IsHidden(evaluateRemoveWhenHidden: true))
+                {
+                    hiddenAttachments.UnionWith(attachments);
+                }
+                else
+                {
+                    nonHiddenAttachments.UnionWith(attachments);
+                }
+            }
+        }
+
+        hiddenAttachments.ExceptWith(nonHiddenAttachments);
+        return hiddenAttachments.ToList();
+    }
+
+    /// <summary>
+    /// Get the attachments owned by the FileUpload or FileUploadWithTag component in this context (one row of a
+    /// repeating group), or none when the context has another component type.
+    /// </summary>
+    private static async Task<List<DataElementIdentifier>> GetAttachmentsOwnedByContext(
+        LayoutEvaluatorState state,
+        ComponentContext context,
+        string taskId
+    )
+    {
+        var component = context.Component;
+        ArgumentNullException.ThrowIfNull(component);
+        if (
+            !component.Type.Equals("FileUpload", StringComparison.OrdinalIgnoreCase)
+            && !component.Type.Equals("FileUploadWithTag", StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            return [];
+        }
+
+        var dataType = state.DataAccessor.DataTypes.FirstOrDefault(dt =>
+            dt.Id.Equals(component.Id, StringComparison.Ordinal)
+        );
+        if (dataType is null || dataType.AppLogic?.ClassRef is not null || dataType.TaskId != taskId)
+        {
+            return [];
+        }
+
+        // Binding values are compared to the data element ids as strings, like app-frontend does
+        string? simpleValue = component.DataModelBindings.TryGetValue("simpleBinding", out var simpleBinding)
+            ? (await state.GetModelData(simpleBinding, context.DataElementIdentifier, context.RowIndices)) as string
+            : null;
+        object? listValue = component.DataModelBindings.TryGetValue("list", out var listBinding)
+            ? await state.GetModelData(listBinding, context.DataElementIdentifier, context.RowIndices)
+            : null;
+        var listIds = listValue is System.Collections.IEnumerable list
+            ? list.OfType<string>().ToHashSet(StringComparer.Ordinal)
+            : [];
+
+        // Same rule as app-frontend: an empty list still counts as a binding value, and only a context
+        // outside a repeating group (without row indices) owns attachments it has no binding value for
+        bool ownsAllOfDataType = string.IsNullOrEmpty(simpleValue) && listValue is null && context.RowIndices is null;
+
+        var attachments = new List<DataElementIdentifier>();
+        foreach (var dataElement in state.Instance.Data.Where(d => d.DataType == dataType.Id))
+        {
+            if (ownsAllOfDataType || dataElement.Id == simpleValue || listIds.Contains(dataElement.Id))
+            {
+                attachments.Add(dataElement);
+            }
+        }
+
+        return attachments;
     }
 
     /// <summary>
