@@ -52,7 +52,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         if (_appSettings.Value.RemoveHiddenData)
         {
             // Must run before the hidden form data is removed, as that removes the bindings in hidden rows
-            await RemoveHiddenAttachments(dataAccessor, taskId);
+            await RemoveHiddenAttachmentsOnTaskComplete(dataAccessor, taskId);
         }
 
         List<Task> tasks = [];
@@ -83,7 +83,7 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
     /// Remove the attachments that only belong to hidden upload components from the unit of work.
     /// They are deleted from storage with the other changes in <see cref="InstanceDataUnitOfWork.UpdateInstanceData"/>.
     /// </summary>
-    private async Task RemoveHiddenAttachments(InstanceDataUnitOfWork dataAccessor, string taskId)
+    private async Task RemoveHiddenAttachmentsOnTaskComplete(InstanceDataUnitOfWork dataAccessor, string taskId)
     {
         LayoutEvaluatorState evaluationState = await _layoutEvaluatorStateInitializer.Init(
             dataAccessor,

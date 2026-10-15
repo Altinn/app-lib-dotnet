@@ -177,7 +177,7 @@ public class FileUploadTests
         return PageComponent.Parse(document.RootElement, pageId, layoutId);
     }
 
-    private static DataElement NewAttachment(string dataType) =>
+    private static DataElement CreateAttachment(string dataType) =>
         new()
         {
             Id = Guid.NewGuid().ToString(),
@@ -238,11 +238,11 @@ public class FileUploadTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Upload_ReturnsAllItsAttachments_OnlyWhenHidden(bool hasDispensation)
+    public async Task Upload_RemovesAllItsAttachments_OnlyWhenHidden(bool hasDispensation)
     {
-        var dispensation1 = NewAttachment("dispensation");
-        var dispensation2 = NewAttachment("dispensation");
-        var alwaysShown = NewAttachment("alwaysShown");
+        var dispensation1 = CreateAttachment("dispensation");
+        var dispensation2 = CreateAttachment("dispensation");
+        var alwaysShown = CreateAttachment("alwaysShown");
 
         var actual = await GetHiddenAttachmentIds(
             new SkjemaModel { HasDispensation = hasDispensation },
@@ -257,9 +257,9 @@ public class FileUploadTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task UploadOnPage_ReturnsItsAttachments_OnlyWhenThePageIsHidden(bool hidePage2)
+    public async Task UploadOnPage_RemovesItsAttachments_OnlyWhenThePageIsHidden(bool hidePage2)
     {
-        var page2Upload = NewAttachment("page2Upload");
+        var page2Upload = CreateAttachment("page2Upload");
 
         var actual = await GetHiddenAttachmentIds(
             new SkjemaModel { HasDispensation = true, HidePage2 = hidePage2 },
@@ -270,12 +270,12 @@ public class FileUploadTests
     }
 
     [Fact]
-    public async Task UploadInRepeatingGroup_ReturnsTheAttachmentsInHiddenRowsAndHiddenUploads()
+    public async Task UploadInRepeatingGroup_RemovesTheAttachmentsInHiddenRowsAndHiddenUploads()
     {
-        var visible = NewAttachment("rowUpload");
-        var uploadHidden = NewAttachment("rowUpload");
-        var rowHidden = NewAttachment("rowUpload");
-        var notInAnyRow = NewAttachment("rowUpload");
+        var visible = CreateAttachment("rowUpload");
+        var uploadHidden = CreateAttachment("rowUpload");
+        var rowHidden = CreateAttachment("rowUpload");
+        var notInAnyRow = CreateAttachment("rowUpload");
 
         var actual = await GetHiddenAttachmentIds(
             new SkjemaModel
@@ -294,17 +294,17 @@ public class FileUploadTests
             notInAnyRow
         );
 
-        // No row has notInAnyRow in its binding, so no component owns it
+        // No row has notInAnyRow in its binding, so it belongs to no component
         Assert.Equal(SortedIds(uploadHidden, rowHidden), actual);
     }
 
     [Fact]
-    public async Task UploadWithoutBindingInRepeatingGroup_ReturnsNothing_EvenInAHiddenRow()
+    public async Task UploadWithoutBindingInRepeatingGroup_RemovesNothing_EvenInAHiddenRow()
     {
-        // As in app-frontend, an upload in a repeating group needs a binding value to own an attachment
+        // As in app-frontend, an attachment belongs to an upload in a repeating group only through its binding value
         var actual = await GetHiddenAttachmentIds(
             new SkjemaModel { HasDispensation = true, Rows = [new Row { HideRow = true }] },
-            NewAttachment("unboundRowUpload")
+            CreateAttachment("unboundRowUpload")
         );
 
         Assert.Empty(actual);
@@ -314,12 +314,12 @@ public class FileUploadTests
     [InlineData("bound")]
     [InlineData(null)]
     [InlineData("")]
-    public async Task HiddenUploadWithSimpleBinding_ReturnsTheBoundAttachment_OrAllWithoutBindingValue(
+    public async Task HiddenUploadWithSimpleBinding_RemovesTheBoundAttachment_OrAllWithoutBindingValue(
         string? contractId
     )
     {
-        var contract = NewAttachment("contract");
-        var otherContract = NewAttachment("contract");
+        var contract = CreateAttachment("contract");
+        var otherContract = CreateAttachment("contract");
         bool bound = contractId == "bound";
 
         var actual = await GetHiddenAttachmentIds(
@@ -337,19 +337,19 @@ public class FileUploadTests
     }
 
     [Fact]
-    public async Task HiddenUpload_WithRemoveWhenHiddenFalseOrDataTypeInAnotherTask_ReturnsNothing()
+    public async Task HiddenUpload_WithRemoveWhenHiddenFalseOrDataTypeInAnotherTask_RemovesNothing()
     {
         var actual = await GetHiddenAttachmentIds(
             new SkjemaModel { HasDispensation = true },
-            NewAttachment("keptWhenHidden"),
-            NewAttachment("otherTask")
+            CreateAttachment("keptWhenHidden"),
+            CreateAttachment("otherTask")
         );
 
         Assert.Empty(actual);
     }
 
     [Fact]
-    public async Task HiddenUpload_WithoutDataTypeOrWithTheFormDataTypeId_ReturnsNothing()
+    public async Task HiddenUpload_WithoutDataTypeOrWithTheFormDataTypeId_RemovesNothing()
     {
         // "withoutDataType" has no data type, and the upload with the form data type's id must not return the form data
         var actual = await GetHiddenAttachmentIds(new SkjemaModel { HasDispensation = true });
@@ -358,10 +358,10 @@ public class FileUploadTests
     }
 
     [Fact]
-    public async Task TaskWithoutLayouts_ReturnsNothing()
+    public async Task TaskWithoutLayouts_RemovesNothing()
     {
         await using var provider = _collection.BuildServiceProvider();
-        var instance = CreateInstance(provider, new SkjemaModel(), [NewAttachment("dispensation")]);
+        var instance = CreateInstance(provider, new SkjemaModel(), [CreateAttachment("dispensation")]);
         var dataMutator = await provider
             .GetRequiredService<InstanceDataUnitOfWorkInitializer>()
             .Init(instance, TaskId, null);
@@ -378,15 +378,13 @@ public class FileUploadTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task ProcessTaskFinalizer_DeletesAttachmentsInHiddenUploads_OnlyWithRemoveHiddenData(
-        bool removeHiddenData
-    )
+    public async Task Finalize_DeletesAttachmentsInHiddenUploads_OnlyWithRemoveHiddenData(bool removeHiddenData)
     {
         _collection.AppSettings.RemoveHiddenData = removeHiddenData;
         RegisterFinalizer(userCanDelete: true);
-        var dispensation = NewAttachment("dispensation");
-        var alwaysShown = NewAttachment("alwaysShown");
-        var rowHidden = NewAttachment("rowUpload");
+        var dispensation = CreateAttachment("dispensation");
+        var alwaysShown = CreateAttachment("alwaysShown");
+        var rowHidden = CreateAttachment("rowUpload");
 
         await using var provider = _collection.BuildServiceProvider();
         var model = new SkjemaModel
@@ -416,11 +414,11 @@ public class FileUploadTests
     }
 
     [Fact]
-    public async Task ProcessTaskFinalizer_KeepsAttachmentsTheUserCannotDelete()
+    public async Task Finalize_KeepsAttachmentsTheUserCannotDelete()
     {
         _collection.AppSettings.RemoveHiddenData = true;
         RegisterFinalizer(userCanDelete: false);
-        var dispensation = NewAttachment("dispensation");
+        var dispensation = CreateAttachment("dispensation");
 
         await using var provider = _collection.BuildServiceProvider();
         var instance = CreateInstance(provider, new SkjemaModel { HasDispensation = false }, [dispensation]);

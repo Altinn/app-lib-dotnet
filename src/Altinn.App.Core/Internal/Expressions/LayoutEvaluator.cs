@@ -132,10 +132,11 @@ public static class LayoutEvaluator
     /// </summary>
     /// <remarks>
     /// An attachment belongs to a component the same way as in app-frontend: the data type id is the component id,
-    /// the data type is not a form data type, and it belongs to the task. A component owns the attachments whose ids
-    /// are in its <c>simpleBinding</c> or <c>list</c> binding. A component outside a repeating group without a
-    /// binding value owns all attachments of the data type. Attachments that no component owns are kept.
-    /// Run this before the hidden form data is removed, so the bindings in hidden rows are still there.
+    /// the data type is not a form data type, and it belongs to the task. The attachments whose ids are in the
+    /// component's <c>simpleBinding</c> or <c>list</c> binding belong to it. When a component outside a repeating
+    /// group has no binding value, all attachments of the data type belong to it. Attachments that belong to no
+    /// component are kept. Run this before the hidden form data is removed, so the bindings in hidden rows are
+    /// still there.
     /// </remarks>
     internal static async Task<List<DataElementIdentifier>> GetHiddenAttachmentsForRemoval(
         LayoutEvaluatorState state,
@@ -155,7 +156,7 @@ public static class LayoutEvaluator
         {
             foreach (var context in pageContext.Descendants)
             {
-                var attachments = await GetAttachmentsOwnedByContext(state, context, taskId);
+                var attachments = await GetAttachmentsToRemoveWhenHidden(state, context, taskId);
                 if (attachments.Count == 0)
                 {
                     continue;
@@ -177,10 +178,12 @@ public static class LayoutEvaluator
     }
 
     /// <summary>
-    /// Get the attachments owned by the FileUpload or FileUploadWithTag component in this context (one row of a
-    /// repeating group), or none when the context has another component type.
+    /// Get the attachments that belong to the FileUpload or FileUploadWithTag component in this context (one row of
+    /// a repeating group), or none for other component types. Like
+    /// <see cref="Models.Layout.Components.Base.BaseComponent.GetDataReferencesToRemoveWhenHidden"/>, it returns
+    /// the same attachments whether or not the context is hidden.
     /// </summary>
-    private static async Task<List<DataElementIdentifier>> GetAttachmentsOwnedByContext(
+    private static async Task<List<DataElementIdentifier>> GetAttachmentsToRemoveWhenHidden(
         LayoutEvaluatorState state,
         ComponentContext context,
         string taskId
@@ -215,14 +218,15 @@ public static class LayoutEvaluator
             ? list.OfType<string>().ToHashSet(StringComparer.Ordinal)
             : [];
 
-        // Same rule as app-frontend: an empty list still counts as a binding value, and only a context
-        // outside a repeating group (without row indices) owns attachments it has no binding value for
-        bool ownsAllOfDataType = string.IsNullOrEmpty(simpleValue) && listValue is null && context.RowIndices is null;
+        // Same rule as app-frontend: without a binding value, all attachments of the data type belong to a
+        // context outside a repeating group (without row indices). An empty list still counts as a binding value.
+        bool includeAllOfDataType =
+            string.IsNullOrEmpty(simpleValue) && listValue is null && context.RowIndices is null;
 
         var attachments = new List<DataElementIdentifier>();
         foreach (var dataElement in state.Instance.Data.Where(d => d.DataType == dataType.Id))
         {
-            if (ownsAllOfDataType || dataElement.Id == simpleValue || listIds.Contains(dataElement.Id))
+            if (includeAllOfDataType || dataElement.Id == simpleValue || listIds.Contains(dataElement.Id))
             {
                 attachments.Add(dataElement);
             }
