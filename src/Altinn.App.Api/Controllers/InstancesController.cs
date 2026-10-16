@@ -1283,6 +1283,7 @@ public class InstancesController : ControllerBase
                     DataHelper.ResetDataFields(application.CopyInstanceSettings.ExcludedDataFields, data);
                 }
 
+                // Ensure that any reference to attachments in the data models gets updated on the copy
                 if (copiedAttachmentIds.Count > 0)
                 {
                     ObjectUtils.ReplaceStringValues(data, copiedAttachmentIds);
