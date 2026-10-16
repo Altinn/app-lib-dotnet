@@ -289,21 +289,26 @@ public static partial class ObjectUtils
             }
             else if (value is IList list)
             {
-                for (int i = 0; i < list.Count; i++)
-                {
-                    if (list[i] is string item && replacements.TryGetValue(item, out var itemReplacement))
-                    {
-                        list[i] = itemReplacement;
-                    }
-                    else if (list[i] is { } child)
-                    {
-                        ReplaceStringValues(child, replacements);
-                    }
-                }
+                ReplaceStringValuesInList(list, replacements);
             }
             else if (value is not null)
             {
                 ReplaceStringValues(value, replacements);
+            }
+        }
+    }
+
+    private static void ReplaceStringValuesInList(IList list, IReadOnlyDictionary<string, string> replacements)
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i] is string item && replacements.TryGetValue(item, out var replacement))
+            {
+                list[i] = replacement;
+            }
+            else if (list[i] is { } child)
+            {
+                ReplaceStringValues(child, replacements);
             }
         }
     }
