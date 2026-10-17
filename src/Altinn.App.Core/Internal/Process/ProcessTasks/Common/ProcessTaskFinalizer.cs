@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Altinn.App.Core.Configuration;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
@@ -48,6 +49,12 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
 
         var dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(instance, taskId, "nb");
 
+        if (_appSettings.Value.RemoveHiddenData)
+        {
+            // Must run before the hidden form data is removed, as that removes the bindings in hidden rows
+            await RemoveHiddenAttachmentsOnTaskComplete(dataAccessor, taskId);
+        }
+
         List<Task> tasks = [];
         foreach (
             var dataType in applicationMetadata.DataTypes.Where(dt =>
@@ -70,6 +77,39 @@ public class ProcessTaskFinalizer : IProcessTaskFinalizer
         var changes = dataAccessor.GetDataElementChanges(initializeAltinnRowId: false);
         await dataAccessor.UpdateInstanceData(changes);
         await dataAccessor.SaveChanges(changes);
+    }
+
+    /// <summary>
+    /// Remove the attachments that only belong to hidden upload components from the unit of work.
+    /// They are deleted from storage with the other changes in <see cref="InstanceDataUnitOfWork.UpdateInstanceData"/>.
+    /// </summary>
+    private async Task RemoveHiddenAttachmentsOnTaskComplete(InstanceDataUnitOfWork dataAccessor, string taskId)
+    {
+        LayoutEvaluatorState evaluationState = await _layoutEvaluatorStateInitializer.Init(
+            dataAccessor,
+            taskId,
+            gatewayAction: null,
+            language: null
+        );
+        var attachments = await LayoutEvaluator.GetHiddenAttachmentsForRemoval(evaluationState, taskId);
+
+        // Keep attachments the user could not have deleted in the form
+        var canDelete = await Task.WhenAll(
+            attachments.Select(attachment =>
+                _dataElementAccessChecker.CanDelete(
+                    dataAccessor.Instance,
+                    dataAccessor.GetDataType(attachment),
+                    attachment.Guid
+                )
+            )
+        );
+        for (int i = 0; i < attachments.Count; i++)
+        {
+            if (canDelete[i])
+            {
+                dataAccessor.RemoveDataElement(attachments[i]);
+            }
+        }
     }
 
     private async Task RemoveFieldsOnTaskComplete(

@@ -113,6 +113,8 @@ public class StorageClientInterceptor : HttpMessageHandler
             ),
             ("PUT", { } path) when TryParseDataUrl(path, out int partyId, out Guid instanceGuid, out Guid dataId) =>
                 PutData(partyId, instanceGuid, dataId, requestBody, request),
+            ("DELETE", { } path) when TryParseDataUrl(path, out int partyId, out Guid instanceGuid, out Guid dataId) =>
+                DeleteData(partyId, instanceGuid, dataId),
             var (method, _) => throw new Exception(
                 $"Unhandled request to {request.RequestUri?.AbsolutePath} with method {method} and body\n\n{(requestBody is not null ? System.Text.Encoding.UTF8.GetString(requestBody) : "[no body]")}"
             ),
@@ -175,6 +177,14 @@ public class StorageClientInterceptor : HttpMessageHandler
         {
             Content = new StringContent(dataElementJson, Encoding.UTF8, "application/json"),
         };
+    }
+
+    private HttpResponseMessage DeleteData(int instanceOwnerPartyId, Guid instanceGuid, Guid dataId)
+    {
+        var instance = _instances[$"{instanceOwnerPartyId}/{instanceGuid}"];
+        instance.Data.RemoveAll(de => de.Id == dataId.ToString());
+        _data.TryRemove(dataId, out _);
+        return new HttpResponseMessage(HttpStatusCode.OK);
     }
 
     private bool TryParseInstanceUrl(string[] pathSegments, out int instanceOwnerPartyId, out Guid instanceGuid)
