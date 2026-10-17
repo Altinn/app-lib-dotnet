@@ -37,7 +37,7 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageVersion Include="Microsoft.OpenApi" Version="1.6.31" />
     <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.31" />
-    <PackageVersion Include="MinVer" Version="7.0.0" />
+    <PackageVersion Include="MinVer" Version="8.0.0" />
     <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="NetEscapades.EnumGenerators" Version="1.0.0-beta21" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
