@@ -666,7 +666,7 @@ public class InstancesController : ControllerBase
             VisibleAfter = instansiationInstance.VisibleAfter,
             DueBefore = instansiationInstance.DueBefore ?? GetDueBeforeFromSource(application, source),
             Org = application.Org,
-            DataValues = SelectIncludedValues(application.CopyInstanceSettings?.IncludedDataValues, source?.DataValues),
+            DataValues = source is null ? null : SelectCopiedDataValues(application, source),
             PresentationTexts = SelectIncludedValues(
                 application.CopyInstanceSettings?.IncludedPresentationTexts,
                 source?.PresentationTexts
@@ -875,10 +875,7 @@ public class InstancesController : ControllerBase
             InstanceOwner = sourceInstance.InstanceOwner,
             VisibleAfter = sourceInstance.VisibleAfter,
             DueBefore = GetDueBeforeFromSource(application, sourceInstance),
-            DataValues = SelectIncludedValues(
-                application.CopyInstanceSettings?.IncludedDataValues,
-                sourceInstance.DataValues
-            ),
+            DataValues = SelectCopiedDataValues(application, sourceInstance),
             PresentationTexts = SelectIncludedValues(
                 application.CopyInstanceSettings?.IncludedPresentationTexts,
                 sourceInstance.PresentationTexts
@@ -1246,8 +1243,13 @@ public class InstancesController : ControllerBase
     {
         int instanceOwnerPartyId = int.Parse(targetInstance.InstanceOwner.PartyId, CultureInfo.InvariantCulture);
 
-        string[] sourceSplit = sourceInstance.Id.Split("/");
-        Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
+        // Attachments are copied first, so references to them in the form data can be updated to the new ids
+        Dictionary<string, string> copiedAttachmentIds = await CopyAttachmentsFromSourceInstance(
+            application,
+            targetInstance,
+            sourceInstance,
+            instanceOwnerPartyId
+        );
 
         List<DataType> dts = application
             .DataTypes.Where(dt => dt.AppLogic?.ClassRef != null)
@@ -1281,6 +1283,12 @@ public class InstancesController : ControllerBase
                     DataHelper.ResetDataFields(application.CopyInstanceSettings.ExcludedDataFields, data);
                 }
 
+                // Ensure that any reference to attachments in the data models gets updated on the copy
+                if (copiedAttachmentIds.Count > 0)
+                {
+                    ObjectUtils.ReplaceStringValues(data, copiedAttachmentIds);
+                }
+
                 await _prefillService.PrefillDataModel(
                     instanceOwnerPartyId.ToString(CultureInfo.InvariantCulture),
                     dt.Id,
@@ -1304,15 +1312,29 @@ public class InstancesController : ControllerBase
                 await UpdateDataValuesOnInstance(application.DataFields, targetInstance, dt.Id, data);
             }
         }
+    }
 
+    /// <summary>
+    /// Copies the attachments of <paramref name="sourceInstance"/> when enabled in the copy instance settings.
+    /// Returns a map from the id of each copied attachment to the id of its copy.
+    /// </summary>
+    private async Task<Dictionary<string, string>> CopyAttachmentsFromSourceInstance(
+        ApplicationMetadata application,
+        Instance targetInstance,
+        Instance sourceInstance,
+        int instanceOwnerPartyId
+    )
+    {
+        Dictionary<string, string> copiedAttachmentIds = [];
         if (application.CopyInstanceSettings?.IncludeAttachments != true)
         {
-            return;
+            return copiedAttachmentIds;
         }
 
-        // Copy binary data elements (files/attachments)
-        // Error handling strategy: Continue processing other attachments even if individual ones fail
-        // This ensures partial success rather than complete failure when some attachments cannot be copied
+        string[] sourceSplit = sourceInstance.Id.Split("/");
+        Guid sourceInstanceGuid = Guid.Parse(sourceSplit[1]);
+        List<string> excludedDataTypes = application.CopyInstanceSettings.ExcludedDataTypes;
+
         List<DataType> binaryDataTypes = application
             .DataTypes.Where(dt => dt.AppLogic?.ClassRef == null)
             .Where(dt =>
@@ -1338,7 +1360,7 @@ public class InstancesController : ControllerBase
                     CancellationToken.None
                 );
 
-                await _dataClient.InsertBinaryData(
+                DataElement newDataElement = await _dataClient.InsertBinaryData(
                     targetInstance.Id,
                     de.DataType,
                     de.ContentType,
@@ -1348,8 +1370,24 @@ public class InstancesController : ControllerBase
                     authenticationMethod: null,
                     CancellationToken.None
                 );
+
+                // Tags (e.g. the file type chosen in FileUploadWithTag) can't be set on insert
+                if (de.Tags is { Count: > 0 })
+                {
+                    newDataElement.Tags = [.. de.Tags];
+                    await _dataClient.Update(
+                        targetInstance,
+                        newDataElement,
+                        authenticationMethod: null,
+                        CancellationToken.None
+                    );
+                }
+
+                copiedAttachmentIds[de.Id] = newDataElement.Id;
             }
         }
+
+        return copiedAttachmentIds;
     }
 
     private static DateTime? GetDueBeforeFromSource(ApplicationMetadata application, Instance? sourceInstance)
@@ -1360,6 +1398,28 @@ public class InstancesController : ControllerBase
         }
 
         return sourceInstance.DueBefore;
+    }
+
+    /// <summary>
+    /// Selects the data values to copy from <paramref name="sourceInstance"/> and adds
+    /// <see cref="DataValueKeys.CopySourceInstanceId"/>. If that key is included and set on the source, the copied
+    /// value is kept so that a copy of a copy references the first instance in the chain.
+    /// </summary>
+    private static Dictionary<string, string> SelectCopiedDataValues(
+        ApplicationMetadata application,
+        Instance sourceInstance
+    )
+    {
+        Dictionary<string, string> dataValues =
+            SelectIncludedValues(application.CopyInstanceSettings?.IncludedDataValues, sourceInstance.DataValues)
+            ?? new Dictionary<string, string>(1);
+
+        // Order matters: the included values are selected first, and TryAdd only sets the key when they do not
+        // already contain it. If the app lists the key in IncludedDataValues and the source already has it, the
+        // source is itself a copy, and the value copied from it points to the first instance in the chain. Setting
+        // the id of the source here would make the value point one step back in the chain instead.
+        dataValues.TryAdd(DataValueKeys.CopySourceInstanceId, sourceInstance.Id);
+        return dataValues;
     }
 
     /// <summary>
