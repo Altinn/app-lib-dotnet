@@ -5,7 +5,7 @@ using static Altinn.App.Core.Features.Auth.Authenticated;
 
 namespace Altinn.App.Core.Tests.Features.Auth;
 
-public class AuthorizationDetailsClaimTests
+public class SystemUserAuthorizationDetailsClaimTests
 {
     private const string SystemUserId = "ebe4a681-0a8c-429e-a36f-8f9ca942b59f";
     private const string Org = """{"authority":"iso6523-actorid-upis","ID":"0192:310702641"}""";
@@ -31,7 +31,7 @@ public class AuthorizationDetailsClaimTests
     [MemberData(nameof(SystemUserClaims))]
     public void Parse_SystemUserClaim_ReturnsSystemUser(string description, string claim)
     {
-        var systemUser = AuthorizationDetailsClaim.Parse(JsonDocument.Parse(claim).RootElement);
+        var systemUser = SystemUserAuthorizationDetailsClaim.Parse(JsonDocument.Parse(claim).RootElement);
 
         Assert.Equal(Guid.Parse(SystemUserId), Assert.Single(systemUser.SystemUserId));
         Assert.Equal("s", systemUser.SystemId);
@@ -56,7 +56,7 @@ public class AuthorizationDetailsClaimTests
     public void Parse_NotASystemUserClaim_ThrowsAuthenticationContextException(string description, string claim)
     {
         var exception = Assert.Throws<AuthenticationContextException>(() =>
-            AuthorizationDetailsClaim.Parse(JsonDocument.Parse(claim).RootElement)
+            SystemUserAuthorizationDetailsClaim.Parse(JsonDocument.Parse(claim).RootElement)
         );
 
         Assert.Contains("systemuser token", exception.Message);
@@ -94,11 +94,53 @@ public class AuthorizationDetailsClaimTests
         Assert.Throws<AuthenticationContextException>(() => Parse(token));
     }
 
-    private static Authenticated Parse(string token) =>
+    [Fact]
+    public void Serialize_WritesTypeFirst()
+    {
+        var claim = new SystemUserAuthorizationDetailsClaim(
+            [Guid.Parse(SystemUserId)],
+            "s",
+            new OrgClaim("iso6523-actorid-upis", "0192:310702641")
+        );
+
+        string json = JsonSerializer.Serialize(claim);
+
+        Assert.StartsWith("""{"type":"urn:altinn:systemuser",""", json);
+        var parsed = SystemUserAuthorizationDetailsClaim.Parse(JsonDocument.Parse(json).RootElement);
+        Assert.Equal(claim.SystemUserId, parsed.SystemUserId);
+        Assert.Equal(claim.SystemId, parsed.SystemId);
+        Assert.Equal(claim.SystemUserOrg, parsed.SystemUserOrg);
+    }
+
+    [Fact]
+    public void From_UnauthenticatedTokenWithMalformedConsumer_ReturnsNone()
+    {
+        JwtPayload payload = TestAuthentication.GetSystemUserPayload(systemUserId: SystemUserId);
+        payload["consumer"] = JsonDocument.Parse("""{"authority":1,"ID":["not","a","string"]}""").RootElement;
+        string token = JwtTokenMock.GenerateToken(payload, TimeSpan.FromMinutes(2));
+
+        var auth = Parse(token, isAuthenticated: false);
+
+        Assert.IsType<None>(auth);
+    }
+
+    [Fact]
+    public void From_SystemUserTokenWithMalformedConsumer_ThrowsAuthenticationContextException()
+    {
+        JwtPayload payload = TestAuthentication.GetSystemUserPayload(systemUserId: SystemUserId);
+        payload["consumer"] = JsonDocument.Parse("""{"authority":1,"ID":["not","a","string"]}""").RootElement;
+        string token = JwtTokenMock.GenerateToken(payload, TimeSpan.FromMinutes(2));
+
+        var exception = Assert.Throws<AuthenticationContextException>(() => Parse(token));
+
+        Assert.Contains("consumer claim", exception.Message);
+    }
+
+    private static Authenticated Parse(string token, bool isAuthenticated = true) =>
         Authenticated.From(
             token,
             null,
-            true,
+            isAuthenticated,
             TestAuthentication.NewApplicationMetadata(),
             getSelectedPartyCookieValues: () => throw new NotImplementedException(),
             getUserProfile: _ => throw new NotImplementedException(),

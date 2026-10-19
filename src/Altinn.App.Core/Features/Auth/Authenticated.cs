@@ -699,7 +699,6 @@ public abstract class Authenticated
         public TokenClaim UsernameClaim = default;
         public TokenClaim ConsumerClaim = default;
         public TokenClaim ClientIdClaim = default;
-        public OrgClaim? ConsumerClaimValue = default;
         public bool IsInAltinnPortal = false;
         public Scopes Scopes = default;
         public TokenIssuer TokenIssuer = TokenIssuer.None;
@@ -794,11 +793,7 @@ public abstract class Authenticated
                 TryAssign(claim, "authorization_details", ref AuthorizationDetailsClaim);
                 TryAssign(claim, AltinnCoreClaimTypes.UserId, ref UserIdClaim);
                 TryAssign(claim, AltinnCoreClaimTypes.UserName, ref UsernameClaim);
-                if (
-                    TryAssign(claim, "consumer", ref ConsumerClaim)
-                    && ConsumerClaim.Value is JsonElement consumerJsonClaim
-                )
-                    ConsumerClaimValue = JsonSerializer.Deserialize<OrgClaim>(consumerJsonClaim);
+                TryAssign(claim, "consumer", ref ConsumerClaim);
                 TryAssign(claim, "client_id", ref ClientIdClaim);
             }
         }
@@ -1009,7 +1004,7 @@ public abstract class Authenticated
     {
         if (!context.AuthorizationDetailsClaim.IsJson(out var json))
             throw new AuthenticationContextException($"Invalid authorization details claim value for token: {json}");
-        var systemUser = AuthorizationDetailsClaim.Parse(json.Value);
+        var systemUser = SystemUserAuthorizationDetailsClaim.Parse(json.Value);
         if (systemUser.SystemUserId is null || systemUser.SystemUserId.Count == 0)
             throw new AuthenticationContextException("Missing system user ID claim for systemuser token");
         if (string.IsNullOrWhiteSpace(systemUser.SystemId))
@@ -1024,9 +1019,10 @@ public abstract class Authenticated
             throw new AuthenticationContextException(
                 $"Invalid system user organisation number in system user token: {systemUser.SystemUserOrg.Id}"
             );
-        if (!OrganisationNumber.TryParse(context.ConsumerClaimValue?.Id, out var supplierOrgNr))
+        var consumer = OrgClaim.Parse(context.ConsumerClaim);
+        if (!OrganisationNumber.TryParse(consumer?.Id, out var supplierOrgNr))
             throw new AuthenticationContextException(
-                $"Invalid organisation number in supplier organisation number claim for system user token: {context.ConsumerClaimValue?.Id}"
+                $"Invalid organisation number in supplier organisation number claim for system user token: {consumer?.Id}"
             );
 
         return new SystemUser(
@@ -1118,18 +1114,38 @@ public abstract class Authenticated
         }
     }
 
-    // The polymorphic attributes give serialized claims the "type" discriminator. Parse does not rely on them, since
-    // System.Text.Json only reads a discriminator that is the first property of the object.
-    [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
-    [JsonDerivedType(typeof(SystemUserAuthorizationDetailsClaim), typeDiscriminator: SystemUserType)]
-    internal record AuthorizationDetailsClaim()
+    /// <summary>
+    /// The system user in the authorization_details claim of a system user token.
+    /// </summary>
+    /// <remarks>
+    /// The claims are parsed by hand rather than relying on JSON deserialization errors: they are only parsed for a
+    /// token the authentication middleware has already validated, so they come from a trusted issuer (Altinn
+    /// Authentication or Maskinporten via the token exchange, or localtest). A claim that does not fit is an issuer
+    /// change, not something a caller can send, and is reported as an <see cref="AuthenticationContextException"/>.
+    /// </remarks>
+    internal sealed record SystemUserAuthorizationDetailsClaim(
+        [property: JsonPropertyName("systemuser_id")] IReadOnlyList<Guid> SystemUserId,
+        [property: JsonPropertyName("system_id")] string SystemId,
+        [property: JsonPropertyName("systemuser_org")] OrgClaim SystemUserOrg
+    )
     {
-        private const string SystemUserType = "urn:altinn:systemuser";
+        public const string SystemUserType = "urn:altinn:systemuser";
 
         /// <summary>
-        /// Parses the system user from an authorization_details claim value: a JSON object, or an array holding
-        /// exactly one, with type urn:altinn:systemuser. The type may appear anywhere in the object, as
-        /// Altinn.Common.PEP accepts it.
+        /// The type that marks the claim as a system user. Written first, as Altinn Authentication and Maskinporten do.
+        /// </summary>
+        [JsonPropertyName("type")]
+        [JsonPropertyOrder(-1)]
+        [SuppressMessage(
+            "Performance",
+            "CA1822:Mark members as static",
+            Justification = "System.Text.Json does not serialize static members"
+        )]
+        public string Type => SystemUserType;
+
+        /// <summary>
+        /// Parses an authorization_details claim value: a JSON object, or an array holding exactly one, with type
+        /// urn:altinn:systemuser anywhere in the object, as Altinn.Common.PEP accepts it.
         /// </summary>
         /// <exception cref="AuthenticationContextException">The value is not a system user claim.</exception>
         public static SystemUserAuthorizationDetailsClaim Parse(JsonElement json)
@@ -1158,6 +1174,7 @@ public abstract class Authenticated
 
             try
             {
+                // Only an issuer change can make this throw, see the remarks on this type
                 return details.Deserialize<SystemUserAuthorizationDetailsClaim>()
                     ?? throw new AuthenticationContextException(
                         "Invalid authorization details claim value for systemuser token"
@@ -1172,14 +1189,33 @@ public abstract class Authenticated
         }
     }
 
-    internal sealed record SystemUserAuthorizationDetailsClaim(
-        [property: JsonPropertyName("systemuser_id")] IReadOnlyList<Guid> SystemUserId,
-        [property: JsonPropertyName("system_id")] string SystemId,
-        [property: JsonPropertyName("systemuser_org")] OrgClaim SystemUserOrg
-    ) : AuthorizationDetailsClaim();
-
     internal sealed record OrgClaim(
         [property: JsonPropertyName("authority")] string Authority,
         [property: JsonPropertyName("ID")] string Id
-    );
+    )
+    {
+        /// <summary>
+        /// Parses the consumer claim of a system user token. Called only after the token is validated, like
+        /// <see cref="SystemUserAuthorizationDetailsClaim.Parse"/>, so a forged token with a malformed consumer claim
+        /// is rejected by the authentication middleware without reaching this.
+        /// </summary>
+        /// <returns>The organisation, or null when the claim is missing or not a JSON object.</returns>
+        /// <exception cref="AuthenticationContextException">The object does not fit, which only an issuer change can cause.</exception>
+        public static OrgClaim? Parse(TokenClaim claim)
+        {
+            if (!claim.IsJson(out var json) || json.Value.ValueKind != JsonValueKind.Object)
+                return null;
+
+            try
+            {
+                return json.Value.Deserialize<OrgClaim>();
+            }
+            catch (JsonException e)
+            {
+                throw new AuthenticationContextException(
+                    $"Invalid consumer claim value for system user token: {e.Message}"
+                );
+            }
+        }
+    }
 }
