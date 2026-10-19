@@ -1009,22 +1009,13 @@ public abstract class Authenticated
     {
         if (!context.AuthorizationDetailsClaim.IsJson(out var json))
             throw new AuthenticationContextException($"Invalid authorization details claim value for token: {json}");
-        var authorizationDetails = AuthorizationDetailsClaim.Parse(json.Value);
-        if (authorizationDetails is null)
-            throw new AuthenticationContextException("Invalid authorization details claim value for systemuser token");
-        if (authorizationDetails is not SystemUserAuthorizationDetailsClaim systemUser)
-            throw new AuthenticationContextException(
-                $"Unsupported authorization details claim value for systemuser token: {authorizationDetails.GetType().Name}"
-            );
-
-        if (systemUser is null)
-            throw new AuthenticationContextException(
-                "Invalid system user authorization details claim value for systemuser token"
-            );
+        var systemUser = AuthorizationDetailsClaim.Parse(json.Value);
         if (systemUser.SystemUserId is null || systemUser.SystemUserId.Count == 0)
             throw new AuthenticationContextException("Missing system user ID claim for systemuser token");
         if (string.IsNullOrWhiteSpace(systemUser.SystemId))
             throw new AuthenticationContextException("Missing system ID claim for systemuser token");
+        if (systemUser.SystemUserOrg is null)
+            throw new AuthenticationContextException("Missing system user organisation claim for systemuser token");
         if (systemUser.SystemUserOrg.Authority != "iso6523-actorid-upis")
             throw new AuthenticationContextException(
                 $"Unsupported organisation authority in systemuser token: {systemUser.SystemUserOrg.Authority}"
@@ -1127,22 +1118,57 @@ public abstract class Authenticated
         }
     }
 
+    // The polymorphic attributes give serialized claims the "type" discriminator. Parse does not rely on them, since
+    // System.Text.Json only reads a discriminator that is the first property of the object.
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
-    [JsonDerivedType(typeof(SystemUserAuthorizationDetailsClaim), typeDiscriminator: "urn:altinn:systemuser")]
+    [JsonDerivedType(typeof(SystemUserAuthorizationDetailsClaim), typeDiscriminator: SystemUserType)]
     internal record AuthorizationDetailsClaim()
     {
-        public static AuthorizationDetailsClaim? Parse(JsonElement json)
+        private const string SystemUserType = "urn:altinn:systemuser";
+
+        /// <summary>
+        /// Parses the system user from an authorization_details claim value: a JSON object, or an array holding
+        /// exactly one, with type urn:altinn:systemuser. The type may appear anywhere in the object, as
+        /// Altinn.Common.PEP accepts it.
+        /// </summary>
+        /// <exception cref="AuthenticationContextException">The value is not a system user claim.</exception>
+        public static SystemUserAuthorizationDetailsClaim Parse(JsonElement json)
         {
-            return json.ValueKind switch
+            JsonElement details = json.ValueKind switch
             {
-                JsonValueKind.Object => JsonSerializer.Deserialize<AuthorizationDetailsClaim>(json),
-                JsonValueKind.Array when json.GetArrayLength() == 1 => JsonSerializer
-                    .Deserialize<AuthorizationDetailsClaim[]>(json)
-                    ?[0],
+                JsonValueKind.Object => json,
+                JsonValueKind.Array when json.GetArrayLength() == 1 => json[0],
                 _ => throw new AuthenticationContextException(
-                    "Invalid authorization details claim value for systemuser token: " + json
+                    $"Invalid authorization details claim value for systemuser token: expected an object or an array with one object, got {json.ValueKind}"
                 ),
             };
+
+            if (details.ValueKind != JsonValueKind.Object)
+                throw new AuthenticationContextException(
+                    $"Invalid authorization details claim value for systemuser token: expected an object, got {details.ValueKind}"
+                );
+            if (
+                !details.TryGetProperty("type", out var type)
+                || type.ValueKind != JsonValueKind.String
+                || type.GetString() is not SystemUserType
+            )
+                throw new AuthenticationContextException(
+                    $"Unsupported authorization details claim for systemuser token: type must be {SystemUserType}"
+                );
+
+            try
+            {
+                return details.Deserialize<SystemUserAuthorizationDetailsClaim>()
+                    ?? throw new AuthenticationContextException(
+                        "Invalid authorization details claim value for systemuser token"
+                    );
+            }
+            catch (JsonException e)
+            {
+                throw new AuthenticationContextException(
+                    $"Invalid authorization details claim value for systemuser token: {e.Message}"
+                );
+            }
         }
     }
 
