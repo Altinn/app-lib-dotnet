@@ -1,5 +1,11 @@
+using Altinn.App.Core.Constants;
+using Altinn.App.Core.Features;
 using Altinn.App.Core.Helpers;
 using Altinn.App.Core.Internal.App;
+using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Instances;
+using Altinn.Platform.Storage.Interface.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Altinn.App.Api.Controllers;
@@ -11,14 +17,21 @@ namespace Altinn.App.Api.Controllers;
 public class ResourceController : ControllerBase
 {
     private readonly IAppResources _appResourceService;
+    private readonly AppImplementationFactory _appImplementationFactory;
+    private readonly IInstanceClient _instanceClient;
+    private readonly InstanceDataUnitOfWorkInitializer _instanceDataUnitOfWorkInitializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ResourceController"/> class
     /// </summary>
     /// <param name="appResourcesService">The execution service</param>
-    public ResourceController(IAppResources appResourcesService)
+    /// <param name="serviceProvider">The service provider</param>
+    public ResourceController(IAppResources appResourcesService, IServiceProvider serviceProvider)
     {
         _appResourceService = appResourcesService;
+        _appImplementationFactory = serviceProvider.GetRequiredService<AppImplementationFactory>();
+        _instanceClient = serviceProvider.GetRequiredService<IInstanceClient>();
+        _instanceDataUnitOfWorkInitializer = serviceProvider.GetRequiredService<InstanceDataUnitOfWorkInitializer>();
     }
 
     /// <summary>
@@ -89,6 +102,48 @@ public class ResourceController : ControllerBase
     }
 
     /// <summary>
+    /// Endpoint for layouts with instance context.
+    /// Uses IInstanceLayoutProvider if implemented with IAppResources as fallback.
+    /// </summary>
+    /// <param name="org">The application owner short name</param>
+    /// <param name="app">The application name</param>
+    /// <param name="instanceOwnerPartyId">The instance owner party id</param>
+    /// <param name="instanceGuid">The instance guid</param>
+    /// <param name="layoutSetId">The layout set id</param>
+    /// <returns>A collection of FormLayout objects in JSON format.</returns>
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "application/json")]
+    [HttpGet]
+    [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
+    [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/layouts/{layoutSetId}")]
+    public async Task<ActionResult> GetInstanceLayouts(
+        string org,
+        string app,
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        string layoutSetId
+    )
+    {
+        IInstanceLayoutProvider? layoutProvider = _appImplementationFactory.Get<IInstanceLayoutProvider>();
+        if (layoutProvider is not null)
+        {
+            InstanceLayoutContext context = await CreateInstanceLayoutContext(
+                org,
+                app,
+                instanceOwnerPartyId,
+                instanceGuid,
+                layoutSetId
+            );
+            string? instanceLayouts = await layoutProvider.GetLayouts(context);
+            if (instanceLayouts is not null)
+            {
+                return Ok(instanceLayouts);
+            }
+        }
+        string layouts = _appResourceService.GetLayoutsForSet(layoutSetId);
+        return Ok(layouts);
+    }
+
+    /// <summary>
     /// Get the layout settings.
     /// </summary>
     /// <param name="org">The application owner short name</param>
@@ -104,6 +159,71 @@ public class ResourceController : ControllerBase
     {
         string? settings = _appResourceService.GetLayoutSettingsString();
         return Ok(settings);
+    }
+
+    /// <summary>
+    /// Endpoint for layout settings with instance context.
+    /// Uses IInstanceLayoutProvider if implemented with IAppResources as fallback.
+    /// </summary>
+    /// <param name="org">The application owner short name</param>
+    /// <param name="app">The application name</param>
+    /// <param name="instanceOwnerPartyId">The instance owner party id</param>
+    /// <param name="instanceGuid">The instance guid</param>
+    /// <param name="layoutSetId">The layout set id</param>
+    /// <returns>The settings in the form of a string.</returns>
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "application/json")]
+    [HttpGet]
+    [Authorize(Policy = AuthzConstants.POLICY_INSTANCE_READ)]
+    [Route("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/layoutsettings/{layoutSetId}")]
+    public async Task<ActionResult> GetInstanceLayoutSettings(
+        string org,
+        string app,
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        string layoutSetId
+    )
+    {
+        IInstanceLayoutProvider? layoutProvider = _appImplementationFactory.Get<IInstanceLayoutProvider>();
+        if (layoutProvider is not null)
+        {
+            InstanceLayoutContext context = await CreateInstanceLayoutContext(
+                org,
+                app,
+                instanceOwnerPartyId,
+                instanceGuid,
+                layoutSetId
+            );
+            string? instanceLayoutSettings = await layoutProvider.GetLayoutSettings(context);
+            if (instanceLayoutSettings is not null)
+            {
+                return Ok(instanceLayoutSettings);
+            }
+        }
+        string? settings = _appResourceService.GetLayoutSettingsStringForSet(layoutSetId);
+        return Ok(settings);
+    }
+
+    private async Task<InstanceLayoutContext> CreateInstanceLayoutContext(
+        string org,
+        string app,
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        string layoutSetId
+    )
+    {
+        CancellationToken ct = HttpContext.RequestAborted;
+        Instance instance = await _instanceClient.GetInstance(app, org, instanceOwnerPartyId, instanceGuid, ct: ct);
+        InstanceDataUnitOfWork dataAccessor = await _instanceDataUnitOfWorkInitializer.Init(
+            instance,
+            instance.Process?.CurrentTask?.ElementId,
+            language: null
+        );
+        return new InstanceLayoutContext
+        {
+            LayoutSetId = layoutSetId,
+            InstanceDataAccessor = dataAccessor,
+            CancellationToken = ct,
+        };
     }
 
     /// <summary>
