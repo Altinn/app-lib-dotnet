@@ -26,6 +26,7 @@ public static class WebApplicationBuilderExtensions
         app.UseStaticFiles('/' + appId);
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseRateLimiter();
         app.UseTelemetryEnricher();
         app.UseScopeAuthorization();
 
