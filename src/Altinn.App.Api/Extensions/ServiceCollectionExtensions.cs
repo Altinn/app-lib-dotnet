@@ -8,6 +8,7 @@ using Altinn.App.Api.Infrastructure.Filters;
 using Altinn.App.Api.Infrastructure.Health;
 using Altinn.App.Api.Infrastructure.Lifetime;
 using Altinn.App.Api.Infrastructure.Middleware;
+using Altinn.App.Api.Infrastructure.RateLimiting;
 using Altinn.App.Api.Infrastructure.Telemetry;
 using Altinn.App.Core.Constants;
 using Altinn.App.Core.Extensions;
@@ -89,6 +90,9 @@ public static class ServiceCollectionExtensions
         IWebHostEnvironment env
     )
     {
+        services.AddRateLimiter(options =>
+            options.AddPolicy<string, PdfPreviewRateLimiterPolicy>(PdfPreviewRateLimiterPolicy.Name)
+        );
         services.AddMemoryCache();
         services.AddHealthChecks().AddCheck<HealthCheck>("default_health_check");
         services.AddFeatureManagement();
