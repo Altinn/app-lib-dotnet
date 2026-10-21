@@ -70,7 +70,7 @@ public class InstancesController_CopyInstanceTests
     }
 
     [Fact]
-    public async Task CopyInstance_ValidToInThePast_ReturnsForbidden()
+    public async Task CopyInstance_ValidToInThePast_ReturnsGone()
     {
         // Arrange
         var auth = TestAuthentication.GetUserAuthentication(userPartyId: 343234);
@@ -87,7 +87,7 @@ public class InstancesController_CopyInstanceTests
 
         // Assert
         ObjectResult result = Assert.IsType<ObjectResult>(actual);
-        Assert.Equal(StatusCodes.Status403Forbidden, result.StatusCode);
+        Assert.Equal(StatusCodes.Status410Gone, result.StatusCode);
         Assert.Contains("can no longer be used to create new instances", result.Value!.ToString());
 
         fixture.Mock<IAppMetadata>().VerifyAll();
