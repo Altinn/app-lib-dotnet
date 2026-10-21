@@ -444,10 +444,10 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
     }
 
     [Fact]
-    public async Task InstationAllowedByOrg_Returns_Forbidden_For_user()
+    public async Task InstationAllowedByOrg_Returns_Gone_For_user()
     {
         // Setup test data
-        string testName = nameof(InstationAllowedByOrg_Returns_Forbidden_For_user);
+        string testName = nameof(InstationAllowedByOrg_Returns_Gone_For_user);
         string org = "tdd";
         string app = "contributer-restriction";
         int instanceOwnerPartyId = 501337;
@@ -474,7 +474,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
             content
         );
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
-        Assert.Equal(HttpStatusCode.Forbidden, createResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Gone, createResponse.StatusCode);
     }
 
     [Fact]
@@ -583,7 +583,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
 
     [Theory]
     [MemberData(nameof(ExpiredValidTo))]
-    public async Task PostNewInstance_ValidToInThePast_Returns_Forbidden(DateTime validTo)
+    public async Task PostNewInstance_ValidToInThePast_Returns_Gone(DateTime validTo)
     {
         string org = "tdd";
         string app = "contributer-restriction";
@@ -598,13 +598,13 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         var createResponse = await client.PostAsync($"{org}/{app}/instances", content);
 
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
-        Assert.Equal(HttpStatusCode.Forbidden, createResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Gone, createResponse.StatusCode);
         Assert.Contains("can no longer be used to create new instances", createResponseContent);
     }
 
     [Theory]
     [MemberData(nameof(ExpiredValidTo))]
-    public async Task PostNewInstance_Simplified_ValidToInThePast_Returns_Forbidden_For_ServiceOwner(DateTime validTo)
+    public async Task PostNewInstance_Simplified_ValidToInThePast_Returns_Gone_For_ServiceOwner(DateTime validTo)
     {
         string org = "tdd";
         string app = "contributer-restriction";
@@ -619,7 +619,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         var createResponse = await client.PostAsync($"{org}/{app}/instances/create", content);
 
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
-        Assert.Equal(HttpStatusCode.Forbidden, createResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Gone, createResponse.StatusCode);
         Assert.Contains("can no longer be used to create new instances", createResponseContent);
     }
 
@@ -646,7 +646,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
     }
 
     [Fact]
-    public async Task InstationAllowedByOrg_Returns_Forbidden_For_User_SimplifiedEndpoint()
+    public async Task InstationAllowedByOrg_Returns_Gone_For_User_SimplifiedEndpoint()
     {
         // Setup test data
         string org = "tdd";
@@ -671,7 +671,7 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
 
         // Create instance
         var createResponse = await client.PostAsync($"{org}/{app}/instances/create", content);
-        Assert.Equal(HttpStatusCode.Forbidden, createResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Gone, createResponse.StatusCode);
     }
 
     [Fact]

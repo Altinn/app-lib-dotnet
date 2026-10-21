@@ -223,6 +223,7 @@ public class InstancesController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(typeof(InstanceResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
     [RequestSizeLimit(RequestSizeLimit)]
     public async Task<ActionResult<InstanceResponse>> Post(
         [FromRoute] string org,
@@ -484,7 +485,7 @@ public class InstancesController : ControllerBase
                 return null;
 
             return StatusCode(
-                StatusCodes.Status403Forbidden,
+                StatusCodes.Status410Gone,
                 $"User instantiation is disabled for this application {org}/{app}"
             );
         }
@@ -507,7 +508,7 @@ public class InstancesController : ControllerBase
             return null;
 
         return StatusCode(
-            StatusCodes.Status403Forbidden,
+            StatusCodes.Status410Gone,
             $"The application {org}/{app} expired at {validToUtc:O} and can no longer be used to create new instances"
         );
     }
@@ -525,6 +526,7 @@ public class InstancesController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(typeof(InstanceResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
     [RequestSizeLimit(RequestSizeLimit)]
     public async Task<ActionResult<InstanceResponse>> PostSimplified(
         [FromRoute] string org,
