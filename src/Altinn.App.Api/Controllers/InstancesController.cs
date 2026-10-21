@@ -842,6 +842,7 @@ public class InstancesController : ControllerBase
     [HttpGet("/{org}/{app}/legacy/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/copy")]
     [ProducesResponseType(typeof(Instance), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
     public async Task<ActionResult> CopyInstance(
         [FromRoute] string org,
         [FromRoute] string app,
