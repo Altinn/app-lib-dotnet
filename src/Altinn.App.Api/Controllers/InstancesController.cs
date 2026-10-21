@@ -474,8 +474,8 @@ public class InstancesController : ControllerBase
         bool isCopy = false
     )
     {
-        if (VerifyNotExpired(application, org, app) is { } expiredResult)
-            return expiredResult;
+        if (VerifyValidityPeriod(application, org, app) is { } validityResult)
+            return validityResult;
 
         if (_env.IsProduction() && application.DisallowUserInstantiation)
         {
@@ -493,25 +493,34 @@ public class InstancesController : ControllerBase
         return null;
     }
 
-    private ObjectResult? VerifyNotExpired(ApplicationMetadata application, string org, string app)
+    private ObjectResult? VerifyValidityPeriod(ApplicationMetadata application, string org, string app)
     {
-        if (application.ValidTo is not { } validTo)
-            return null;
+        DateTime now = DateTime.UtcNow;
 
-        // A validTo without an offset is interpreted as UTC.
-        DateTime validToUtc =
-            validTo.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(validTo, DateTimeKind.Utc)
-                : validTo.ToUniversalTime();
+        if (application.ValidFrom is { } validFrom && ToUtc(validFrom) > now)
+        {
+            return StatusCode(
+                StatusCodes.Status410Gone,
+                $"The application {org}/{app} is not valid before {ToUtc(validFrom):O} and cannot be used to create new instances yet"
+            );
+        }
 
-        if (validToUtc >= DateTime.UtcNow)
-            return null;
+        if (application.ValidTo is { } validTo && ToUtc(validTo) < now)
+        {
+            return StatusCode(
+                StatusCodes.Status410Gone,
+                $"The application {org}/{app} expired at {ToUtc(validTo):O} and can no longer be used to create new instances"
+            );
+        }
 
-        return StatusCode(
-            StatusCodes.Status410Gone,
-            $"The application {org}/{app} expired at {validToUtc:O} and can no longer be used to create new instances"
-        );
+        return null;
     }
+
+    // A validity date without an offset is interpreted as UTC.
+    private static DateTime ToUtc(DateTime dateTime) =>
+        dateTime.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(dateTime, DateTimeKind.Utc)
+            : dateTime.ToUniversalTime();
 
     /// <summary>
     /// Simplified instantiation with support for fieldprefill
@@ -861,9 +870,9 @@ public class InstancesController : ControllerBase
 
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
 
-        if (VerifyNotExpired(application, org, app) is { } expiredResult)
+        if (VerifyValidityPeriod(application, org, app) is { } validityResult)
         {
-            return expiredResult;
+            return validityResult;
         }
 
         if (application.CopyInstanceSettings?.Enabled is null or false)

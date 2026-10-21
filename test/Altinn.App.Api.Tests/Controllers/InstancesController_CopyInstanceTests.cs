@@ -95,6 +95,31 @@ public class InstancesController_CopyInstanceTests
     }
 
     [Fact]
+    public async Task CopyInstance_ValidFromInTheFuture_ReturnsGone()
+    {
+        // Arrange
+        var auth = TestAuthentication.GetUserAuthentication(userPartyId: 343234);
+        using var fixture = InstancesControllerFixture.Create(auth);
+        const string Org = "ttd";
+        const string AppName = "copy-instance";
+        ApplicationMetadata application = CreateApplicationMetadata(Org, AppName, true);
+        application.ValidFrom = DateTime.UtcNow.AddDays(1);
+        fixture.Mock<IAppMetadata>().Setup(a => a.GetApplicationMetadata()).ReturnsAsync(application);
+
+        // Act
+        var controller = fixture.ServiceProvider.GetRequiredService<InstancesController>();
+        ActionResult actual = await controller.CopyInstance(Org, AppName, 343234, Guid.NewGuid());
+
+        // Assert
+        ObjectResult result = Assert.IsType<ObjectResult>(actual);
+        Assert.Equal(StatusCodes.Status410Gone, result.StatusCode);
+        Assert.Contains("cannot be used to create new instances yet", result.Value!.ToString());
+
+        fixture.Mock<IAppMetadata>().VerifyAll();
+        fixture.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public async Task CopyInstance_AsAppOwner_ReturnsForbidResult()
     {
         // Arrange

@@ -645,6 +645,77 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         TestData.DeleteInstanceAndData(org, app, instance.Id);
     }
 
+    public static TheoryData<DateTime> FutureValidFrom =>
+        [
+            DateTime.UtcNow.AddDays(1),
+            DateTime.Now.AddDays(1),
+            DateTime.SpecifyKind(DateTime.UtcNow.AddDays(1), DateTimeKind.Unspecified),
+        ];
+
+    [Theory]
+    [MemberData(nameof(FutureValidFrom))]
+    public async Task PostNewInstance_ValidFromInTheFuture_Returns_Gone(DateTime validFrom)
+    {
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        OverrideServicesForThisTest = services =>
+            services.AddSingleton(new AppMetadataMutationHook(app => app.ValidFrom = validFrom));
+        using HttpClient client = GetRootedUserClient(org, app, 1337, instanceOwnerPartyId);
+
+        using var content = JsonContent.Create(
+            new Instance() { InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() } }
+        );
+        var createResponse = await client.PostAsync($"{org}/{app}/instances", content);
+
+        var createResponseContent = await createResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.Gone, createResponse.StatusCode);
+        Assert.Contains("cannot be used to create new instances yet", createResponseContent);
+    }
+
+    [Theory]
+    [MemberData(nameof(FutureValidFrom))]
+    public async Task PostNewInstance_Simplified_ValidFromInTheFuture_Returns_Gone_For_ServiceOwner(DateTime validFrom)
+    {
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        OverrideServicesForThisTest = services =>
+            services.AddSingleton(new AppMetadataMutationHook(app => app.ValidFrom = validFrom));
+        using HttpClient client = GetRootedOrgClient(org, app, serviceOwnerOrg: org);
+
+        using var content = JsonContent.Create(
+            new { prefill = new { }, instanceOwner = new { partyId = instanceOwnerPartyId.ToString() } }
+        );
+        var createResponse = await client.PostAsync($"{org}/{app}/instances/create", content);
+
+        var createResponseContent = await createResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.Gone, createResponse.StatusCode);
+        Assert.Contains("cannot be used to create new instances yet", createResponseContent);
+    }
+
+    [Fact]
+    public async Task PostNewInstance_ValidFromInThePast_Returns_Created()
+    {
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        OverrideServicesForThisTest = services =>
+            services.AddSingleton(new AppMetadataMutationHook(app => app.ValidFrom = DateTime.UtcNow.AddDays(-1)));
+        using HttpClient client = GetRootedUserClient(org, app, 1337, instanceOwnerPartyId);
+
+        using var content = JsonContent.Create(
+            new Instance() { InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() } }
+        );
+        var createResponse = await client.PostAsync($"{org}/{app}/instances", content);
+
+        var createResponseContent = await createResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        var instance = JsonSerializer.Deserialize<Instance>(createResponseContent, JsonSerializerOptions);
+        Assert.NotNull(instance);
+        TestData.DeleteInstanceAndData(org, app, instance.Id);
+    }
+
     [Fact]
     public async Task InstationAllowedByOrg_Returns_Gone_For_User_SimplifiedEndpoint()
     {
