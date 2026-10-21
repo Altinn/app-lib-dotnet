@@ -574,6 +574,77 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
         TestData.DeleteInstanceAndData(org, app, instance.Id);
     }
 
+    public static TheoryData<DateTime> ExpiredValidTo =>
+        [
+            DateTime.UtcNow.AddMinutes(-1),
+            DateTime.Now.AddMinutes(-1),
+            DateTime.SpecifyKind(DateTime.UtcNow.AddMinutes(-1), DateTimeKind.Unspecified),
+        ];
+
+    [Theory]
+    [MemberData(nameof(ExpiredValidTo))]
+    public async Task PostNewInstance_ValidToInThePast_Returns_Forbidden(DateTime validTo)
+    {
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        OverrideServicesForThisTest = services =>
+            services.AddSingleton(new AppMetadataMutationHook(app => app.ValidTo = validTo));
+        using HttpClient client = GetRootedUserClient(org, app, 1337, instanceOwnerPartyId);
+
+        using var content = JsonContent.Create(
+            new Instance() { InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() } }
+        );
+        var createResponse = await client.PostAsync($"{org}/{app}/instances", content);
+
+        var createResponseContent = await createResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.Forbidden, createResponse.StatusCode);
+        Assert.Contains("can no longer be used to create new instances", createResponseContent);
+    }
+
+    [Theory]
+    [MemberData(nameof(ExpiredValidTo))]
+    public async Task PostNewInstance_Simplified_ValidToInThePast_Returns_Forbidden_For_ServiceOwner(DateTime validTo)
+    {
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        OverrideServicesForThisTest = services =>
+            services.AddSingleton(new AppMetadataMutationHook(app => app.ValidTo = validTo));
+        using HttpClient client = GetRootedOrgClient(org, app, serviceOwnerOrg: org);
+
+        using var content = JsonContent.Create(
+            new { prefill = new { }, instanceOwner = new { partyId = instanceOwnerPartyId.ToString() } }
+        );
+        var createResponse = await client.PostAsync($"{org}/{app}/instances/create", content);
+
+        var createResponseContent = await createResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.Forbidden, createResponse.StatusCode);
+        Assert.Contains("can no longer be used to create new instances", createResponseContent);
+    }
+
+    [Fact]
+    public async Task PostNewInstance_ValidToInTheFuture_Returns_Created()
+    {
+        string org = "tdd";
+        string app = "contributer-restriction";
+        int instanceOwnerPartyId = 501337;
+        OverrideServicesForThisTest = services =>
+            services.AddSingleton(new AppMetadataMutationHook(app => app.ValidTo = DateTime.UtcNow.AddDays(1)));
+        using HttpClient client = GetRootedUserClient(org, app, 1337, instanceOwnerPartyId);
+
+        using var content = JsonContent.Create(
+            new Instance() { InstanceOwner = new InstanceOwner() { PartyId = instanceOwnerPartyId.ToString() } }
+        );
+        var createResponse = await client.PostAsync($"{org}/{app}/instances", content);
+
+        var createResponseContent = await createResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        var instance = JsonSerializer.Deserialize<Instance>(createResponseContent, JsonSerializerOptions);
+        Assert.NotNull(instance);
+        TestData.DeleteInstanceAndData(org, app, instance.Id);
+    }
+
     [Fact]
     public async Task InstationAllowedByOrg_Returns_Forbidden_For_User_SimplifiedEndpoint()
     {
