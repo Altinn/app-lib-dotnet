@@ -124,6 +124,61 @@ public class PdpRetryDelegatingHandlerTests
         Assert.Single(receivedBodies);
     }
 
+    [Fact]
+    public async Task SendAsync_DoesNotRetry_WhenRequestIsCanceledAfterFirstAttemptFails()
+    {
+        List<string> receivedBodies = [];
+        using var cancellation = new CancellationTokenSource();
+        using HttpClient client = CreateClient(
+            receivedBodies,
+            () =>
+            {
+                cancellation.Cancel();
+                throw new HttpRequestException("An error occurred while sending the request.");
+            },
+            () => new HttpResponseMessage(HttpStatusCode.OK)
+        );
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            client.PostAsync("decision", new StringContent(RequestBody), cancellation.Token)
+        );
+
+        Assert.Single(receivedBodies);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.OK)]
+    [InlineData(HttpStatusCode.ServiceUnavailable)]
+    public async Task SendAsync_HasNoAttemptInFlight_WhenItReturns(HttpStatusCode secondStatusCode)
+    {
+        int started = 0;
+        int finished = 0;
+        var pdp = new DelegatingHandlerStub(
+            async (_, _) =>
+            {
+                started++;
+                await Task.Yield();
+                finished++;
+                return new HttpResponseMessage(started == 1 ? HttpStatusCode.ServiceUnavailable : secondStatusCode);
+            }
+        );
+        using var client = new HttpClient(
+            new PdpRetryDelegatingHandler(NullLogger<PdpRetryDelegatingHandler>.Instance) { InnerHandler = pdp }
+        )
+        {
+            BaseAddress = new Uri("http://localhost/authorization/api/v1/"),
+        };
+
+        using HttpResponseMessage response = await client.PostAsync("decision", new StringContent(RequestBody));
+        int startedWhenReturned = started;
+        await Task.Delay(100);
+
+        Assert.Equal(secondStatusCode, response.StatusCode);
+        Assert.Equal(2, startedWhenReturned);
+        Assert.Equal(startedWhenReturned, finished);
+        Assert.Equal(startedWhenReturned, started);
+    }
+
     private static HttpClient CreateClient(List<string> receivedBodies, params Func<HttpResponseMessage>[] attempts)
     {
         var pdp = new DelegatingHandlerStub(

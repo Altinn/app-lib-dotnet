@@ -43,6 +43,8 @@ internal sealed class PdpRetryDelegatingHandler : DelegatingHandler
             _logger.LogWarning(e, "Request to PDP failed, retrying once");
         }
 
+        // A request the caller has given up on is not sent again
+        cancellationToken.ThrowIfCancellationRequested();
         return await base.SendAsync(request, cancellationToken);
     }
 
