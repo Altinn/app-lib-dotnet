@@ -1,0 +1,127 @@
+using System.Net;
+using Altinn.App.Core.Infrastructure.Clients.Authorization;
+using Altinn.App.PlatformServices.Tests.Mocks;
+using Microsoft.Extensions.Logging.Abstractions;
+
+namespace Altinn.App.Core.Tests.Infrastructure.Clients.Authorization;
+
+public class PdpRetryDelegatingHandlerTests
+{
+    private const string RequestBody = """{"Request":{}}""";
+
+    [Theory]
+    [InlineData(HttpStatusCode.BadGateway)]
+    [InlineData(HttpStatusCode.ServiceUnavailable)]
+    [InlineData(HttpStatusCode.GatewayTimeout)]
+    public async Task SendAsync_RetriesOnce_WhenFirstResponseIsTransient(HttpStatusCode statusCode)
+    {
+        List<string> receivedBodies = [];
+        using HttpClient client = CreateClient(
+            receivedBodies,
+            () => new HttpResponseMessage(statusCode),
+            () => new HttpResponseMessage(HttpStatusCode.OK)
+        );
+
+        using HttpResponseMessage response = await client.PostAsync("decision", new StringContent(RequestBody));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal([RequestBody, RequestBody], receivedBodies);
+    }
+
+    [Fact]
+    public async Task SendAsync_RetriesOnce_WhenFirstAttemptThrowsHttpRequestException()
+    {
+        List<string> receivedBodies = [];
+        using HttpClient client = CreateClient(
+            receivedBodies,
+            () => throw new HttpRequestException("An error occurred while sending the request."),
+            () => new HttpResponseMessage(HttpStatusCode.OK)
+        );
+
+        using HttpResponseMessage response = await client.PostAsync("decision", new StringContent(RequestBody));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal([RequestBody, RequestBody], receivedBodies);
+    }
+
+    [Fact]
+    public async Task SendAsync_ReturnsSecondResponse_WhenBothResponsesAreTransient()
+    {
+        List<string> receivedBodies = [];
+        using HttpClient client = CreateClient(
+            receivedBodies,
+            () => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable),
+            () => new HttpResponseMessage(HttpStatusCode.GatewayTimeout)
+        );
+
+        using HttpResponseMessage response = await client.PostAsync("decision", new StringContent(RequestBody));
+
+        Assert.Equal(HttpStatusCode.GatewayTimeout, response.StatusCode);
+        Assert.Equal(2, receivedBodies.Count);
+    }
+
+    [Fact]
+    public async Task SendAsync_ThrowsHttpRequestException_WhenBothAttemptsThrow()
+    {
+        List<string> receivedBodies = [];
+        using HttpClient client = CreateClient(
+            receivedBodies,
+            () => throw new HttpRequestException("first"),
+            () => throw new HttpRequestException("second")
+        );
+
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(() =>
+            client.PostAsync("decision", new StringContent(RequestBody))
+        );
+
+        Assert.Equal("second", exception.Message);
+        Assert.Equal(2, receivedBodies.Count);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.OK)]
+    [InlineData(HttpStatusCode.BadRequest)]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.Forbidden)]
+    [InlineData(HttpStatusCode.NotFound)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    public async Task SendAsync_DoesNotRetry_WhenResponseIsNotTransient(HttpStatusCode statusCode)
+    {
+        List<string> receivedBodies = [];
+        using HttpClient client = CreateClient(receivedBodies, () => new HttpResponseMessage(statusCode));
+
+        using HttpResponseMessage response = await client.PostAsync("decision", new StringContent(RequestBody));
+
+        Assert.Equal(statusCode, response.StatusCode);
+        Assert.Single(receivedBodies);
+    }
+
+    [Fact]
+    public async Task SendAsync_DoesNotRetry_WhenRequestIsCanceled()
+    {
+        List<string> receivedBodies = [];
+        using HttpClient client = CreateClient(receivedBodies, () => throw new TaskCanceledException());
+
+        await Assert.ThrowsAsync<TaskCanceledException>(() =>
+            client.PostAsync("decision", new StringContent(RequestBody))
+        );
+
+        Assert.Single(receivedBodies);
+    }
+
+    private static HttpClient CreateClient(List<string> receivedBodies, params Func<HttpResponseMessage>[] attempts)
+    {
+        var pdp = new DelegatingHandlerStub(
+            async (request, cancellationToken) =>
+            {
+                receivedBodies.Add(await request.Content!.ReadAsStringAsync(cancellationToken));
+                return attempts[receivedBodies.Count - 1]();
+            }
+        );
+        var handler = new PdpRetryDelegatingHandler(NullLogger<PdpRetryDelegatingHandler>.Instance)
+        {
+            InnerHandler = pdp,
+        };
+        return new HttpClient(handler) { BaseAddress = new Uri("http://localhost/authorization/api/v1/") };
+    }
+}

@@ -17,6 +17,7 @@ using Altinn.App.Core.Features.Correspondence.Extensions;
 using Altinn.App.Core.Features.Maskinporten;
 using Altinn.App.Core.Features.Maskinporten.Extensions;
 using Altinn.App.Core.Features.Maskinporten.Models;
+using Altinn.App.Core.Infrastructure.Clients.Authorization;
 using Altinn.Common.PEP.Authorization;
 using Altinn.Common.PEP.Clients;
 using AltinnCore.Authentication.JwtCookie;
@@ -129,7 +130,8 @@ public static class ServiceCollectionExtensions
         ConfigureGracefulShutdown(services, env);
 
         // HttpClients for platform functionality. Registered as HttpClient so default HttpClientFactory is used
-        services.AddHttpClient<AuthorizationApiClient>();
+        services.AddTransient<PdpRetryDelegatingHandler>();
+        services.AddHttpClient<AuthorizationApiClient>().AddHttpMessageHandler<PdpRetryDelegatingHandler>();
 
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
