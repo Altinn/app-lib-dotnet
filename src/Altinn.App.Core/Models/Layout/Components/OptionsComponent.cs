@@ -1,6 +1,8 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
+using Altinn.App.Core.Internal.Expressions;
 using Altinn.App.Core.Models.Expressions;
 
 namespace Altinn.App.Core.Models.Layout.Components;
@@ -31,6 +33,22 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
     public required bool Secure { get; init; }
 
     /// <summary>
+    /// Data model paths whose values are sent as query parameters to the options provider of <see cref="OptionsId" />,
+    /// keyed by path, with the name of the query parameter as value
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? Mapping { get; init; }
+
+    /// <summary>
+    /// Query parameters, as values or expressions, sent to the options provider of <see cref="OptionsId" />
+    /// </summary>
+    public IReadOnlyDictionary<string, Expression>? QueryParameters { get; init; }
+
+    /// <summary>
+    /// Is the component shown as a summary, so the user cannot change the value
+    /// </summary>
+    public bool RenderAsSummary { get; init; }
+
+    /// <summary>
     /// Parser for OptionsComponent
     /// </summary>
     public static OptionsComponent Parse(JsonElement componentElement, string pageId, string layoutId)
@@ -40,6 +58,11 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
         var options = ParseOrNull<List<AppOption>>(componentElement, "options");
         var optionsSource = ParseOrNull<OptionsSource>(componentElement, "source");
         var secure = ParseBoolOrNull(componentElement, "secure") ?? false;
+        var mapping = ParseMapping(componentElement);
+        var queryParameters = ParseQueryParameters(componentElement);
+        var renderAsSummary =
+            componentElement.TryGetProperty("renderAsSummary", out JsonElement renderAsSummaryElement)
+            && renderAsSummaryElement.ValueKind == JsonValueKind.True;
 
         if (optionsId is null && options is null && optionsSource is null)
         {
@@ -89,6 +112,9 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
             OptionsId = optionsId,
             OptionsSource = optionsSource,
             Secure = secure,
+            Mapping = mapping,
+            QueryParameters = queryParameters,
+            RenderAsSummary = renderAsSummary,
         };
     }
 
@@ -146,6 +172,50 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
             ? optionsIdElement.GetBoolean()
             : null;
 
+    // mapping and queryParameters are read leniently, so a layout the frontend accepts is never rejected here
+    private static Dictionary<string, string>? ParseMapping(JsonElement componentElement) =>
+        ParseObject(componentElement, "mapping", path => path.ToString());
+
+    private static Dictionary<string, Expression>? ParseQueryParameters(JsonElement componentElement) =>
+        ParseObject(componentElement, "queryParameters", ParseQueryParameter);
+
+    // Like a JavaScript object, the last of two properties with the same name wins
+    private static Dictionary<string, T>? ParseObject<T>(
+        JsonElement componentElement,
+        string propertyName,
+        Func<JsonElement, T> parseValue
+    )
+    {
+        if (
+            !componentElement.TryGetProperty(propertyName, out JsonElement objectElement)
+            || objectElement.ValueKind != JsonValueKind.Object
+        )
+        {
+            return null;
+        }
+
+        var result = new Dictionary<string, T>();
+        foreach (var property in objectElement.EnumerateObject())
+        {
+            result[property.Name] = parseValue(property.Value);
+        }
+
+        return result;
+    }
+
+    // The frontend evaluates a query parameter that is not a valid expression to an empty string
+    private static Expression ParseQueryParameter(JsonElement parameter)
+    {
+        try
+        {
+            return ExpressionConverter.ReadStatic(parameter);
+        }
+        catch (JsonException)
+        {
+            return new Expression(ExpressionValue.Null);
+        }
+    }
+
     private static T? ParseOrNull<T>(JsonElement componentElement, string propertyName)
         where T : class =>
         componentElement.TryGetProperty(propertyName, out JsonElement optionsIdElement)
@@ -170,6 +240,7 @@ public record OptionsSource
     /// <summary>
     /// the group field in the data model to base the options on
     /// </summary>
+    [JsonPropertyName("group")]
     public string Group { get; }
 
     /// <summary>
@@ -179,7 +250,14 @@ public record OptionsSource
     /// Notice that the value field must be unique for each element. If the repeating group does not contain a field which is unique for each item
     /// it is recommended to add a field to the data model that can be used as identificator, for instance a GUID.
     /// </remarks>
+    [JsonPropertyName("value")]
     public string Value { get; }
+
+    /// <summary>
+    /// The data type of the group, when it is not the data type of the layout set
+    /// </summary>
+    [JsonPropertyName("dataType")]
+    public string? DataType { get; init; }
 }
 
 /// <summary>

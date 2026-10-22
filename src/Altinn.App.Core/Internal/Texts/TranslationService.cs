@@ -300,6 +300,17 @@ internal sealed class TranslationService : ITranslationService
                         _ => "Field is required",
                     },
                 };
+            case "backend.validation_errors.invalid_option":
+                return new TextResourceElement()
+                {
+                    Id = "backend.validation_errors.invalid_option",
+                    Value = language switch
+                    {
+                        LanguageConst.Nb => "Verdien er ikke et av alternativene",
+                        LanguageConst.Nn => "Verdien er ikkje eit av alternativa",
+                        _ => "The value is not one of the options",
+                    },
+                };
             case "backend.pdf_default_file_name":
                 return new TextResourceElement()
                 {
