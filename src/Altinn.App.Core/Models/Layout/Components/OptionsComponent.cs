@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models.Expressions;
@@ -31,6 +32,17 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
     public required bool Secure { get; init; }
 
     /// <summary>
+    /// Data model paths whose values are sent as query parameters to the options provider of <see cref="OptionsId" />,
+    /// keyed by path, with the name of the query parameter as value
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? Mapping { get; init; }
+
+    /// <summary>
+    /// Query parameters, as values or expressions, sent to the options provider of <see cref="OptionsId" />
+    /// </summary>
+    public IReadOnlyDictionary<string, Expression>? QueryParameters { get; init; }
+
+    /// <summary>
     /// Parser for OptionsComponent
     /// </summary>
     public static OptionsComponent Parse(JsonElement componentElement, string pageId, string layoutId)
@@ -40,6 +52,8 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
         var options = ParseOrNull<List<AppOption>>(componentElement, "options");
         var optionsSource = ParseOrNull<OptionsSource>(componentElement, "source");
         var secure = ParseBoolOrNull(componentElement, "secure") ?? false;
+        var mapping = ParseOrNull<Dictionary<string, string>>(componentElement, "mapping");
+        var queryParameters = ParseQueryParameters(componentElement);
 
         if (optionsId is null && options is null && optionsSource is null)
         {
@@ -89,6 +103,8 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
             OptionsId = optionsId,
             OptionsSource = optionsSource,
             Secure = secure,
+            Mapping = mapping,
+            QueryParameters = queryParameters,
         };
     }
 
@@ -146,6 +162,13 @@ public sealed class OptionsComponent : Base.NoReferenceComponent
             ? optionsIdElement.GetBoolean()
             : null;
 
+    private static Dictionary<string, Expression>? ParseQueryParameters(JsonElement componentElement) =>
+        componentElement.TryGetProperty("queryParameters", out JsonElement queryParametersElement)
+            ? queryParametersElement
+                .EnumerateObject()
+                .ToDictionary(parameter => parameter.Name, parameter => ExpressionConverter.ReadStatic(parameter.Value))
+            : null;
+
     private static T? ParseOrNull<T>(JsonElement componentElement, string propertyName)
         where T : class =>
         componentElement.TryGetProperty(propertyName, out JsonElement optionsIdElement)
@@ -170,6 +193,7 @@ public record OptionsSource
     /// <summary>
     /// the group field in the data model to base the options on
     /// </summary>
+    [JsonPropertyName("group")]
     public string Group { get; }
 
     /// <summary>
@@ -179,6 +203,7 @@ public record OptionsSource
     /// Notice that the value field must be unique for each element. If the repeating group does not contain a field which is unique for each item
     /// it is recommended to add a field to the data model that can be used as identificator, for instance a GUID.
     /// </remarks>
+    [JsonPropertyName("value")]
     public string Value { get; }
 }
 
