@@ -6,7 +6,7 @@ namespace Altinn.App.Core.Infrastructure.Clients.Authorization;
 /// <summary>
 /// A <see cref="DelegatingHandler"/> that sends a request to the PDP once more when the first attempt fails
 /// with a network error or a 502, 503 or 504 response.
-/// A decision request only asks a question, so sending it twice changes nothing.
+/// A decision request is safe to repeat: at most the PDP logs one more audit event for it.
 /// </summary>
 internal sealed class PdpRetryDelegatingHandler : DelegatingHandler
 {

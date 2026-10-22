@@ -29,6 +29,21 @@ public class PdpRetryDelegatingHandlerTests
     }
 
     [Fact]
+    public async Task SendAsync_DisposesFirstResponse_WhenRetrying()
+    {
+        var firstResponse = new DisposeTrackingResponse(HttpStatusCode.ServiceUnavailable);
+        using HttpClient client = CreateClient(
+            [],
+            () => firstResponse,
+            () => new HttpResponseMessage(HttpStatusCode.OK)
+        );
+
+        using HttpResponseMessage response = await client.PostAsync("decision", new StringContent(RequestBody));
+
+        Assert.True(firstResponse.IsDisposed);
+    }
+
+    [Fact]
     public async Task SendAsync_RetriesOnce_WhenFirstAttemptThrowsHttpRequestException()
     {
         List<string> receivedBodies = [];
@@ -123,5 +138,16 @@ public class PdpRetryDelegatingHandlerTests
             InnerHandler = pdp,
         };
         return new HttpClient(handler) { BaseAddress = new Uri("http://localhost/authorization/api/v1/") };
+    }
+
+    private sealed class DisposeTrackingResponse(HttpStatusCode statusCode) : HttpResponseMessage(statusCode)
+    {
+        public bool IsDisposed { get; private set; }
+
+        protected override void Dispose(bool disposing)
+        {
+            IsDisposed = true;
+            base.Dispose(disposing);
+        }
     }
 }
