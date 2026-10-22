@@ -27,6 +27,8 @@ public class OptionsValidatorTests
 {
     private const string DataElementId = "fc9e8d8c-4b9f-4f59-9a3e-6a1c3e4b5d6f";
     private const string InlineOptions = """[{ "value": "a", "label": "A" }, { "value": "b", "label": "B" }]""";
+    private const string OptionsIdComponent =
+        """{ "id": "dropdown", "type": "Dropdown", "dataModelBindings": { "simpleBinding": "value" }, "optionsId": "list" }""";
 
     private readonly ITestOutputHelper _output;
     private readonly Mock<IAppResources> _appResources = new();
@@ -41,6 +43,11 @@ public class OptionsValidatorTests
             _appResources.Object,
             _appOptionsService.Object,
             _altinn3LibraryCodeListService.Object,
+            new TranslationService(
+                new AppIdentifier("org", "app"),
+                _appResources.Object,
+                FakeLoggerXunit.Get<TranslationService>(output)
+            ),
             FakeLoggerXunit.Get<OptionsValidator>(output)
         );
     }
@@ -65,9 +72,12 @@ public class OptionsValidatorTests
             var issue = Assert.Single(issues);
             Assert.Equal("value", issue.Field);
             Assert.Equal(DataElementId, issue.DataElementId);
-            Assert.Equal("invalidOption", issue.Code);
+            Assert.Equal("InvalidOption", issue.Code);
+            Assert.Equal("Verdien er ikke et av alternativene", issue.Description);
+            Assert.Null(issue.CustomTextKey);
+            Assert.Equal("radio", issue.CustomTextParameters?["componentId"]);
+            Assert.Equal(value, issue.CustomTextParameters?["invalidValues"]);
             Assert.Equal(ValidationIssueSeverity.Error, issue.Severity);
-            Assert.Contains("radio", issue.Description);
         }
         else
         {
@@ -97,9 +107,14 @@ public class OptionsValidatorTests
     [InlineData("\"hidden\": true", false)]
     [InlineData("\"hidden\": [\"equals\", [\"dataModel\", \"value\"], \"x\"]", false)]
     [InlineData("\"readOnly\": true", false)]
+    [InlineData("\"readOnly\": [\"concat\", \"tr\", \"ue\"]", false)]
+    [InlineData("\"renderAsSummary\": true", false)]
     [InlineData("\"readOnly\": false", true)]
     [InlineData("\"readOnly\": [\"dataModel\", \"note\"]", true)]
-    public async Task Validate_SkipsComponent_OnlyWhenHiddenOrReadOnly(string property, bool expectIssue)
+    [InlineData("\"renderAsSummary\": \"yes\"", true)]
+    [InlineData("\"readOnly\": [\"authContext\", \"write\"]", false)]
+    [InlineData("\"readOnly\": [\"dataModel\", \"value\"]", true)]
+    public async Task Validate_SkipsComponent_OnlyWhenHiddenOrNotEditable(string property, bool expectIssue)
     {
         var issues = await Validate(
             $$"""[{ "id": "radio", "type": "RadioButtons", {{property}}, "dataModelBindings": { "simpleBinding": "value" }, "options": {{InlineOptions}} }]""",
@@ -143,6 +158,7 @@ public class OptionsValidatorTests
     [InlineData("number", """[{ "value": 1.5, "label": "1.5" }, { "value": 2, "label": "2" }]""", false)]
     [InlineData("flag", """[{ "value": true, "label": "Yes" }, { "value": false, "label": "No" }]""", false)]
     [InlineData("value", """[{ "value": null, "label": "None" }]""", false)]
+    [InlineData("date", """[{ "value": "2026-10-22T00:00:00", "label": "Today" }]""", false)]
     [InlineData("date", InlineOptions, true)]
     public async Task Validate_ComparesValuesAsTheFrontend_ForOtherTypes(string field, string options, bool expectIssue)
     {
@@ -161,7 +177,7 @@ public class OptionsValidatorTests
     }
 
     [Fact]
-    public async Task Validate_GetsOptionsOnce_WithQueryParametersFromMappingAndQueryParameters()
+    public async Task Validate_GetsOptionsOnce_WithQueryParametersLikeTheFrontend()
     {
         var model = new OptionsTestModel
         {
@@ -174,24 +190,24 @@ public class OptionsValidatorTests
         };
         var expectedParameters = new Dictionary<string, string>
         {
+            ["language"] = "nb",
             ["municipality"] = "0301",
             ["number"] = "2",
             ["flag"] = "true",
-            ["date"] = JsonSerializer.Serialize(model.Date),
+            ["date"] = "2026-10-22T00:00:00",
             ["rows"] = JsonSerializer.Serialize(model.Rows),
             ["outside"] = "",
             ["static"] = "fixed",
             ["fromModel"] = "a",
             ["count"] = "5",
             ["empty"] = "",
+            ["invalid"] = "",
         };
-        _appOptionsService
-            .Setup(s => s.GetOptionsAsync("list", "nb", It.IsAny<Dictionary<string, string>>()))
-            .ReturnsAsync(new AppOptions { Options = [new AppOption { Value = "a", Label = "A" }] });
+        SetupOptions("list", "a");
         var component = """
             "type": "Dropdown", "dataModelBindings": { "simpleBinding": "value" }, "optionsId": "list",
             "mapping": { "municipality": "municipality", "number": "number", "flag": "flag", "date": "date", "rows": "rows", "rows[{0}].id": "outside" },
-            "queryParameters": { "static": "fixed", "fromModel": ["dataModel", "value"], "count": 5, "empty": ["dataModel", "note"] }
+            "queryParameters": { "static": "fixed", "fromModel": ["dataModel", "value"], "count": 5, "empty": ["dataModel", "note"], "invalid": { "not": "an expression" } }
             """;
 
         var issues = await Validate(
@@ -213,12 +229,27 @@ public class OptionsValidatorTests
         );
     }
 
+    [Theory]
+    [InlineData("\"mapping\": null, \"queryParameters\": null")]
+    [InlineData("\"mapping\": [], \"queryParameters\": \"x\"")]
+    [InlineData("\"mapping\": { \"value\": 1 }, \"queryParameters\": {}")]
+    [InlineData("\"mapping\": { \"value\": \"a\", \"value\": \"b\" }, \"queryParameters\": { \"a\": 1, \"a\": 2 }")]
+    public async Task Validate_ReadsMappingAndQueryParametersLeniently_WhenTheyAreNotObjectsOfStrings(string properties)
+    {
+        SetupOptions("list", "a");
+
+        var issues = await Validate(
+            $$"""[{ "id": "dropdown", "type": "Dropdown", "dataModelBindings": { "simpleBinding": "value" }, "optionsId": "list", {{properties}} }]""",
+            new OptionsTestModel { Value = "x" }
+        );
+
+        Assert.Single(issues);
+    }
+
     [Fact]
     public async Task Validate_SendsMappedValuesFromTheRow_WhenComponentIsInRepeatingGroup()
     {
-        _appOptionsService
-            .Setup(s => s.GetOptionsAsync("list", "nb", It.IsAny<Dictionary<string, string>>()))
-            .ReturnsAsync(new AppOptions { Options = [new AppOption { Value = "a", Label = "A" }] });
+        SetupOptions("list", "a");
 
         await Validate(
             """
@@ -247,75 +278,142 @@ public class OptionsValidatorTests
         }
     }
 
+    [Theory]
+    [InlineData("a", false)]
+    [InlineData("x", true)]
+    public async Task Validate_UsesOptionsFromProvider_WhenOptionsIdIsSet(string value, bool expectIssue)
+    {
+        SetupOptions("list", "a");
+
+        var issues = await Validate($"[{OptionsIdComponent}]", new OptionsTestModel { Value = value });
+
+        Assert.Equal(expectIssue ? 1 : 0, issues.Count);
+    }
+
     [Fact]
-    public async Task Validate_ReturnsIssue_WhenValueIsNotAmongOptionsFromProvider()
+    public async Task Validate_UsesLanguageNb_WhenLanguageIsNull()
+    {
+        SetupOptions("list", "a");
+
+        await Validate($"[{OptionsIdComponent}]", new OptionsTestModel { Value = "x" }, language: null);
+
+        _appOptionsService.Verify(
+            s => s.GetOptionsAsync("list", "nb", It.Is<Dictionary<string, string>>(p => p["language"] == "nb")),
+            Times.Once
+        );
+    }
+
+    [Theory]
+    [InlineData("7", false)]
+    [InlineData("10", false)]
+    [InlineData("007", true)]
+    [InlineData("n/a", false)]
+    public async Task Validate_ComparesNumberOptionsAsTheFrontendReceivesThem_WhenProviderSetsValueTypeNumber(
+        string value,
+        bool expectIssue
+    )
     {
         _appOptionsService
             .Setup(s => s.GetOptionsAsync("list", "nb", It.IsAny<Dictionary<string, string>>()))
-            .ReturnsAsync(new AppOptions { Options = [new AppOption { Value = "a", Label = "A" }] });
+            .ReturnsAsync(
+                new AppOptions
+                {
+                    Options =
+                    [
+                        new AppOption
+                        {
+                            Value = "007",
+                            ValueType = AppOptionValueType.Number,
+                            Label = "Seven",
+                        },
+                        new AppOption
+                        {
+                            Value = "0010",
+                            ValueType = AppOptionValueType.Number,
+                            Label = "Ten",
+                        },
+                        new AppOption
+                        {
+                            Value = "n/a",
+                            ValueType = AppOptionValueType.Number,
+                            Label = "Not a number",
+                        },
+                    ],
+                }
+            );
 
-        var issues = await Validate(
-            """[{ "id": "dropdown", "type": "Dropdown", "dataModelBindings": { "simpleBinding": "value" }, "optionsId": "list" }]""",
-            new OptionsTestModel { Value = "x" }
-        );
+        var issues = await Validate($"[{OptionsIdComponent}]", new OptionsTestModel { Value = value });
 
-        Assert.Single(issues);
+        Assert.Equal(expectIssue ? 1 : 0, issues.Count);
     }
 
     [Fact]
     public async Task Validate_ReturnsNoIssues_WhenOptionsAreNotFound()
     {
         _appOptionsService
-            .Setup(s => s.GetOptionsAsync("missing", "nb", It.IsAny<Dictionary<string, string>>()))
+            .Setup(s => s.GetOptionsAsync("list", "nb", It.IsAny<Dictionary<string, string>>()))
             .ReturnsAsync(new AppOptions { Options = null });
 
-        var issues = await Validate(
-            """[{ "id": "dropdown", "type": "Dropdown", "dataModelBindings": { "simpleBinding": "value" }, "optionsId": "missing" }]""",
-            new OptionsTestModel { Value = "x" }
-        );
+        var issues = await Validate($"[{OptionsIdComponent}]", new OptionsTestModel { Value = "x" });
 
         Assert.Empty(issues);
     }
 
-    [Fact]
-    public async Task Validate_ReturnsNoIssues_WhenOptionsProviderFails()
+    public static TheoryData<Exception> ProviderExceptions =>
+        new()
+        {
+            new HttpRequestException("down"),
+            new TaskCanceledException("timeout"),
+            new InvalidOperationException("bug"),
+        };
+
+    [Theory]
+    [MemberData(nameof(ProviderExceptions))]
+    public async Task Validate_ReturnsNoIssues_WhenOptionsProviderFails(Exception exception)
     {
         _appOptionsService
             .Setup(s => s.GetOptionsAsync("list", "nb", It.IsAny<Dictionary<string, string>>()))
-            .ThrowsAsync(new HttpRequestException("down"));
+            .ThrowsAsync(exception);
 
-        var issues = await Validate(
-            """[{ "id": "dropdown", "type": "Dropdown", "dataModelBindings": { "simpleBinding": "value" }, "optionsId": "list" }]""",
-            new OptionsTestModel { Value = "x" }
-        );
+        var issues = await Validate($"[{OptionsIdComponent}]", new OptionsTestModel { Value = "x" });
 
         Assert.Empty(issues);
     }
 
     [Theory]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    public async Task Validate_UsesInstanceOptions_WhenSecureOrInstanceProviderIsRegistered(
+    [InlineData(true, "found", true)]
+    [InlineData(true, "notFound", false)]
+    [InlineData(true, "null", false)]
+    [InlineData(false, "found", false)]
+    public async Task Validate_UsesInstanceOptionsFirst_OnlyWhenSecure(
         bool secure,
-        bool registered
+        string instanceOptions,
+        bool expectInstanceOptions
     )
     {
-        _appOptionsService.Setup(s => s.IsInstanceAppOptionsProviderRegistered("list")).Returns(registered);
         _appOptionsService
             .Setup(s =>
                 s.GetOptionsAsync(It.IsAny<InstanceIdentifier>(), "list", "nb", It.IsAny<Dictionary<string, string>>())
             )
-            .ReturnsAsync(new AppOptions { Options = [new AppOption { Value = "a", Label = "A" }] });
+            .ReturnsAsync(
+                instanceOptions switch
+                {
+                    "found" => new AppOptions { Options = [new AppOption { Value = "instance", Label = "Instance" }] },
+                    "notFound" => new AppOptions { Options = null },
+                    _ => null,
+                }
+            );
+        SetupOptions("list", "app");
 
         var issues = await Validate(
             $$"""[{ "id": "dropdown", "type": "Dropdown", "dataModelBindings": { "simpleBinding": "value" }, "optionsId": "list", "secure": {{secure.ToString().ToLowerInvariant()}} }]""",
-            new OptionsTestModel { Value = "x" }
+            new OptionsTestModel { Value = "instance" }
         );
 
-        Assert.Single(issues);
+        Assert.Equal(expectInstanceOptions ? 0 : 1, issues.Count);
         _appOptionsService.Verify(
-            s => s.GetOptionsAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<Dictionary<string, string>>()),
-            Times.Never
+            s => s.GetOptionsAsync("list", "nb", It.IsAny<Dictionary<string, string>>()),
+            expectInstanceOptions ? Times.Never() : Times.Once()
         );
     }
 
@@ -357,15 +455,57 @@ public class OptionsValidatorTests
         Assert.Equal(expectIssue ? 1 : 0, issues.Count);
     }
 
-    [Fact]
-    public async Task Validate_ReturnsIssue_WhenSourceGroupIsEmpty()
+    [Theory]
+    [InlineData("""{ "group": "people", "label": "x", "value": "people[{0}].id" }""", "p1", false)]
+    [InlineData("""{ "group": "people", "label": "x", "value": "people[{0}].id" }""", "x", true)]
+    [InlineData("""{ "group": "rows.items", "label": "x", "value": "rows.items[{0}].id" }""", "i2", false)]
+    [InlineData("""{ "group": "rows.items", "label": "x", "value": "rows.items[{0}].id" }""", "i1", true)]
+    [InlineData(
+        """{ "group": "rows.items", "label": "x", "value": "rows.items[{0}].id", "dataType": "default" }""",
+        "i2",
+        false
+    )]
+    public async Task Validate_ReadsSourceFromTheComponentsRow_WhenComponentIsInRepeatingGroup(
+        string source,
+        string value,
+        bool expectIssue
+    )
     {
         var issues = await Validate(
-            """[{ "id": "radio", "type": "RadioButtons", "dataModelBindings": { "simpleBinding": "municipality" }, "source": { "group": "rows", "label": "x", "value": "rows[{0}].id" } }]""",
-            new OptionsTestModel { Municipality = "r1" }
+            $$"""
+            [
+              { "id": "group", "type": "RepeatingGroup", "dataModelBindings": { "group": "rows" }, "children": ["answer"] },
+              { "id": "answer", "type": "Dropdown", "dataModelBindings": { "simpleBinding": "rows.answer" }, "source": {{source}} }
+            ]
+            """,
+            new OptionsTestModel
+            {
+                People = [new OptionsTestRow { Id = "p1" }],
+                Rows =
+                [
+                    new OptionsTestRow { Items = [new OptionsTestItem { Id = "i1" }] },
+                    new OptionsTestRow { Answer = value, Items = [new OptionsTestItem { Id = "i2" }] },
+                ],
+            }
         );
 
-        Assert.Single(issues);
+        Assert.Equal(expectIssue ? 1 : 0, issues.Count);
+    }
+
+    [Theory]
+    [InlineData("""{ "group": "rows", "label": "x", "value": "rows[{0}].id" }""", true)]
+    [InlineData("""{ "group": "missing", "label": "x", "value": "missing[{0}].id" }""", false)]
+    [InlineData("""{ "group": "rows", "label": "x", "value": "rows[{0}].id", "dataType": "missing" }""", false)]
+    [InlineData("""{ "group": "rows", "label": "x" }""", false)]
+    [InlineData("""{ "label": "x", "value": "rows[{0}].id" }""", false)]
+    public async Task Validate_ChecksSourceOptions_OnlyWhenTheGroupCanBeRead(string source, bool expectIssue)
+    {
+        var issues = await Validate(
+            $$"""[{ "id": "radio", "type": "RadioButtons", "dataModelBindings": { "simpleBinding": "municipality" }, "source": {{source}} }]""",
+            new OptionsTestModel { Municipality = "r1", Rows = [] }
+        );
+
+        Assert.Equal(expectIssue ? 1 : 0, issues.Count);
     }
 
     [Fact]
@@ -393,20 +533,27 @@ public class OptionsValidatorTests
     }
 
     [Fact]
-    public async Task NoIncrementalValidation_IsTrue_SoOptionsAreOnlyResolvedOnFullValidation()
-    {
-        Assert.True(_validator.NoIncrementalValidation);
-        Assert.Equal("*", _validator.TaskId);
-        Assert.Equal("Options", _validator.ValidationSource);
-        Assert.True(await _validator.HasRelevantChanges(null!, "Task_1", null!));
-    }
-
-    [Fact]
     public void ShouldRunForTask_ReturnsFalse_WhenAppHasNoLayoutSets()
     {
         _appResources.Setup(r => r.GetLayoutSet()).Returns((LayoutSets?)null);
 
         Assert.False(_validator.ShouldRunForTask("Task_1"));
+    }
+
+    [Fact]
+    public void ValidationSource_ReturnsOptions_ForAllTasks()
+    {
+        Assert.Equal("Options", _validator.ValidationSource);
+        Assert.Equal("*", _validator.TaskId);
+    }
+
+    [Fact]
+    public async Task HasRelevantChanges_ReturnsFalse_AsValidatorOnlyRunsOnFullValidation()
+    {
+        Assert.True(_validator.NoIncrementalValidation);
+        Assert.False(
+            await _validator.HasRelevantChanges(Mock.Of<IInstanceDataAccessor>(), "Task_1", new DataElementChanges([]))
+        );
     }
 
     [Theory]
@@ -429,7 +576,16 @@ public class OptionsValidatorTests
         );
     }
 
-    private async Task<List<ValidationIssue>> Validate(string components, OptionsTestModel model)
+    private void SetupOptions(string optionsId, string value) =>
+        _appOptionsService
+            .Setup(s => s.GetOptionsAsync(optionsId, "nb", It.IsAny<Dictionary<string, string>>()))
+            .ReturnsAsync(new AppOptions { Options = [new AppOption { Value = value, Label = value }] });
+
+    private async Task<List<ValidationIssue>> Validate(
+        string components,
+        OptionsTestModel model,
+        string? language = "nb"
+    )
     {
         var instance = new Instance
         {
@@ -458,13 +614,13 @@ public class OptionsValidatorTests
             new LayoutModel([layout], null),
             new FrontEndSettings(),
             null,
-            "nb"
+            language
         )
         {
             { dataElement, model },
         };
 
-        return await _validator.Validate(dataAccessor, "Task_1", "nb");
+        return await _validator.Validate(dataAccessor, "Task_1", language);
     }
 
     public class OptionsTestModel
@@ -489,6 +645,9 @@ public class OptionsValidatorTests
 
         [JsonPropertyName("rows")]
         public List<OptionsTestRow>? Rows { get; set; }
+
+        [JsonPropertyName("people")]
+        public List<OptionsTestRow>? People { get; set; }
     }
 
     public class OptionsTestRow
@@ -498,5 +657,14 @@ public class OptionsValidatorTests
 
         [JsonPropertyName("answer")]
         public string? Answer { get; set; }
+
+        [JsonPropertyName("items")]
+        public List<OptionsTestItem>? Items { get; set; }
+    }
+
+    public class OptionsTestItem
+    {
+        [JsonPropertyName("id")]
+        public string? Id { get; set; }
     }
 }
