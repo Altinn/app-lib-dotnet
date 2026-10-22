@@ -81,6 +81,8 @@
         lastChangedBy: null
       }
     ],
+    presentationTexts: null,
+    dataValues: null,
     created: null,
     createdBy: null,
     lastChanged: null,
@@ -168,9 +170,11 @@
         lastChangedBy: null
       }
     ],
+    presentationTexts: null,
+    dataValues: null,
     created: null,
     createdBy: null,
     lastChanged: DateTimeOffset_3,
-    lastChangedBy: 
+    lastChangedBy: null
   }
 }
