@@ -130,8 +130,9 @@ public static class ServiceCollectionExtensions
         ConfigureGracefulShutdown(services, env);
 
         // HttpClients for platform functionality. Registered as HttpClient so default HttpClientFactory is used
-        services.AddTransient<PdpRetryDelegatingHandler>();
-        services.AddHttpClient<AuthorizationApiClient>().AddHttpMessageHandler<PdpRetryDelegatingHandler>();
+        services
+            .AddHttpClient<AuthorizationApiClient>()
+            .AddHttpMessageHandler(provider => ActivatorUtilities.CreateInstance<PdpRetryDelegatingHandler>(provider));
 
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
