@@ -206,4 +206,18 @@ public class TranslationServiceTests
         );
         Assert.Equal("Feltet er påkrevd", resultNb);
     }
+
+    [Theory]
+    [InlineData(LanguageConst.Nb, "Verdien er ikke et av alternativene")]
+    [InlineData(LanguageConst.Nn, "Verdien er ikkje eit av alternativa")]
+    [InlineData(LanguageConst.En, "The value is not one of the options")]
+    public async Task TranslateTextKey_BackendFallback_ForInvalidOption(string language, string expected)
+    {
+        await using var provider = _services.BuildServiceProvider();
+        var translationService = provider.GetRequiredService<ITranslationService>();
+
+        var result = await translationService.TranslateTextKey("backend.validation_errors.invalid_option", language);
+
+        Assert.Equal(expected, result);
+    }
 }
