@@ -241,12 +241,10 @@ public sealed class PdfPreviewTests : IDisposable
     }
 
     [Fact]
-    public async Task OriginalControllerMethodPreservesAppProvidedPdfService()
+    public async Task PreviewWithoutTaskIdPreservesAppProvidedPdfService()
     {
         _legacy.Setup(x => x.GeneratePdf(_instance, "Task_1", true, CancellationToken.None)).ReturnsAsync(_pdf);
-        var result = Assert.IsType<FileStreamResult>(
-            await _controller.GetPdfPreview("org", "app", 12345, _instanceGuid)
-        );
+        var result = Assert.IsType<FileStreamResult>(await Preview(null));
         Assert.Same(_pdf, result.FileStream);
         Assert.Null(_renderedUrl);
         _process.VerifyNoOtherCalls();

@@ -63,14 +63,6 @@ public class PdfController : ControllerBase
     }
 
     /// <summary>
-    /// Generate a preview of the PDF for the current task.
-    /// Retained for binary compatibility with v8 callers.
-    /// </summary>
-    [NonAction]
-    public Task<ActionResult> GetPdfPreview(string org, string app, int instanceOwnerPartyId, Guid instanceGuid) =>
-        GetPdfPreview(org, app, instanceOwnerPartyId, instanceGuid, null, null, null, CancellationToken.None);
-
-    /// <summary>
     /// Generate a preview of the current task, or a PDF or subform PDF service task.
     /// </summary>
     /// <param name="org">The application organization.</param>

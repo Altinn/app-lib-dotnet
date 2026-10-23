@@ -158,7 +158,7 @@ public class PdfControllerTests
                     }
                 );
 
-            var result = await pdfController.GetPdfPreview(_org, _app, _partyId, _instanceId);
+            var result = await pdfController.GetPdfPreview(_org, _app, _partyId, _instanceId, null, null, null);
             result.Should().BeOfType(typeof(FileStreamResult));
         }
 
@@ -231,7 +231,7 @@ public class PdfControllerTests
                     }
                 );
 
-            var result = await pdfController.GetPdfPreview(_org, _app, _partyId, _instanceId);
+            var result = await pdfController.GetPdfPreview(_org, _app, _partyId, _instanceId, null, null, null);
             result.Should().BeOfType(typeof(FileStreamResult));
         }
 
@@ -306,7 +306,7 @@ public class PdfControllerTests
                     }
                 );
 
-            var result = await pdfController.GetPdfPreview(_org, _app, _partyId, _instanceId);
+            var result = await pdfController.GetPdfPreview(_org, _app, _partyId, _instanceId, null, null, null);
             result.Should().BeOfType(typeof(FileStreamResult));
         }
 
