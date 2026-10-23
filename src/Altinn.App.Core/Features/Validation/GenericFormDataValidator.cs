@@ -10,6 +10,8 @@ namespace Altinn.App.Core.Features.Validation;
 /// Simple wrapper for validation of form data that does the type checking for you.
 /// </summary>
 /// <typeparam name="TModel">The type of the model this class will validate</typeparam>
+// TODO: Consider marking this as obsolete and use the new GenericFormDataValidator2 instead
+//[Obsolete("Use GenericFormDataValidator2 instead")]
 public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
 {
     /// <summary>
@@ -39,7 +41,7 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
     private static readonly AsyncLocal<List<ValidationIssue>> _validationIssues = new();
 
     /// <summary>
-    /// Default implementation that respects the runFor prefixes.
+    /// Default implementation that calls the same method with TModel arguments.
     /// </summary>
     public bool HasRelevantChanges(object current, object previous)
     {
@@ -129,6 +131,7 @@ public abstract class GenericFormDataValidator<TModel> : IFormDataValidator
 
     /// <summary>
     /// Implement this method to check if the data has changed in a way that requires validation.
+    /// A default "return true" implementation can be used if the validator is quick and does not call external APIs.
     /// </summary>
     /// <param name="current">The current data model after applying patches and data processing</param>
     /// <param name="previous">The previous state before patches and data processing</param>
