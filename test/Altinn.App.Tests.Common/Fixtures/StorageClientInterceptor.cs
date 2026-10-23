@@ -353,13 +353,13 @@ public class StorageClientInterceptor : HttpMessageHandler
         };
     }
 
+    private static readonly System.Text.Json.JsonSerializerOptions _caseInsensitiveJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
+
     private static T? Deserialize<T>(byte[]? body) =>
-        body is null
-            ? default
-            : System.Text.Json.JsonSerializer.Deserialize<T>(
-                body,
-                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            );
+        body is null ? default : System.Text.Json.JsonSerializer.Deserialize<T>(body, _caseInsensitiveJsonOptions);
 
     // Mirrors Storage: a null or empty value removes the key instead of storing it.
     private HttpResponseMessage UpdateInstanceDictionary(
