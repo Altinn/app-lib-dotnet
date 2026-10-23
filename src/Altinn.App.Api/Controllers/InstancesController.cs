@@ -223,6 +223,7 @@ public class InstancesController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(typeof(InstanceResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
     [RequestSizeLimit(RequestSizeLimit)]
     public async Task<ActionResult<InstanceResponse>> Post(
         [FromRoute] string org,
@@ -473,6 +474,9 @@ public class InstancesController : ControllerBase
         bool isCopy = false
     )
     {
+        if (VerifyValidityPeriod(application, org, app) is { } validityResult)
+            return validityResult;
+
         if (_env.IsProduction() && application.DisallowUserInstantiation)
         {
             var orgClaimIsValid = !string.IsNullOrWhiteSpace(User.GetOrg());
@@ -481,13 +485,42 @@ public class InstancesController : ControllerBase
                 return null;
 
             return StatusCode(
-                StatusCodes.Status403Forbidden,
+                StatusCodes.Status410Gone,
                 $"User instantiation is disabled for this application {org}/{app}"
             );
         }
 
         return null;
     }
+
+    private ObjectResult? VerifyValidityPeriod(ApplicationMetadata application, string org, string app)
+    {
+        DateTime now = DateTime.UtcNow;
+
+        if (application.ValidFrom is { } validFrom && ToUtc(validFrom) > now)
+        {
+            return StatusCode(
+                StatusCodes.Status410Gone,
+                $"The application {org}/{app} is not valid before {ToUtc(validFrom):O} and cannot be used to create new instances yet"
+            );
+        }
+
+        if (application.ValidTo is { } validTo && ToUtc(validTo) < now)
+        {
+            return StatusCode(
+                StatusCodes.Status410Gone,
+                $"The application {org}/{app} expired at {ToUtc(validTo):O} and can no longer be used to create new instances"
+            );
+        }
+
+        return null;
+    }
+
+    // A validity date without an offset is interpreted as UTC.
+    private static DateTime ToUtc(DateTime dateTime) =>
+        dateTime.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(dateTime, DateTimeKind.Utc)
+            : dateTime.ToUniversalTime();
 
     /// <summary>
     /// Simplified instantiation with support for fieldprefill
@@ -502,6 +535,7 @@ public class InstancesController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(typeof(InstanceResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
     [RequestSizeLimit(RequestSizeLimit)]
     public async Task<ActionResult<InstanceResponse>> PostSimplified(
         [FromRoute] string org,
@@ -817,6 +851,7 @@ public class InstancesController : ControllerBase
     [HttpGet("/{org}/{app}/legacy/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/copy")]
     [ProducesResponseType(typeof(Instance), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
     public async Task<ActionResult> CopyInstance(
         [FromRoute] string org,
         [FromRoute] string app,
@@ -834,6 +869,11 @@ public class InstancesController : ControllerBase
         }
 
         ApplicationMetadata application = await _appMetadata.GetApplicationMetadata();
+
+        if (VerifyValidityPeriod(application, org, app) is { } validityResult)
+        {
+            return validityResult;
+        }
 
         if (application.CopyInstanceSettings?.Enabled is null or false)
         {
