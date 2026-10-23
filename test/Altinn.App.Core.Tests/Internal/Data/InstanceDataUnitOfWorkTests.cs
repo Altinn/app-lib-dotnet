@@ -3,6 +3,7 @@ using System.Text.Json;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Models;
 using Altinn.App.Tests.Common.Fixtures;
+using Altinn.App.Tests.Common.Mocks;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -157,6 +158,86 @@ public sealed class InstanceDataUnitOfWorkTests
         );
         Assert.Contains("cannot be updated", exception.Message, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task UpdateInstanceData_DoesNotSendEmptyDerivedFieldsAbsentFromInstance()
+    {
+        var services = new MockedServiceCollection();
+        DataType dataType = AddDerivedFields(services);
+        await using var provider = services.BuildServiceProvider();
+        var unitOfWork = await provider.CreateInstanceDataUnitOfWork(
+            new DerivedFieldsModel { Name = "", Status = null },
+            dataType,
+            language: null
+        );
+
+        _ = await unitOfWork.GetFormData(unitOfWork.Instance.Data[0]);
+        await unitOfWork.UpdateInstanceData(unitOfWork.GetDataElementChanges(initializeAltinnRowId: false));
+
+        Assert.Empty(DerivedFieldRequests(services));
+    }
+
+    [Fact]
+    public async Task UpdateInstanceData_SendsOnlyNonEmptyDerivedFields()
+    {
+        var services = new MockedServiceCollection();
+        DataType dataType = AddDerivedFields(services);
+        await using var provider = services.BuildServiceProvider();
+        var unitOfWork = await provider.CreateInstanceDataUnitOfWork(
+            new DerivedFieldsModel { Name = "Kari", Status = "" },
+            dataType,
+            language: null
+        );
+
+        _ = await unitOfWork.GetFormData(unitOfWork.Instance.Data[0]);
+        await unitOfWork.UpdateInstanceData(unitOfWork.GetDataElementChanges(initializeAltinnRowId: false));
+
+        var request = Assert.Single(DerivedFieldRequests(services));
+        Assert.EndsWith("/presentationtexts", request.RequestUrl!.AbsolutePath, StringComparison.Ordinal);
+        Assert.Equal(new Dictionary<string, string> { ["name"] = "Kari" }, unitOfWork.Instance.PresentationTexts);
+        Assert.Null(unitOfWork.Instance.DataValues);
+    }
+
+    public sealed class DerivedFieldsModel
+    {
+        public string? Name { get; set; }
+
+        public string? Status { get; set; }
+    }
+
+    private static DataType AddDerivedFields(MockedServiceCollection services)
+    {
+        DataType dataType = services.AddDataType<DerivedFieldsModel>();
+        services.AppMetadata.PresentationFields =
+        [
+            new DataField
+            {
+                Id = "name",
+                Path = nameof(DerivedFieldsModel.Name),
+                DataTypeId = dataType.Id,
+            },
+        ];
+        services.AppMetadata.DataFields =
+        [
+            new DataField
+            {
+                Id = "status",
+                Path = nameof(DerivedFieldsModel.Status),
+                DataTypeId = dataType.Id,
+            },
+        ];
+        return dataType;
+    }
+
+    private static List<StorageClientInterceptor.RequestResponse> DerivedFieldRequests(
+        MockedServiceCollection services
+    ) =>
+        services
+            .Storage.RequestsResponses.Where(r =>
+                r.RequestUrl?.AbsolutePath.EndsWith("/presentationtexts", StringComparison.Ordinal) == true
+                || r.RequestUrl?.AbsolutePath.EndsWith("/datavalues", StringComparison.Ordinal) == true
+            )
+            .ToList();
 
     private sealed class BinaryDataUnitOfWorkSetup : IAsyncDisposable
     {

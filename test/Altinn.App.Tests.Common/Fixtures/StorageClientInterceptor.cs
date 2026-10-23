@@ -113,6 +113,22 @@ public class StorageClientInterceptor : HttpMessageHandler
             ),
             ("PUT", { } path) when TryParseDataUrl(path, out int partyId, out Guid instanceGuid, out Guid dataId) =>
                 PutData(partyId, instanceGuid, dataId, requestBody, request),
+            ("PUT", ["storage", "api", "v1", "instances", var partyIdStr, var instanceGuidStr, "presentationtexts"])
+                when int.TryParse(partyIdStr, out int partyId)
+                    && Guid.TryParse(instanceGuidStr, out Guid instanceGuid) => UpdateInstanceDictionary(
+                partyId,
+                instanceGuid,
+                Deserialize<PresentationTexts>(requestBody)?.Texts,
+                instance => instance.PresentationTexts ??= []
+            ),
+            ("PUT", ["storage", "api", "v1", "instances", var partyIdStr, var instanceGuidStr, "datavalues"])
+                when int.TryParse(partyIdStr, out int partyId)
+                    && Guid.TryParse(instanceGuidStr, out Guid instanceGuid) => UpdateInstanceDictionary(
+                partyId,
+                instanceGuid,
+                Deserialize<DataValues>(requestBody)?.Values,
+                instance => instance.DataValues ??= []
+            ),
             var (method, _) => throw new Exception(
                 $"Unhandled request to {request.RequestUri?.AbsolutePath} with method {method} and body\n\n{(requestBody is not null ? System.Text.Encoding.UTF8.GetString(requestBody) : "[no body]")}"
             ),
@@ -335,6 +351,51 @@ public class StorageClientInterceptor : HttpMessageHandler
         {
             Content = new StringContent(dataElementJson, Encoding.UTF8, "application/json"),
         };
+    }
+
+    private static T? Deserialize<T>(byte[]? body) =>
+        body is null
+            ? default
+            : System.Text.Json.JsonSerializer.Deserialize<T>(
+                body,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+
+    // Mirrors Storage: a null or empty value removes the key instead of storing it.
+    private HttpResponseMessage UpdateInstanceDictionary(
+        int instanceOwnerPartyId,
+        Guid instanceGuid,
+        Dictionary<string, string>? values,
+        Func<Instance, Dictionary<string, string>> getTarget
+    )
+    {
+        if (values is null)
+        {
+            return CreateErrorResponse(HttpStatusCode.BadRequest, "No values provided");
+        }
+
+        if (!_instances.TryGetValue($"{instanceOwnerPartyId}/{instanceGuid}", out var instance))
+        {
+            return CreateErrorResponse(
+                HttpStatusCode.NotFound,
+                $"Instance with id {instanceOwnerPartyId}/{instanceGuid} not found"
+            );
+        }
+
+        var target = getTarget(instance);
+        foreach (var (key, value) in values)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                target.Remove(key);
+            }
+            else
+            {
+                target[key] = value;
+            }
+        }
+
+        return GetInstanceResponse(instanceOwnerPartyId, instanceGuid);
     }
 
     private static HttpResponseMessage CreateErrorResponse(
