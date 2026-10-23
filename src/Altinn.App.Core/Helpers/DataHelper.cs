@@ -119,10 +119,7 @@ public static class DataHelper
     /// </summary>
     /// <param name="originalDictionary">The original dictionary</param>
     /// <param name="newDictionary">The updated dictionary</param>
-    /// <returns>
-    /// A dictionary containing changed and new entries not represented in the original dictionary. A new
-    /// entry whose value is null or empty is not included.
-    /// </returns>
+    /// <returns>A dictionary containing changed and new entries not represented in the original dictionary.</returns>
     private static Dictionary<string, string?> CompareDictionaries(
         Dictionary<string, string?>? originalDictionary,
         Dictionary<string, string?> newDictionary
