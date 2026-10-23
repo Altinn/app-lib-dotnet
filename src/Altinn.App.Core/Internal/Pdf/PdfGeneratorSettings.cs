@@ -29,4 +29,9 @@ public class PdfGeneratorSettings
     /// Shows a footer on each page in the PDF with the date, altinn-referance, page number and total pages.
     /// </summary>
     public bool DisplayFooter { get; set; }
+
+    /// <summary>
+    /// Rate limit for previews with an explicit taskId. Existing current-task previews are not limited.
+    /// </summary>
+    public PdfPreviewRateLimitSettings PreviewRateLimit { get; set; } = new();
 }

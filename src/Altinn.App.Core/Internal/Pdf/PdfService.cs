@@ -22,7 +22,7 @@ namespace Altinn.App.Core.Internal.Pdf;
 /// <summary>
 /// Service for handling the creation and storage of receipt Pdf.
 /// </summary>
-public class PdfService : IPdfService
+public class PdfService : IPdfService, IPdfPreviewService
 {
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
@@ -144,6 +144,33 @@ public class PdfService : IPdfService
         return await GeneratePdf(instance, taskId, false, ct);
     }
 
+    async Task<Stream> IPdfPreviewService.GeneratePreview(
+        Instance instance,
+        string taskId,
+        string? language,
+        SubformPdfContext? subformPdfContext,
+        List<string>? autoGeneratePdfForTaskIds,
+        CancellationToken cancellationToken
+    )
+    {
+        using var activity = _telemetry?.StartGeneratePdfActivity(instance, taskId);
+        string? requestedLanguage = language ?? GetOverriddenLanguage(_httpContextAccessor.HttpContext?.Request.Query);
+        string pdfLanguage = string.IsNullOrWhiteSpace(requestedLanguage)
+            ? await _authenticationContext.Current.GetLanguage()
+            : requestedLanguage;
+
+        return await GeneratePdfContent(
+            instance,
+            taskId,
+            pdfLanguage,
+            true,
+            subformPdfContext,
+            autoGeneratePdfForTaskIds,
+            cancellationToken,
+            includeTaskId: true
+        );
+    }
+
     private async Task<DataElement> GenerateAndStorePdfInternal(
         Instance instance,
         string taskId,
@@ -196,7 +223,8 @@ public class PdfService : IPdfService
         bool isPreview,
         SubformPdfContext? subformPdfContext,
         List<string>? autoGeneratePdfForTaskIds,
-        CancellationToken ct
+        CancellationToken ct,
+        bool includeTaskId = false
     )
     {
         var baseUrl = _generalSettings.FormattedExternalAppBaseUrl(new AppIdentifier(instance));
@@ -208,7 +236,15 @@ public class PdfService : IPdfService
             autoGeneratePdfForTaskIds
         );
 
-        Uri uri = BuildUri(baseUrl, pagePath, taskId, language, subformPdfContext, autoPdfTaskIdsQueryParams);
+        Uri uri = BuildUri(
+            baseUrl,
+            pagePath,
+            taskId,
+            language,
+            subformPdfContext,
+            autoPdfTaskIdsQueryParams,
+            includeTaskId
+        );
 
         bool displayFooter = _pdfGeneratorSettings.DisplayFooter;
 
@@ -234,27 +270,27 @@ public class PdfService : IPdfService
         string taskId,
         string language,
         SubformPdfContext? subformPdfContext,
-        List<KeyValuePair<string, string>>? additionalQueryParams = null
+        List<KeyValuePair<string, string>>? additionalQueryParams = null,
+        bool includeTaskId = false
     )
     {
         // Uses string manipulation instead of UriBuilder, since UriBuilder messes up
         // query parameters in combination with hash fragments in the url.
         string url = baseUrl + pagePath;
 
-        // Insert subform component and data element id in the url if provided
-        if (subformPdfContext is not null)
+        // Explicit previews must keep rendering the selected task even if the process moves on.
+        // Preserve the existing URL for v8 callers, including apps pinned to older frontends.
+        if (includeTaskId || subformPdfContext is not null)
         {
+            string taskPath = $"/{Uri.EscapeDataString(taskId)}";
+            if (subformPdfContext is not null)
+            {
+                taskPath +=
+                    $"/subform/{Uri.EscapeDataString(subformPdfContext.ComponentId)}/{Uri.EscapeDataString(subformPdfContext.DataElementId)}";
+            }
+
             int pdfIndex = url.IndexOf("?pdf=1", StringComparison.OrdinalIgnoreCase);
-            if (pdfIndex > 0)
-            {
-                string beforePdf = $"{url[..pdfIndex]}/{taskId}/subform";
-                string afterPdf = url[pdfIndex..];
-                url = $"{beforePdf}/{subformPdfContext.ComponentId}/{subformPdfContext.DataElementId}/{afterPdf}";
-            }
-            else
-            {
-                url += $"/{taskId}/subform/{subformPdfContext.ComponentId}/{subformPdfContext.DataElementId}";
-            }
+            url = pdfIndex > 0 ? $"{url[..pdfIndex]}{taskPath}/{url[pdfIndex..]}" : url + taskPath;
         }
 
         string lang = Uri.EscapeDataString(language);

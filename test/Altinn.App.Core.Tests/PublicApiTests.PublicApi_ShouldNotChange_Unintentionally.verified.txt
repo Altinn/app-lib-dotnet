@@ -3478,8 +3478,16 @@ namespace Altinn.App.Core.Internal.Pdf
         public PdfGeneratorSettings() { }
         public string AppPdfPagePathTemplate { get; set; }
         public bool DisplayFooter { get; set; }
+        public Altinn.App.Core.Internal.Pdf.PdfPreviewRateLimitSettings PreviewRateLimit { get; set; }
         public string WaitForSelector { get; set; }
         public int WaitForTime { get; set; }
+    }
+    public class PdfPreviewRateLimitSettings
+    {
+        public PdfPreviewRateLimitSettings() { }
+        public int PermitLimit { get; set; }
+        public int QueueLimit { get; set; }
+        public System.TimeSpan Window { get; set; }
     }
     public class PdfService : Altinn.App.Core.Internal.Pdf.IPdfService
     {

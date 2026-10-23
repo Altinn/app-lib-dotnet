@@ -1,14 +1,19 @@
 using System.Text.Json;
+using Altinn.App.Api.Infrastructure.RateLimiting;
 using Altinn.App.Core.Features;
 using Altinn.App.Core.Internal.App;
 using Altinn.App.Core.Internal.AppModel;
 using Altinn.App.Core.Internal.Data;
 using Altinn.App.Core.Internal.Instances;
 using Altinn.App.Core.Internal.Pdf;
+using Altinn.App.Core.Internal.Process;
+using Altinn.App.Core.Internal.Process.Elements;
+using Altinn.App.Core.Internal.Process.Elements.AltinnExtensionProperties;
 using Altinn.App.Core.Models;
 using Altinn.Platform.Storage.Interface.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Altinn.App.Api.Controllers;
 
@@ -58,35 +63,103 @@ public class PdfController : ControllerBase
     }
 
     /// <summary>
-    /// Generate a preview of the PDF for the current task
+    /// Generate a preview of the current task, or a PDF or subform PDF service task.
     /// </summary>
+    /// <param name="org">The application organization.</param>
+    /// <param name="app">The application name.</param>
+    /// <param name="instanceOwnerPartyId">The instance owner's party id.</param>
+    /// <param name="instanceGuid">The instance id.</param>
+    /// <param name="taskId">The PDF or subform PDF service task to preview. Defaults to the current task.</param>
+    /// <param name="dataElementId">The subform data element. Required for a subform PDF service task.</param>
+    /// <param name="language">The preview language. Defaults to the user's language.</param>
+    /// <param name="cancellationToken">The request cancellation token.</param>
     [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK, "application/pdf")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest, "text/plain")]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound, "text/plain")]
-    [ApiExplorerSettings(IgnoreApi = true)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status429TooManyRequests)]
+    [EnableRateLimiting(PdfPreviewRateLimiterPolicy.Name)]
     [HttpGet("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/pdf/preview")]
     public async Task<ActionResult> GetPdfPreview(
         [FromRoute] string org,
         [FromRoute] string app,
         [FromRoute] int instanceOwnerPartyId,
-        [FromRoute] Guid instanceGuid
+        [FromRoute] Guid instanceGuid,
+        [FromQuery] string? taskId,
+        [FromQuery] Guid? dataElementId,
+        [FromQuery] string? language,
+        CancellationToken cancellationToken = default
     )
     {
-        var instance = await _instanceClient.GetInstance(
+        Instance? instance = await _instanceClient.GetInstance(
             app,
             org,
             instanceOwnerPartyId,
             instanceGuid,
             authenticationMethod: null,
-            CancellationToken.None
+            cancellationToken
         );
-        string? taskId = instance.Process?.CurrentTask?.ElementId;
-        if (instance == null || taskId == null)
+        string? currentTaskId = instance?.Process?.CurrentTask?.ElementId;
+        if (instance is null || currentTaskId is null)
         {
             return NotFound("Did not find instance or task");
         }
 
-        Stream pdfContent = await _pdfService.GeneratePdf(instance, taskId, true, CancellationToken.None);
-        return new FileStreamResult(pdfContent, "application/pdf");
+        if (taskId is null)
+        {
+            // Preserve the existing v8 service, including any app-provided implementation.
+            // It already reads language/lang from the request.
+            Stream pdfContent = await _pdfService.GeneratePdf(instance, currentTaskId, true, cancellationToken);
+            return new FileStreamResult(pdfContent, "application/pdf");
+        }
+
+        // Resolve the new internal service without changing the existing public constructor.
+        var processReader = HttpContext.RequestServices.GetRequiredService<IProcessReader>();
+        if (processReader.GetFlowElement(taskId) is not ProcessTask task)
+        {
+            return NotFound("Did not find task");
+        }
+
+        AltinnTaskExtension? taskExtension = task.ExtensionElements?.TaskExtension;
+        SubformPdfContext? subformContext = null;
+        List<string>? autoPdfTaskIds = null;
+        if (taskExtension?.TaskType == "pdf")
+        {
+            autoPdfTaskIds = taskExtension.PdfConfiguration?.AutoPdfTaskIds;
+        }
+        else if (taskExtension?.TaskType == "subformPdf")
+        {
+            ValidAltinnSubformPdfConfiguration subformConfig = (
+                taskExtension.SubformPdfConfiguration
+                ?? throw new ApplicationConfigException(
+                    "The subformPdfConfig node is missing in the subform pdf process task configuration."
+                )
+            ).Validate();
+            string? subformId = dataElementId?.ToString();
+            DataElement? subform = instance.Data.Find(element => element.Id == subformId);
+            if (subform is null || subform.DataType != subformConfig.SubformDataTypeId)
+            {
+                return BadRequest(
+                    $"dataElementId must be the id of a data element of type {subformConfig.SubformDataTypeId}"
+                );
+            }
+
+            subformContext = new SubformPdfContext(subformConfig.SubformComponentId, subform.Id);
+        }
+        else
+        {
+            return BadRequest("taskId must identify a PDF or subform PDF service task");
+        }
+
+        var previewService = HttpContext.RequestServices.GetRequiredService<IPdfPreviewService>();
+        Stream preview = await previewService.GeneratePreview(
+            instance,
+            taskId,
+            language,
+            subformContext,
+            autoPdfTaskIds,
+            cancellationToken
+        );
+        return new FileStreamResult(preview, "application/pdf");
     }
 
     /// <summary>
