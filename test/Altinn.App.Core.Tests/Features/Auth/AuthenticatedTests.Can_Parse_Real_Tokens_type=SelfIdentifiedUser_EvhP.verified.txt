@@ -1,0 +1,95 @@
+﻿{
+  Description: Altinn portal tt02 self-registered email, token extracted from AltinnStudioRuntime cookie,
+  AuthType: Altinn.App.Core.Features.Auth.Authenticated+User,
+  Auth: {
+    UserId: 1000010482,
+    UserPartyId: 1000010482,
+    SelectedPartyId: 1000010482,
+    AuthenticationMethod: IdportenEpost,
+    InAltinnPortal: true,
+    IsSelfIdentified: true,
+    TokenIssuer: Altinn,
+    TokenIsExchanged: false,
+    Scopes: digdir:dialogporten.noconsent openid altinn:portal/enduser altinn:instances.read,
+    Token: eyJhbGciOiJSUzI1NiIsImtpZCI6IjJCQUI1NDM1MzU1RTc2NzFDNkM0MEUzQzcxNTEzQ0MxRkI5MUIxMTkiLCJ4NXQiOiJLNnRVTlRWZWRuSEd4QTQ4Y1ZFOHdmdVJzUmsiLCJ0eXAiOiJKV1QifQ.eyJuYW1laWQiOiJ1cm46YWx0aW5uOnBhcnR5OnV1aWQ6ZjkxMmU3MzYtZDk5Zi00OTEwLTgxMjAtZjUzYjExNjYwMTI1Iiwic2lkIjoiQ3JLVjFuZTVWMktBamtENlliT3hpbno0MXR6UTJwOGlIcUZMWnZDdk9mTSIsImlzcyI6Imh0dHBzOi8vcGxhdGZvcm0udHQwMi5hbHRpbm4ubm8vYXV0aGVudGljYXRpb24vYXBpL3YxL29wZW5pZC8iLCJ1cm46YWx0aW5uOnBhcnR5OnV1aWQiOiJmOTEyZTczNi1kOTlmLTQ5MTAtODEyMC1mNTNiMTE2NjAxMjUiLCJqdGkiOiJDcktWMW5lNVYyS0Fqa0Q2WWJPeGluejQxdHpRMnA4aUhxRkxadkN2T2ZNIiwidXJuOmFsdGlubjpwYXJ0eWlkIjoxMDAwMDEwNDgyLCJ1cm46YWx0aW5uOnVzZXJpZCI6IjEwMDAwMTA0ODIiLCJvcmlnaW5hbGlzcyI6ImlkcG9ydGVuIiwiZW1haWwiOiJtYXJ0aW5Ab3RoYW1hci5uZXQiLCJ1cm46YWx0aW5uOnBhcnR5OmV4dGVybmFsLWlkZW50aWZpZXIiOiJ1cm46YWx0aW5uOnBlcnNvbjppZHBvcnRlbi1lbWFpbDptYXJ0aW5Ab3RoYW1hci5uZXQiLCJhY3IiOiJzZWxmcmVnaXN0ZXJlZC1lbWFpbCIsInVybjphbHRpbm46YXV0aGxldmVsIjowLCJhbXIiOiJTZWxmcmVnaXN0ZXJlZC1lbWFpbCIsInVybjphbHRpbm46YXV0aGVudGljYXRlbWV0aG9kIjoiSWRwb3J0ZW5FcG9zdCIsImF1dGhfdGltZSI6MTc4NjY5NzY1MSwic2NvcGUiOiJkaWdkaXI6ZGlhbG9ncG9ydGVuLm5vY29uc2VudCBvcGVuaWQgYWx0aW5uOnBvcnRhbC9lbmR1c2VyIGFsdGlubjppbnN0YW5jZXMucmVhZCIsIm5iZiI6MTc4NjY5NzcwNSwiZXhwIjoxNzg2Njk5NTA1LCJpYXQiOjE3ODY2OTc3MDV9.QAJMWzsY2dTAFOLiG188ABNqnsI64qDjzES8qSAU34GQDe-EHSGsG9jLDVdlCQDBHv_fXsORvCJnM_GkamBkVCOJE2xVBw4MBxfZi-Ch6ANOwtY6cWqG_aArUSX6ZHMEdJ_ITEJTzy1vYySALDGul5c2jVFCPUnkvHgXYxPtzS2A9mkuSuWsq2A6sxDTCK4s3xZafxGTe4PRp8iKeIXt3veRtNAVU6NhcwwEK0HbNpEs02XyfK6xxuIFZNNAKumv_jO9TdniQOq8IeYvDzKRJ-LSpI_lhUU-rw0_hROB-FPbpkpDWbGuA-n3bQkZJzgaYQuaf_KZIyGSgjEFsIMVpQ
+  },
+  Jwt: {
+    acr: selfregistered-email,
+    amr: Selfregistered-email,
+    auth_time: 1786697651,
+    email: martin@othamar.net,
+    exp: 1786699505,
+    iat: 1786697705,
+    iss: https://platform.tt02.altinn.no/authentication/api/v1/openid/,
+    jti: CrKV1ne5V2KAjkD6YbOxinz41tzQ2p8iHqFLZvCvOfM,
+    nameid: urn:altinn:party:uuid:f912e736-d99f-4910-8120-f53b11660125,
+    nbf: 1786697705,
+    originaliss: idporten,
+    scope: digdir:dialogporten.noconsent openid altinn:portal/enduser altinn:instances.read,
+    sid: CrKV1ne5V2KAjkD6YbOxinz41tzQ2p8iHqFLZvCvOfM,
+    urn:altinn:authenticatemethod: IdportenEpost,
+    urn:altinn:authlevel: 0,
+    urn:altinn:party:external-identifier: urn:altinn:person:idporten-email:martin@othamar.net,
+    urn:altinn:party:uuid: f912e736-d99f-4910-8120-f53b11660125,
+    urn:altinn:partyid: 1000010482,
+    urn:altinn:userid: 1000010482
+  },
+  Details: {
+    UserParty: {
+      PartyId: 1000010482,
+      PartyTypeName: Person,
+      SSN: 12345678901,
+      Name: Test Testesen,
+      IsDeleted: false,
+      OnlyHierarchyElementWithNoAccess: false,
+      ChildParties: []
+    },
+    SelectedParty: {
+      PartyId: 1000010482,
+      PartyTypeName: Person,
+      SSN: 12345678901,
+      Name: Test Testesen,
+      IsDeleted: false,
+      OnlyHierarchyElementWithNoAccess: false,
+      ChildParties: []
+    },
+    Profile: {
+      UserId: 1000010482,
+      IsReserved: false,
+      PartyId: 1000010482,
+      Party: {
+        PartyId: 1000010482,
+        PartyTypeName: Person,
+        SSN: 12345678901,
+        Name: Test Testesen,
+        IsDeleted: false,
+        OnlyHierarchyElementWithNoAccess: false,
+        ChildParties: []
+      }
+    },
+    RepresentsSelf: true,
+    Parties: [
+      {
+        PartyId: 1000010482,
+        PartyTypeName: Person,
+        SSN: 12345678901,
+        Name: Test Testesen,
+        IsDeleted: false,
+        OnlyHierarchyElementWithNoAccess: false,
+        ChildParties: []
+      }
+    ],
+    PartiesAllowedToInstantiate: [
+      {
+        PartyId: 1000010482,
+        PartyTypeName: Person,
+        SSN: 12345678901,
+        Name: Test Testesen,
+        IsDeleted: false,
+        OnlyHierarchyElementWithNoAccess: false,
+        ChildParties: []
+      }
+    ],
+    CanRepresent: true
+  }
+}
