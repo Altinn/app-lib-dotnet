@@ -98,7 +98,6 @@
         IsRead: true
       }
     ],
-    LastChanged: DateTime_3,
-    LastChangedBy: 
+    LastChanged: DateTime_3
   }
 }
