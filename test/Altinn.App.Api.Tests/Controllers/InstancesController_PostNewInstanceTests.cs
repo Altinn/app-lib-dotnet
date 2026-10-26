@@ -599,7 +599,12 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
 
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         Assert.Equal(HttpStatusCode.Gone, createResponse.StatusCode);
-        Assert.Contains("can no longer be used to create new instances", createResponseContent);
+        var problem = JsonSerializer.Deserialize<ProblemDetails>(
+            createResponseContent,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        );
+        Assert.Equal(StatusCodes.Status410Gone, problem?.Status);
+        Assert.Contains("can no longer be used to create new instances", problem?.Detail);
     }
 
     [Theory]
@@ -620,7 +625,12 @@ public class InstancesController_PostNewInstanceTests : ApiTestBase, IClassFixtu
 
         var createResponseContent = await createResponse.Content.ReadAsStringAsync();
         Assert.Equal(HttpStatusCode.Gone, createResponse.StatusCode);
-        Assert.Contains("can no longer be used to create new instances", createResponseContent);
+        var problem = JsonSerializer.Deserialize<ProblemDetails>(
+            createResponseContent,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        );
+        Assert.Equal(StatusCodes.Status410Gone, problem?.Status);
+        Assert.Contains("can no longer be used to create new instances", problem?.Detail);
     }
 
     [Fact]

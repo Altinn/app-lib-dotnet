@@ -223,7 +223,7 @@ public class InstancesController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(typeof(InstanceResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status410Gone)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone)]
     [RequestSizeLimit(RequestSizeLimit)]
     public async Task<ActionResult<InstanceResponse>> Post(
         [FromRoute] string org,
@@ -484,10 +484,7 @@ public class InstancesController : ControllerBase
             if (orgClaimIsValid || isCopy)
                 return null;
 
-            return StatusCode(
-                StatusCodes.Status410Gone,
-                $"User instantiation is disabled for this application {org}/{app}"
-            );
+            return Gone($"User instantiation is disabled for this application {org}/{app}");
         }
 
         return null;
@@ -499,22 +496,31 @@ public class InstancesController : ControllerBase
 
         if (application.ValidFrom is { } validFrom && ToUtc(validFrom) > now)
         {
-            return StatusCode(
-                StatusCodes.Status410Gone,
+            return Gone(
                 $"The application {org}/{app} is not valid before {ToUtc(validFrom):O} and cannot be used to create new instances yet"
             );
         }
 
         if (application.ValidTo is { } validTo && ToUtc(validTo) < now)
         {
-            return StatusCode(
-                StatusCodes.Status410Gone,
+            return Gone(
                 $"The application {org}/{app} expired at {ToUtc(validTo):O} and can no longer be used to create new instances"
             );
         }
 
         return null;
     }
+
+    private ObjectResult Gone(string detail) =>
+        StatusCode(
+            StatusCodes.Status410Gone,
+            new ProblemDetails
+            {
+                Title = "Instantiation is closed",
+                Detail = detail,
+                Status = StatusCodes.Status410Gone,
+            }
+        );
 
     // A validity date without an offset is interpreted as UTC.
     private static DateTime ToUtc(DateTime dateTime) =>
@@ -535,7 +541,7 @@ public class InstancesController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(typeof(InstanceResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status410Gone)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone)]
     [RequestSizeLimit(RequestSizeLimit)]
     public async Task<ActionResult<InstanceResponse>> PostSimplified(
         [FromRoute] string org,
@@ -851,7 +857,7 @@ public class InstancesController : ControllerBase
     [HttpGet("/{org}/{app}/legacy/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/copy")]
     [ProducesResponseType(typeof(Instance), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status410Gone)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone)]
     public async Task<ActionResult> CopyInstance(
         [FromRoute] string org,
         [FromRoute] string app,

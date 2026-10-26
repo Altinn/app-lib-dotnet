@@ -88,7 +88,9 @@ public class InstancesController_CopyInstanceTests
         // Assert
         ObjectResult result = Assert.IsType<ObjectResult>(actual);
         Assert.Equal(StatusCodes.Status410Gone, result.StatusCode);
-        Assert.Contains("can no longer be used to create new instances", result.Value!.ToString());
+        var problem = Assert.IsType<ProblemDetails>(result.Value);
+        Assert.Equal(StatusCodes.Status410Gone, problem.Status);
+        Assert.Contains("can no longer be used to create new instances", problem.Detail);
 
         fixture.Mock<IAppMetadata>().VerifyAll();
         fixture.VerifyNoOtherCalls();
@@ -113,7 +115,9 @@ public class InstancesController_CopyInstanceTests
         // Assert
         ObjectResult result = Assert.IsType<ObjectResult>(actual);
         Assert.Equal(StatusCodes.Status410Gone, result.StatusCode);
-        Assert.Contains("cannot be used to create new instances yet", result.Value!.ToString());
+        var problem = Assert.IsType<ProblemDetails>(result.Value);
+        Assert.Equal(StatusCodes.Status410Gone, problem.Status);
+        Assert.Contains("cannot be used to create new instances yet", problem.Detail);
 
         fixture.Mock<IAppMetadata>().VerifyAll();
         fixture.VerifyNoOtherCalls();
