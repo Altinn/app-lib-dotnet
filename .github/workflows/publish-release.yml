@@ -9,6 +9,9 @@ jobs:
   release-nugets:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     environment: |-
       ${{
          contains(github.event.release.tag_name, 'preview') && 'test'
@@ -55,6 +58,13 @@ jobs:
       - name: Versions
         run: |
           dotnet --version
+      - name: NuGet login
+        id: nuget-login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ vars.NUGET_TRUSTED_PUBLISHING_USER }}
       - name: Publish
+        env:
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         run: |
-          dotnet nuget push src/**/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
+          dotnet nuget push src/**/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY"
