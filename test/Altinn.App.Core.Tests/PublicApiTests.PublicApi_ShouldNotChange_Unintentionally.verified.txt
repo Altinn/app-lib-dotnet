@@ -33,6 +33,7 @@ namespace Altinn.App.Core.Configuration
         public string ModelsFolder { get; set; }
         public string OpenIdWellKnownEndpoint { get; set; }
         public string OptionsFolder { get; set; }
+        public bool OptionsValidation { get; set; }
         public string ProcessFileName { get; set; }
         public string ProcessFolder { get; set; }
         public bool RegisterEventsWithEventsComponent { get; set; }
@@ -4918,9 +4919,12 @@ namespace Altinn.App.Core.Models.Layout.Components
     public sealed class OptionsComponent : Altinn.App.Core.Models.Layout.Components.Base.NoReferenceComponent
     {
         public OptionsComponent() { }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string>? Mapping { get; init; }
         public required System.Collections.Generic.List<Altinn.App.Core.Models.AppOption>? Options { get; init; }
         public required string? OptionsId { get; init; }
         public required Altinn.App.Core.Models.Layout.Components.OptionsSource? OptionsSource { get; init; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, Altinn.App.Core.Models.Expressions.Expression>? QueryParameters { get; init; }
+        public bool RenderAsSummary { get; init; }
         public required bool Secure { get; init; }
         public override System.Threading.Tasks.Task<Altinn.App.Core.Models.Expressions.ComponentContext> GetContext(Altinn.App.Core.Features.IInstanceDataAccessor dataAccessor, Altinn.App.Core.Models.DataElementIdentifier defaultDataElementIdentifier, int[]? rowIndexes, System.Collections.Generic.Dictionary<string, Altinn.App.Core.Models.Layout.LayoutSetComponent> layoutsLookup) { }
         public override System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<Altinn.App.Core.Models.Layout.DataReference>> GetDataReferencesToRemoveWhenHidden(Altinn.App.Core.Models.Expressions.ComponentContext context) { }
@@ -4934,7 +4938,11 @@ namespace Altinn.App.Core.Models.Layout.Components
     public class OptionsSource : System.IEquatable<Altinn.App.Core.Models.Layout.Components.OptionsSource>
     {
         public OptionsSource(string group, string value) { }
+        [System.Text.Json.Serialization.JsonPropertyName("dataType")]
+        public string? DataType { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("group")]
         public string Group { get; }
+        [System.Text.Json.Serialization.JsonPropertyName("value")]
         public string Value { get; }
     }
     public sealed class PageComponent : Altinn.App.Core.Models.Layout.Components.Base.BaseComponent
