@@ -231,6 +231,12 @@ public class AppSettings
     public bool XsdValidation { get; set; }
 
     /// <summary>
+    /// Enable the functionality to validate in backend that the values of visible checkboxes, radio buttons,
+    /// dropdowns and multiple selects are among the component's options
+    /// </summary>
+    public bool OptionsValidation { get; set; }
+
+    /// <summary>
     /// Enables OpenTelemetry as a substitute for Application Insights SDK
     /// Improves instrumentation throughout the Altinn app libraries.
     /// </summary>

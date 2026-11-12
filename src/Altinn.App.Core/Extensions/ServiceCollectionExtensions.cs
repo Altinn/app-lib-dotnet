@@ -261,6 +261,11 @@ public static class ServiceCollectionExtensions
         {
             services.AddTransient<IValidator, XsdValidator>();
         }
+
+        if (appSettings?.OptionsValidation is true)
+        {
+            services.AddTransient<IValidator, OptionsValidator>();
+        }
     }
 
     /// <summary>
