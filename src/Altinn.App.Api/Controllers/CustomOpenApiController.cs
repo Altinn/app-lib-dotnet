@@ -569,7 +569,7 @@ public class CustomOpenApiController : Controller
                         Tags = instanceTags,
                         Summary = "Preview a PDF",
                         Description =
-                            "Generate a preview of the PDF of the current task, or of a PDF or subform PDF service task, also one the instance has not reached yet. The preview is in the language given by `language`, or the user's language, and is marked as a preview in its footer. Previews with an explicit taskId are rate limited across all instances.",
+                            "Generate a preview of the PDF of the current task, or of a PDF or subform PDF service task, also one the instance has not reached yet. To preview one subform without knowing the app's tasks, give only `dataElementId`. The preview is in the language given by `language`, or the user's language, and is marked as a preview in its footer. Previews with a taskId or dataElementId are rate limited across all instances.",
                         Parameters =
                         [
                             new OpenApiParameter()
@@ -585,7 +585,7 @@ public class CustomOpenApiController : Controller
                             {
                                 Name = "dataElementId",
                                 Description =
-                                    "The subform data element to preview. Required when previewing a subform PDF service task.",
+                                    "The subform data element to preview. Required when previewing a subform PDF service task. Without taskId, the task is the one subform PDF service task configured for the data element's data type.",
                                 In = ParameterLocation.Query,
                                 Required = false,
                                 Schema = new OpenApiSchema() { Type = "string", Format = "uuid" },
@@ -608,7 +608,7 @@ public class CustomOpenApiController : Controller
                                 ["400"] = new OpenApiResponse()
                                 {
                                     Description =
-                                        "The task is not a PDF or subform PDF service task, or the subform is missing or of the wrong data type",
+                                        "The task is not a PDF or subform PDF service task, the subform is missing or of the wrong data type, or without taskId, no subform PDF service task or more than one is configured for the subform's data type",
                                     Content = new Dictionary<string, OpenApiMediaType>
                                     {
                                         ["text/plain"] = new OpenApiMediaType()
