@@ -119,6 +119,86 @@ public class PdfController : ControllerBase
             return NotFound("Did not find task");
         }
 
+        return await PreviewTask(instance, task, dataElementId, language, cancellationToken);
+    }
+
+    /// <summary>
+    /// Generate a preview of the subform PDF of a subform data element, without naming the subform PDF service task.
+    /// The task is the one subform PDF service task configured for the data element's data type.
+    /// </summary>
+    /// <param name="org">The application organization.</param>
+    /// <param name="app">The application name.</param>
+    /// <param name="instanceOwnerPartyId">The instance owner's party id.</param>
+    /// <param name="instanceGuid">The instance id.</param>
+    /// <param name="dataGuid">The subform data element.</param>
+    /// <param name="language">The preview language. Defaults to the user's language.</param>
+    /// <param name="cancellationToken">The request cancellation token.</param>
+    [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK, "application/pdf")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest, "text/plain")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound, "text/plain")]
+    [ProducesResponseType(typeof(void), StatusCodes.Status429TooManyRequests)]
+    [EnableRateLimiting(PdfPreviewRateLimiterPolicy.Name)]
+    [HttpGet("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataGuid:guid}/pdf/preview")]
+    public async Task<ActionResult> GetDataElementPdfPreview(
+        [FromRoute] string org,
+        [FromRoute] string app,
+        [FromRoute] int instanceOwnerPartyId,
+        [FromRoute] Guid instanceGuid,
+        [FromRoute] Guid dataGuid,
+        [FromQuery] string? language,
+        CancellationToken cancellationToken = default
+    )
+    {
+        Instance? instance = await _instanceClient.GetInstance(
+            app,
+            org,
+            instanceOwnerPartyId,
+            instanceGuid,
+            authenticationMethod: null,
+            cancellationToken
+        );
+        if (instance?.Process?.CurrentTask?.ElementId is null)
+        {
+            return NotFound("Did not find instance or task");
+        }
+
+        DataElement? dataElement = instance.Data.Find(element => element.Id == dataGuid.ToString());
+        if (dataElement is null)
+        {
+            return NotFound("Did not find data element");
+        }
+
+        var processReader = HttpContext.RequestServices.GetRequiredService<IProcessReader>();
+        List<ProcessTask> tasks = processReader
+            .GetProcessTasks()
+            .Where(task =>
+                task.ExtensionElements?.TaskExtension is { TaskType: "subformPdf" } extension
+                && extension.SubformPdfConfiguration?.SubformDataTypeId == dataElement.DataType
+            )
+            .ToList();
+        if (tasks.Count == 0)
+        {
+            return BadRequest($"No subform PDF service task renders data elements of type {dataElement.DataType}");
+        }
+
+        if (tasks.Count > 1)
+        {
+            return BadRequest(
+                $"Several subform PDF service tasks render data elements of type {dataElement.DataType}. Preview with pdf/preview?taskId=...&dataElementId=... instead"
+            );
+        }
+
+        return await PreviewTask(instance, tasks[0], dataGuid, language, cancellationToken);
+    }
+
+    private async Task<ActionResult> PreviewTask(
+        Instance instance,
+        ProcessTask task,
+        Guid? dataElementId,
+        string? language,
+        CancellationToken cancellationToken
+    )
+    {
         AltinnTaskExtension? taskExtension = task.ExtensionElements?.TaskExtension;
         SubformPdfContext? subformContext = null;
         List<string>? autoPdfTaskIds = null;
@@ -153,7 +233,7 @@ public class PdfController : ControllerBase
         var previewService = HttpContext.RequestServices.GetRequiredService<IPdfPreviewService>();
         Stream preview = await previewService.GeneratePreview(
             instance,
-            taskId,
+            task.Id,
             language,
             subformContext,
             autoPdfTaskIds,

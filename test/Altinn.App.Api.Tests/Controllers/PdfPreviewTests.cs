@@ -108,53 +108,47 @@ public sealed class PdfPreviewTests : IDisposable
         {
             ControllerContext = new() { HttpContext = httpContext },
         };
-        _process
-            .Setup(x => x.GetFlowElement("Pdf"))
-            .Returns(
-                new ServiceTask
+        var dataTask = new ProcessTask
+        {
+            Id = "Task_1",
+            ExtensionElements = new() { TaskExtension = new() { TaskType = "data" } },
+        };
+        var pdfTask = new ServiceTask
+        {
+            Id = "Pdf",
+            ExtensionElements = new()
+            {
+                TaskExtension = new()
                 {
-                    Id = "Pdf",
-                    ExtensionElements = new()
-                    {
-                        TaskExtension = new()
-                        {
-                            TaskType = "pdf",
-                            PdfConfiguration = new() { AutoPdfTaskIds = ["Task_1", "Task_2"] },
-                        },
-                    },
-                }
-            );
-        _process
-            .Setup(x => x.GetFlowElement("SubformPdf"))
-            .Returns(
-                new ServiceTask
-                {
-                    Id = "SubformPdf",
-                    ExtensionElements = new()
-                    {
-                        TaskExtension = new()
-                        {
-                            TaskType = "subformPdf",
-                            PdfConfiguration = new() { AutoPdfTaskIds = ["Task_1"] },
-                            SubformPdfConfiguration = new()
-                            {
-                                SubformComponentId = "subform-component",
-                                SubformDataTypeId = "subform",
-                            },
-                        },
-                    },
-                }
-            );
-        _process
-            .Setup(x => x.GetFlowElement("Task_1"))
-            .Returns(
-                new ProcessTask
-                {
-                    Id = "Task_1",
-                    ExtensionElements = new() { TaskExtension = new() { TaskType = "data" } },
-                }
-            );
+                    TaskType = "pdf",
+                    PdfConfiguration = new() { AutoPdfTaskIds = ["Task_1", "Task_2"] },
+                },
+            },
+        };
+        _process.Setup(x => x.GetFlowElement("Task_1")).Returns(dataTask);
+        _process.Setup(x => x.GetFlowElement("Pdf")).Returns(pdfTask);
+        _process.Setup(x => x.GetFlowElement("SubformPdf")).Returns(SubformPdfTask("SubformPdf"));
+        _process.Setup(x => x.GetProcessTasks()).Returns([dataTask, pdfTask, SubformPdfTask("SubformPdf")]);
     }
+
+    private static ServiceTask SubformPdfTask(string id) =>
+        new()
+        {
+            Id = id,
+            ExtensionElements = new()
+            {
+                TaskExtension = new()
+                {
+                    TaskType = "subformPdf",
+                    PdfConfiguration = new() { AutoPdfTaskIds = ["Task_1"] },
+                    SubformPdfConfiguration = new()
+                    {
+                        SubformComponentId = "subform-component",
+                        SubformDataTypeId = "subform",
+                    },
+                },
+            },
+        };
 
     [Fact]
     public async Task FuturePdfTaskUsesItsConfigurationWithoutStoringOrAdvancing()
@@ -266,12 +260,73 @@ public sealed class PdfPreviewTests : IDisposable
         Assert.Null(_renderedUrl);
     }
 
+    [Theory]
+    [InlineData(FirstSubformId)]
+    [InlineData(SecondSubformId)]
+    public async Task DataElementPreviewFindsTheSubformPdfTaskFromTheDataType(string id)
+    {
+        using var cancellation = new CancellationTokenSource();
+        var result = Assert.IsType<FileStreamResult>(
+            await _controller.GetDataElementPdfPreview(
+                "org",
+                "app",
+                12345,
+                _instanceGuid,
+                Guid.Parse(id),
+                "en",
+                cancellation.Token
+            )
+        );
+        Assert.Same(_pdf, result.FileStream);
+        Assert.Contains($"/SubformPdf/subform/subform-component/{id}/?pdf=1&lang=en", _renderedUrl!.AbsoluteUri);
+        Assert.Contains("PREVIEW", _footer);
+        Assert.Equal(cancellation.Token, _renderCancellation);
+        Assert.Equal("Task_1", _instance.Process.CurrentTask.ElementId);
+        _data.VerifyNoOtherCalls();
+        _legacy.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task DataElementWithoutSubformPdfTaskIsRejected()
+    {
+        Assert.IsType<BadRequestObjectResult>(await DataElementPreview(Guid.Parse(MainId)));
+        Assert.Null(_renderedUrl);
+    }
+
+    [Fact]
+    public async Task DataElementWithSeveralSubformPdfTasksIsRejected()
+    {
+        _process
+            .Setup(x => x.GetProcessTasks())
+            .Returns([SubformPdfTask("SubformPdf"), SubformPdfTask("OtherSubformPdf")]);
+        Assert.IsType<BadRequestObjectResult>(await DataElementPreview(Guid.Parse(FirstSubformId)));
+        Assert.Null(_renderedUrl);
+    }
+
+    [Fact]
+    public async Task UnknownDataElementReturnsNotFound()
+    {
+        Assert.IsType<NotFoundObjectResult>(await DataElementPreview(Guid.NewGuid()));
+        Assert.Null(_renderedUrl);
+    }
+
+    [Fact]
+    public async Task DataElementPreviewOfInstanceWithoutCurrentTaskReturnsNotFound()
+    {
+        _instance.Process.CurrentTask = null;
+        Assert.IsType<NotFoundObjectResult>(await DataElementPreview(Guid.Parse(FirstSubformId)));
+        Assert.Null(_renderedUrl);
+    }
+
     private Task<ActionResult> Preview(
         string? taskId,
         Guid? id = null,
         string? language = null,
         CancellationToken token = default
     ) => _controller.GetPdfPreview("org", "app", 12345, _instanceGuid, taskId, id, language, token);
+
+    private Task<ActionResult> DataElementPreview(Guid dataGuid) =>
+        _controller.GetDataElementPdfPreview("org", "app", 12345, _instanceGuid, dataGuid, null);
 
     public void Dispose()
     {
