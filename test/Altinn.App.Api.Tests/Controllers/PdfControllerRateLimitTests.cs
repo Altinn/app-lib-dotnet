@@ -130,21 +130,21 @@ public class PdfControllerRateLimitTests : ApiTestBase, IClassFixture<WebApplica
     }
 
     [Fact]
-    public async Task DataElementPreviewsShareTheLimit()
+    public async Task SubformPreviewsWithoutTaskIdShareTheLimit()
     {
         using HttpClient client = GetClient(permitLimit: 2);
-        string dataElementPreviewUrl =
-            $"{Org}/{App}/instances/{InstanceOwnerPartyId}/{_instanceGuid}/data/{_formDataGuid}/pdf/preview";
+        string subformPreviewUrl =
+            $"{Org}/{App}/instances/{InstanceOwnerPartyId}/{_instanceGuid}/pdf/preview?dataElementId={_formDataGuid}";
 
         try
         {
             using HttpResponseMessage taskPreview = await client.GetAsync(PreviewUrl(_instanceGuid));
-            using HttpResponseMessage dataElementPreview = await client.GetAsync(dataElementPreviewUrl);
-            using HttpResponseMessage overTheLimit = await client.GetAsync(dataElementPreviewUrl);
+            using HttpResponseMessage subformPreview = await client.GetAsync(subformPreviewUrl);
+            using HttpResponseMessage overTheLimit = await client.GetAsync(subformPreviewUrl);
 
             taskPreview.StatusCode.Should().Be(HttpStatusCode.OK);
-            dataElementPreview.StatusCode.Should().Be(HttpStatusCode.OK);
-            dataElementPreview.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
+            subformPreview.StatusCode.Should().Be(HttpStatusCode.OK);
+            subformPreview.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
             overTheLimit.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
         }
         finally
@@ -216,16 +216,6 @@ public class PdfControllerRateLimitTests : ApiTestBase, IClassFixture<WebApplica
 
     private static string PreviewUrl(Guid instanceGuid) =>
         $"{Org}/{App}/instances/{InstanceOwnerPartyId}/{instanceGuid}/pdf/preview?taskId=Pdf";
-
-    [Fact]
-    public void DataElementPreviewsUseTheLimitedPartition()
-    {
-        var policy = new PdfPreviewRateLimiterPolicy(Options.Create(new PdfGeneratorSettings()));
-        var httpContext = new DefaultHttpContext();
-        httpContext.Request.RouteValues["dataGuid"] = Guid.NewGuid().ToString();
-
-        policy.GetPartition(httpContext).PartitionKey.Should().Be(GetPartition(policy, Guid.NewGuid()).PartitionKey);
-    }
 
     private static RateLimitPartition<string> GetPartition(PdfPreviewRateLimiterPolicy policy, Guid instanceGuid)
     {

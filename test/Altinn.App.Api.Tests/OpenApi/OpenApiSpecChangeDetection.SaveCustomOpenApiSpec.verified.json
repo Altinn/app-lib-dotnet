@@ -503,7 +503,7 @@
           "Instances"
         ],
         "summary": "Preview a PDF",
-        "description": "Generate a preview of the PDF of the current task, or of a PDF or subform PDF service task, also one the instance has not reached yet. The preview is in the language given by `language`, or the user's language, and is marked as a preview in its footer. Previews with an explicit taskId are rate limited across all instances.",
+        "description": "Generate a preview of the PDF of the current task, or of a PDF or subform PDF service task, also one the instance has not reached yet. To preview one subform without knowing the app's tasks, give only `dataElementId`. The preview is in the language given by `language`, or the user's language, and is marked as a preview in its footer. Previews with a taskId or dataElementId are rate limited across all instances.",
         "parameters": [
           {
             "name": "taskId",
@@ -516,7 +516,7 @@
           {
             "name": "dataElementId",
             "in": "query",
-            "description": "The subform data element to preview. Required when previewing a subform PDF service task.",
+            "description": "The subform data element to preview. Required when previewing a subform PDF service task. Without taskId, the task is the one subform PDF service task configured for the data element's data type.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -536,7 +536,7 @@
             }
           },
           "400": {
-            "description": "The task is not a PDF or subform PDF service task, or the subform is missing or of the wrong data type",
+            "description": "The task is not a PDF or subform PDF service task, the subform is missing or of the wrong data type, or without taskId, no subform PDF service task or more than one is configured for the subform's data type",
             "content": {
               "text/plain": {
                 "schema": {
@@ -575,75 +575,6 @@
         },
         {
           "$ref": "#/components/parameters/instanceGuid"
-        },
-        {
-          "$ref": "#/components/parameters/language"
-        }
-      ]
-    },
-    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/pdf/preview": {
-      "summary": "Preview the PDF of a subform data element",
-      "get": {
-        "tags": [
-          "Instances"
-        ],
-        "summary": "Preview the PDF of a subform data element",
-        "description": "Generate a preview of the subform PDF of one subform data element, without naming the subform PDF service task. The task is the one subform PDF service task configured for the data element's data type. The preview is in the language given by `language`, or the user's language, and is marked as a preview in its footer. Previews are rate limited across all instances.",
-        "responses": {
-          "200": {
-            "description": "The PDF preview",
-            "content": {
-              "application/pdf": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "No subform PDF service task, or more than one, is configured for the data element's data type",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The instance has no current task, or the data element does not exist",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too many previews. Try again after the number of seconds in the Retry-After header"
-          },
-          "401": {
-            "$ref": "#/components/responses/ProblemDetails"
-          },
-          "403": {
-            "$ref": "#/components/responses/ProblemDetails"
-          },
-          "500": {
-            "$ref": "#/components/responses/ProblemDetails"
-          }
-        }
-      },
-      "parameters": [
-        {
-          "$ref": "#/components/parameters/instanceOwnerPartyId"
-        },
-        {
-          "$ref": "#/components/parameters/instanceGuid"
-        },
-        {
-          "$ref": "#/components/parameters/dataGuid"
         },
         {
           "$ref": "#/components/parameters/language"

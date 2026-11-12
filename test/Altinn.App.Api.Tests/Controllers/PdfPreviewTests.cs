@@ -263,20 +263,10 @@ public sealed class PdfPreviewTests : IDisposable
     [Theory]
     [InlineData(FirstSubformId)]
     [InlineData(SecondSubformId)]
-    public async Task DataElementPreviewFindsTheSubformPdfTaskFromTheDataType(string id)
+    public async Task SubformWithoutTaskIdUsesTheSubformPdfTaskOfItsDataType(string id)
     {
         using var cancellation = new CancellationTokenSource();
-        var result = Assert.IsType<FileStreamResult>(
-            await _controller.GetDataElementPdfPreview(
-                "org",
-                "app",
-                12345,
-                _instanceGuid,
-                Guid.Parse(id),
-                "en",
-                cancellation.Token
-            )
-        );
+        var result = Assert.IsType<FileStreamResult>(await Preview(null, Guid.Parse(id), "en", cancellation.Token));
         Assert.Same(_pdf, result.FileStream);
         Assert.Contains($"/SubformPdf/subform/subform-component/{id}/?pdf=1&lang=en", _renderedUrl!.AbsoluteUri);
         Assert.Contains("PREVIEW", _footer);
@@ -287,34 +277,36 @@ public sealed class PdfPreviewTests : IDisposable
     }
 
     [Fact]
-    public async Task DataElementWithoutSubformPdfTaskIsRejected()
+    public async Task SubformWithoutTaskIdAndWithoutSubformPdfTaskIsRejected()
     {
-        Assert.IsType<BadRequestObjectResult>(await DataElementPreview(Guid.Parse(MainId)));
+        Assert.IsType<BadRequestObjectResult>(await Preview(null, Guid.Parse(MainId)));
         Assert.Null(_renderedUrl);
+        _legacy.VerifyNoOtherCalls();
     }
 
     [Fact]
-    public async Task DataElementWithSeveralSubformPdfTasksIsRejected()
+    public async Task SubformWithoutTaskIdAndWithSeveralSubformPdfTasksIsRejected()
     {
         _process
             .Setup(x => x.GetProcessTasks())
             .Returns([SubformPdfTask("SubformPdf"), SubformPdfTask("OtherSubformPdf")]);
-        Assert.IsType<BadRequestObjectResult>(await DataElementPreview(Guid.Parse(FirstSubformId)));
+        Assert.IsType<BadRequestObjectResult>(await Preview(null, Guid.Parse(FirstSubformId)));
         Assert.Null(_renderedUrl);
     }
 
     [Fact]
-    public async Task UnknownDataElementReturnsNotFound()
+    public async Task UnknownSubformWithoutTaskIdIsRejected()
     {
-        Assert.IsType<NotFoundObjectResult>(await DataElementPreview(Guid.NewGuid()));
+        Assert.IsType<BadRequestObjectResult>(await Preview(null, Guid.NewGuid()));
         Assert.Null(_renderedUrl);
+        _legacy.VerifyNoOtherCalls();
     }
 
     [Fact]
-    public async Task DataElementPreviewOfInstanceWithoutCurrentTaskReturnsNotFound()
+    public async Task SubformWithoutTaskIdOfInstanceWithoutCurrentTaskReturnsNotFound()
     {
         _instance.Process.CurrentTask = null;
-        Assert.IsType<NotFoundObjectResult>(await DataElementPreview(Guid.Parse(FirstSubformId)));
+        Assert.IsType<NotFoundObjectResult>(await Preview(null, Guid.Parse(FirstSubformId)));
         Assert.Null(_renderedUrl);
     }
 
@@ -324,9 +316,6 @@ public sealed class PdfPreviewTests : IDisposable
         string? language = null,
         CancellationToken token = default
     ) => _controller.GetPdfPreview("org", "app", 12345, _instanceGuid, taskId, id, language, token);
-
-    private Task<ActionResult> DataElementPreview(Guid dataGuid) =>
-        _controller.GetDataElementPdfPreview("org", "app", 12345, _instanceGuid, dataGuid, null);
 
     public void Dispose()
     {

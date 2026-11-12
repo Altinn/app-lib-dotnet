@@ -469,14 +469,6 @@ namespace Altinn.App.Api.Controllers
     {
         public PdfController(Altinn.App.Core.Internal.Instances.IInstanceClient instanceClient, Altinn.App.Core.Features.IPdfFormatter pdfFormatter, Altinn.App.Core.Internal.App.IAppResources resources, Altinn.App.Core.Internal.AppModel.IAppModel appModel, Altinn.App.Core.Internal.Data.IDataClient dataClient, Altinn.App.Core.Internal.Pdf.IPdfService pdfService) { }
         [Microsoft.AspNetCore.Mvc.HttpGet("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataGu" +
-            "id:guid}/pdf/preview")]
-        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(Microsoft.AspNetCore.Mvc.FileStreamResult), 200, "application/pdf", new string[0])]
-        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(string), 400, "text/plain", new string[0])]
-        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(string), 404, "text/plain", new string[0])]
-        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(void), 429)]
-        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("AltinnPdfPreview")]
-        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult> GetDataElementPdfPreview([Microsoft.AspNetCore.Mvc.FromRoute] string org, [Microsoft.AspNetCore.Mvc.FromRoute] string app, [Microsoft.AspNetCore.Mvc.FromRoute] int instanceOwnerPartyId, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid instanceGuid, [Microsoft.AspNetCore.Mvc.FromRoute] System.Guid dataGuid, [Microsoft.AspNetCore.Mvc.FromQuery] string? language, System.Threading.CancellationToken cancellationToken = default) { }
-        [Microsoft.AspNetCore.Mvc.HttpGet("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataGu" +
             "id}/pdf/format")]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(object), 200)]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(string), 404, "text/plain", new string[0])]
