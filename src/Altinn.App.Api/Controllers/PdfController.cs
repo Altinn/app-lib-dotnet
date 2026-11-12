@@ -70,7 +70,7 @@ public class PdfController : ControllerBase
     /// <param name="instanceOwnerPartyId">The instance owner's party id.</param>
     /// <param name="instanceGuid">The instance id.</param>
     /// <param name="taskId">The PDF or subform PDF service task to preview. Defaults to the current task.</param>
-    /// <param name="dataElementId">The subform data element. Required for a subform PDF service task.</param>
+    /// <param name="dataElementId">The subform data element. Without taskId, it selects the subform PDF task for its data type.</param>
     /// <param name="language">The preview language. Defaults to the user's language.</param>
     /// <param name="cancellationToken">The request cancellation token.</param>
     [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK, "application/pdf")]
@@ -104,7 +104,7 @@ public class PdfController : ControllerBase
             return NotFound("Did not find instance or task");
         }
 
-        if (taskId is null)
+        if (taskId is null && dataElementId is null)
         {
             // Preserve the existing v8 service, including any app-provided implementation.
             // It already reads language/lang from the request.
@@ -114,81 +114,49 @@ public class PdfController : ControllerBase
 
         // Resolve the new internal service without changing the existing public constructor.
         var processReader = HttpContext.RequestServices.GetRequiredService<IProcessReader>();
-        if (processReader.GetFlowElement(taskId) is not ProcessTask task)
+        ProcessTask task;
+        if (taskId is not null)
         {
-            return NotFound("Did not find task");
+            if (processReader.GetFlowElement(taskId) is not ProcessTask namedTask)
+            {
+                return NotFound("Did not find task");
+            }
+
+            task = namedTask;
+        }
+        else
+        {
+            // Callers that only know the subform get the subform PDF service task of its data type
+            string? subformId = dataElementId?.ToString();
+            DataElement? subform = instance.Data.Find(element => element.Id == subformId);
+            if (subform is null)
+            {
+                return BadRequest("dataElementId must be the id of a data element in the instance");
+            }
+
+            List<ProcessTask> subformPdfTasks = processReader
+                .GetProcessTasks()
+                .Where(processTask =>
+                    processTask.ExtensionElements?.TaskExtension is { TaskType: "subformPdf" } extension
+                    && extension.SubformPdfConfiguration?.SubformDataTypeId == subform.DataType
+                )
+                .ToList();
+            if (subformPdfTasks.Count == 0)
+            {
+                return BadRequest($"No subform PDF service task renders data elements of type {subform.DataType}");
+            }
+
+            if (subformPdfTasks.Count > 1)
+            {
+                return BadRequest(
+                    $"Several subform PDF service tasks render data elements of type {subform.DataType}. Add taskId to choose one"
+                );
+            }
+
+            task = subformPdfTasks[0];
         }
 
         return await PreviewTask(instance, task, dataElementId, language, cancellationToken);
-    }
-
-    /// <summary>
-    /// Generate a preview of the subform PDF of a subform data element, without naming the subform PDF service task.
-    /// The task is the one subform PDF service task configured for the data element's data type.
-    /// </summary>
-    /// <param name="org">The application organization.</param>
-    /// <param name="app">The application name.</param>
-    /// <param name="instanceOwnerPartyId">The instance owner's party id.</param>
-    /// <param name="instanceGuid">The instance id.</param>
-    /// <param name="dataGuid">The subform data element.</param>
-    /// <param name="language">The preview language. Defaults to the user's language.</param>
-    /// <param name="cancellationToken">The request cancellation token.</param>
-    [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK, "application/pdf")]
-    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest, "text/plain")]
-    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound, "text/plain")]
-    [ProducesResponseType(typeof(void), StatusCodes.Status429TooManyRequests)]
-    [EnableRateLimiting(PdfPreviewRateLimiterPolicy.Name)]
-    [HttpGet("{org}/{app}/instances/{instanceOwnerPartyId:int}/{instanceGuid:guid}/data/{dataGuid:guid}/pdf/preview")]
-    public async Task<ActionResult> GetDataElementPdfPreview(
-        [FromRoute] string org,
-        [FromRoute] string app,
-        [FromRoute] int instanceOwnerPartyId,
-        [FromRoute] Guid instanceGuid,
-        [FromRoute] Guid dataGuid,
-        [FromQuery] string? language,
-        CancellationToken cancellationToken = default
-    )
-    {
-        Instance? instance = await _instanceClient.GetInstance(
-            app,
-            org,
-            instanceOwnerPartyId,
-            instanceGuid,
-            authenticationMethod: null,
-            cancellationToken
-        );
-        if (instance?.Process?.CurrentTask?.ElementId is null)
-        {
-            return NotFound("Did not find instance or task");
-        }
-
-        DataElement? dataElement = instance.Data.Find(element => element.Id == dataGuid.ToString());
-        if (dataElement is null)
-        {
-            return NotFound("Did not find data element");
-        }
-
-        var processReader = HttpContext.RequestServices.GetRequiredService<IProcessReader>();
-        List<ProcessTask> tasks = processReader
-            .GetProcessTasks()
-            .Where(task =>
-                task.ExtensionElements?.TaskExtension is { TaskType: "subformPdf" } extension
-                && extension.SubformPdfConfiguration?.SubformDataTypeId == dataElement.DataType
-            )
-            .ToList();
-        if (tasks.Count == 0)
-        {
-            return BadRequest($"No subform PDF service task renders data elements of type {dataElement.DataType}");
-        }
-
-        if (tasks.Count > 1)
-        {
-            return BadRequest(
-                $"Several subform PDF service tasks render data elements of type {dataElement.DataType}. Preview with pdf/preview?taskId=...&dataElementId=... instead"
-            );
-        }
-
-        return await PreviewTask(instance, tasks[0], dataGuid, language, cancellationToken);
     }
 
     private async Task<ActionResult> PreviewTask(

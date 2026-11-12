@@ -569,7 +569,7 @@ public class CustomOpenApiController : Controller
                         Tags = instanceTags,
                         Summary = "Preview a PDF",
                         Description =
-                            "Generate a preview of the PDF of the current task, or of a PDF or subform PDF service task, also one the instance has not reached yet. The preview is in the language given by `language`, or the user's language, and is marked as a preview in its footer. Previews with an explicit taskId are rate limited across all instances.",
+                            "Generate a preview of the PDF of the current task, or of a PDF or subform PDF service task, also one the instance has not reached yet. To preview one subform without knowing the app's tasks, give only `dataElementId`. The preview is in the language given by `language`, or the user's language, and is marked as a preview in its footer. Previews with a taskId or dataElementId are rate limited across all instances.",
                         Parameters =
                         [
                             new OpenApiParameter()
@@ -585,7 +585,7 @@ public class CustomOpenApiController : Controller
                             {
                                 Name = "dataElementId",
                                 Description =
-                                    "The subform data element to preview. Required when previewing a subform PDF service task.",
+                                    "The subform data element to preview. Required when previewing a subform PDF service task. Without taskId, the task is the one subform PDF service task configured for the data element's data type.",
                                 In = ParameterLocation.Query,
                                 Required = false,
                                 Schema = new OpenApiSchema() { Type = "string", Format = "uuid" },
@@ -608,7 +608,7 @@ public class CustomOpenApiController : Controller
                                 ["400"] = new OpenApiResponse()
                                 {
                                     Description =
-                                        "The task is not a PDF or subform PDF service task, or the subform is missing or of the wrong data type",
+                                        "The task is not a PDF or subform PDF service task, the subform is missing or of the wrong data type, or without taskId, no subform PDF service task or more than one is configured for the subform's data type",
                                     Content = new Dictionary<string, OpenApiMediaType>
                                     {
                                         ["text/plain"] = new OpenApiMediaType()
@@ -641,76 +641,6 @@ public class CustomOpenApiController : Controller
                 [
                     Snippets.InstanceOwnerPartyIdParameterReference,
                     Snippets.InstanceGuidParameterReference,
-                    Snippets.LanguageParameterReference,
-                ],
-            }
-        );
-
-        document.Paths.Add(
-            $"/{appMetadata.Id}/instances/{{instanceOwnerPartyId}}/{{instanceGuid}}/data/{{dataGuid}}/pdf/preview",
-            new OpenApiPathItem()
-            {
-                Summary = "Preview the PDF of a subform data element",
-                Operations = new Dictionary<OperationType, OpenApiOperation>
-                {
-                    [OperationType.Get] = new OpenApiOperation()
-                    {
-                        Tags = instanceTags,
-                        Summary = "Preview the PDF of a subform data element",
-                        Description =
-                            "Generate a preview of the subform PDF of one subform data element, without naming the subform PDF service task. The task is the one subform PDF service task configured for the data element's data type. The preview is in the language given by `language`, or the user's language, and is marked as a preview in its footer. Previews are rate limited across all instances.",
-                        Responses = Snippets.AddCommonErrorResponses(
-                            new OpenApiResponses()
-                            {
-                                ["200"] = new OpenApiResponse()
-                                {
-                                    Description = "The PDF preview",
-                                    Content = new Dictionary<string, OpenApiMediaType>
-                                    {
-                                        ["application/pdf"] = new OpenApiMediaType()
-                                        {
-                                            Schema = new OpenApiSchema() { Type = "string", Format = "binary" },
-                                        },
-                                    },
-                                },
-                                ["400"] = new OpenApiResponse()
-                                {
-                                    Description =
-                                        "No subform PDF service task, or more than one, is configured for the data element's data type",
-                                    Content = new Dictionary<string, OpenApiMediaType>
-                                    {
-                                        ["text/plain"] = new OpenApiMediaType()
-                                        {
-                                            Schema = new OpenApiSchema() { Type = "string" },
-                                        },
-                                    },
-                                },
-                                ["404"] = new OpenApiResponse()
-                                {
-                                    Description =
-                                        "The instance has no current task, or the data element does not exist",
-                                    Content = new Dictionary<string, OpenApiMediaType>
-                                    {
-                                        ["text/plain"] = new OpenApiMediaType()
-                                        {
-                                            Schema = new OpenApiSchema() { Type = "string" },
-                                        },
-                                    },
-                                },
-                                ["429"] = new OpenApiResponse()
-                                {
-                                    Description =
-                                        "Too many previews. Try again after the number of seconds in the Retry-After header",
-                                },
-                            }
-                        ),
-                    },
-                },
-                Parameters =
-                [
-                    Snippets.InstanceOwnerPartyIdParameterReference,
-                    Snippets.InstanceGuidParameterReference,
-                    Snippets.DataGuidParameterReference,
                     Snippets.LanguageParameterReference,
                 ],
             }
