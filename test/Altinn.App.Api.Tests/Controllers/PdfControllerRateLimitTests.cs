@@ -23,6 +23,7 @@ public class PdfControllerRateLimitTests : ApiTestBase, IClassFixture<WebApplica
     private const string App = "contributer-restriction";
     private const int InstanceOwnerPartyId = 500600;
     private static readonly Guid _instanceGuid = new("ace19a86-3468-40ee-9393-ee7e0c1ab768");
+    private static readonly Guid _formDataGuid = new("5d9f7a2b-3c41-4e8a-9b6d-2f1e0c7a8b94");
 
     public PdfControllerRateLimitTests(WebApplicationFactory<Program> factory, ITestOutputHelper outputHelper)
         : base(factory, outputHelper) { }
@@ -129,6 +130,30 @@ public class PdfControllerRateLimitTests : ApiTestBase, IClassFixture<WebApplica
     }
 
     [Fact]
+    public async Task DataElementPreviewsShareTheLimit()
+    {
+        using HttpClient client = GetClient(permitLimit: 2);
+        string dataElementPreviewUrl =
+            $"{Org}/{App}/instances/{InstanceOwnerPartyId}/{_instanceGuid}/data/{_formDataGuid}/pdf/preview";
+
+        try
+        {
+            using HttpResponseMessage taskPreview = await client.GetAsync(PreviewUrl(_instanceGuid));
+            using HttpResponseMessage dataElementPreview = await client.GetAsync(dataElementPreviewUrl);
+            using HttpResponseMessage overTheLimit = await client.GetAsync(dataElementPreviewUrl);
+
+            taskPreview.StatusCode.Should().Be(HttpStatusCode.OK);
+            dataElementPreview.StatusCode.Should().Be(HttpStatusCode.OK);
+            dataElementPreview.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
+            overTheLimit.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+        }
+        finally
+        {
+            TestData.DeleteInstanceAndData(Org, App, InstanceOwnerPartyId, _instanceGuid);
+        }
+    }
+
+    [Fact]
     public async Task InvalidDataElementIdIsRejectedByModelBinding()
     {
         using HttpClient client = GetClient(permitLimit: 0);
@@ -163,6 +188,26 @@ public class PdfControllerRateLimitTests : ApiTestBase, IClassFixture<WebApplica
                         ExtensionElements = new() { TaskExtension = new() { TaskType = "pdf" } },
                     }
                 );
+            processReader
+                .Setup(p => p.GetProcessTasks())
+                .Returns([
+                    new ServiceTask
+                    {
+                        Id = "SubformPdf",
+                        ExtensionElements = new()
+                        {
+                            TaskExtension = new()
+                            {
+                                TaskType = "subformPdf",
+                                SubformPdfConfiguration = new()
+                                {
+                                    SubformComponentId = "subform",
+                                    SubformDataTypeId = "default",
+                                },
+                            },
+                        },
+                    },
+                ]);
             services.AddSingleton(processReader.Object);
             services.Configure<PdfGeneratorSettings>(settings => settings.PreviewRateLimit.PermitLimit = permitLimit);
         };
@@ -171,6 +216,16 @@ public class PdfControllerRateLimitTests : ApiTestBase, IClassFixture<WebApplica
 
     private static string PreviewUrl(Guid instanceGuid) =>
         $"{Org}/{App}/instances/{InstanceOwnerPartyId}/{instanceGuid}/pdf/preview?taskId=Pdf";
+
+    [Fact]
+    public void DataElementPreviewsUseTheLimitedPartition()
+    {
+        var policy = new PdfPreviewRateLimiterPolicy(Options.Create(new PdfGeneratorSettings()));
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.RouteValues["dataGuid"] = Guid.NewGuid().ToString();
+
+        policy.GetPartition(httpContext).PartitionKey.Should().Be(GetPartition(policy, Guid.NewGuid()).PartitionKey);
+    }
 
     private static RateLimitPartition<string> GetPartition(PdfPreviewRateLimiterPolicy policy, Guid instanceGuid)
     {

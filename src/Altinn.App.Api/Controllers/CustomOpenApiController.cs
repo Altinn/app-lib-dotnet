@@ -646,6 +646,76 @@ public class CustomOpenApiController : Controller
             }
         );
 
+        document.Paths.Add(
+            $"/{appMetadata.Id}/instances/{{instanceOwnerPartyId}}/{{instanceGuid}}/data/{{dataGuid}}/pdf/preview",
+            new OpenApiPathItem()
+            {
+                Summary = "Preview the PDF of a subform data element",
+                Operations = new Dictionary<OperationType, OpenApiOperation>
+                {
+                    [OperationType.Get] = new OpenApiOperation()
+                    {
+                        Tags = instanceTags,
+                        Summary = "Preview the PDF of a subform data element",
+                        Description =
+                            "Generate a preview of the subform PDF of one subform data element, without naming the subform PDF service task. The task is the one subform PDF service task configured for the data element's data type. The preview is in the language given by `language`, or the user's language, and is marked as a preview in its footer. Previews are rate limited across all instances.",
+                        Responses = Snippets.AddCommonErrorResponses(
+                            new OpenApiResponses()
+                            {
+                                ["200"] = new OpenApiResponse()
+                                {
+                                    Description = "The PDF preview",
+                                    Content = new Dictionary<string, OpenApiMediaType>
+                                    {
+                                        ["application/pdf"] = new OpenApiMediaType()
+                                        {
+                                            Schema = new OpenApiSchema() { Type = "string", Format = "binary" },
+                                        },
+                                    },
+                                },
+                                ["400"] = new OpenApiResponse()
+                                {
+                                    Description =
+                                        "No subform PDF service task, or more than one, is configured for the data element's data type",
+                                    Content = new Dictionary<string, OpenApiMediaType>
+                                    {
+                                        ["text/plain"] = new OpenApiMediaType()
+                                        {
+                                            Schema = new OpenApiSchema() { Type = "string" },
+                                        },
+                                    },
+                                },
+                                ["404"] = new OpenApiResponse()
+                                {
+                                    Description =
+                                        "The instance has no current task, or the data element does not exist",
+                                    Content = new Dictionary<string, OpenApiMediaType>
+                                    {
+                                        ["text/plain"] = new OpenApiMediaType()
+                                        {
+                                            Schema = new OpenApiSchema() { Type = "string" },
+                                        },
+                                    },
+                                },
+                                ["429"] = new OpenApiResponse()
+                                {
+                                    Description =
+                                        "Too many previews. Try again after the number of seconds in the Retry-After header",
+                                },
+                            }
+                        ),
+                    },
+                },
+                Parameters =
+                [
+                    Snippets.InstanceOwnerPartyIdParameterReference,
+                    Snippets.InstanceGuidParameterReference,
+                    Snippets.DataGuidParameterReference,
+                    Snippets.LanguageParameterReference,
+                ],
+            }
+        );
+
         var commonTags = new[]
         {
             new OpenApiTag() { Name = "Static", Description = "Static info about the application" },

@@ -581,6 +581,75 @@
         }
       ]
     },
+    "/tdd/contributer-restriction/instances/{instanceOwnerPartyId}/{instanceGuid}/data/{dataGuid}/pdf/preview": {
+      "summary": "Preview the PDF of a subform data element",
+      "get": {
+        "tags": [
+          "Instances"
+        ],
+        "summary": "Preview the PDF of a subform data element",
+        "description": "Generate a preview of the subform PDF of one subform data element, without naming the subform PDF service task. The task is the one subform PDF service task configured for the data element's data type. The preview is in the language given by `language`, or the user's language, and is marked as a preview in its footer. Previews are rate limited across all instances.",
+        "responses": {
+          "200": {
+            "description": "The PDF preview",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No subform PDF service task, or more than one, is configured for the data element's data type",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The instance has no current task, or the data element does not exist",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many previews. Try again after the number of seconds in the Retry-After header"
+          },
+          "401": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "403": {
+            "$ref": "#/components/responses/ProblemDetails"
+          },
+          "500": {
+            "$ref": "#/components/responses/ProblemDetails"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/instanceOwnerPartyId"
+        },
+        {
+          "$ref": "#/components/parameters/instanceGuid"
+        },
+        {
+          "$ref": "#/components/parameters/dataGuid"
+        },
+        {
+          "$ref": "#/components/parameters/language"
+        }
+      ]
+    },
     "/tdd/contributer-restriction/api/v1/applicationmetadata": {
       "summary": "Get application metadata",
       "description": "Get the metadata for the application",
