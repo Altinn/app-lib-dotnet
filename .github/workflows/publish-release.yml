@@ -12,12 +12,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    environment: |-
-      ${{
-         contains(github.event.release.tag_name, 'preview') && 'test'
-      || contains(github.event.release.tag_name, 'rc')      && 'staging'
-      ||                                                       'prod'
-      }}
+    environment: libraries
     steps:
       - name: Validate tag
         env:

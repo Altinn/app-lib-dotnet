@@ -102,6 +102,7 @@ jobs:
     name: Publish PR packages
     needs: build
     runs-on: ubuntu-latest
+    environment: libraries
     permissions:
       id-token: write
       issues: write
