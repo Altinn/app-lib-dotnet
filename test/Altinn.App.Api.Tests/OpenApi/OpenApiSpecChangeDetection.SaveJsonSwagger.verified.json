@@ -4325,7 +4325,7 @@
           {
             "name": "dataElementId",
             "in": "query",
-            "description": "The subform data element. Required for a subform PDF service task.",
+            "description": "The subform data element. Without taskId, it selects the subform PDF task for its data type.",
             "schema": {
               "type": "string",
               "format": "uuid"

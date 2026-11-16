@@ -30,8 +30,9 @@ internal sealed class PdfPreviewRateLimiterPolicy(IOptions<PdfGeneratorSettings>
     public RateLimitPartition<string> GetPartition(HttpContext httpContext)
     {
         PdfPreviewRateLimitSettings limit = settings.Value.PreviewRateLimit;
-        // Keep the existing current-task preview behavior for v8 consumers.
-        if (!httpContext.Request.Query.ContainsKey("taskId"))
+        // Keep the existing current-task preview behavior for v8 consumers. Previews of a named task or a subform
+        // share the limit.
+        if (!httpContext.Request.Query.ContainsKey("taskId") && !httpContext.Request.Query.ContainsKey("dataElementId"))
         {
             return RateLimitPartition.GetNoLimiter(Name + "Legacy");
         }

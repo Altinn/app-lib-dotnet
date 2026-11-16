@@ -70,7 +70,7 @@ public class PdfController : ControllerBase
     /// <param name="instanceOwnerPartyId">The instance owner's party id.</param>
     /// <param name="instanceGuid">The instance id.</param>
     /// <param name="taskId">The PDF or subform PDF service task to preview. Defaults to the current task.</param>
-    /// <param name="dataElementId">The subform data element. Required for a subform PDF service task.</param>
+    /// <param name="dataElementId">The subform data element. Without taskId, it selects the subform PDF task for its data type.</param>
     /// <param name="language">The preview language. Defaults to the user's language.</param>
     /// <param name="cancellationToken">The request cancellation token.</param>
     [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK, "application/pdf")]
@@ -104,7 +104,7 @@ public class PdfController : ControllerBase
             return NotFound("Did not find instance or task");
         }
 
-        if (taskId is null)
+        if (taskId is null && dataElementId is null)
         {
             // Preserve the existing v8 service, including any app-provided implementation.
             // It already reads language/lang from the request.
@@ -114,11 +114,59 @@ public class PdfController : ControllerBase
 
         // Resolve the new internal service without changing the existing public constructor.
         var processReader = HttpContext.RequestServices.GetRequiredService<IProcessReader>();
-        if (processReader.GetFlowElement(taskId) is not ProcessTask task)
+        ProcessTask task;
+        if (taskId is not null)
         {
-            return NotFound("Did not find task");
+            if (processReader.GetFlowElement(taskId) is not ProcessTask namedTask)
+            {
+                return NotFound("Did not find task");
+            }
+
+            task = namedTask;
+        }
+        else
+        {
+            // Callers that only know the subform get the subform PDF service task of its data type
+            string? subformId = dataElementId?.ToString();
+            DataElement? subform = instance.Data.Find(element => element.Id == subformId);
+            if (subform is null)
+            {
+                return BadRequest("dataElementId must be the id of a data element in the instance");
+            }
+
+            List<ProcessTask> subformPdfTasks = processReader
+                .GetProcessTasks()
+                .Where(processTask =>
+                    processTask.ExtensionElements?.TaskExtension is { TaskType: "subformPdf" } extension
+                    && extension.SubformPdfConfiguration?.SubformDataTypeId == subform.DataType
+                )
+                .ToList();
+            if (subformPdfTasks.Count == 0)
+            {
+                return BadRequest($"No subform PDF service task renders data elements of type {subform.DataType}");
+            }
+
+            if (subformPdfTasks.Count > 1)
+            {
+                return BadRequest(
+                    $"Several subform PDF service tasks render data elements of type {subform.DataType}. Add taskId to choose one"
+                );
+            }
+
+            task = subformPdfTasks[0];
         }
 
+        return await PreviewTask(instance, task, dataElementId, language, cancellationToken);
+    }
+
+    private async Task<ActionResult> PreviewTask(
+        Instance instance,
+        ProcessTask task,
+        Guid? dataElementId,
+        string? language,
+        CancellationToken cancellationToken
+    )
+    {
         AltinnTaskExtension? taskExtension = task.ExtensionElements?.TaskExtension;
         SubformPdfContext? subformContext = null;
         List<string>? autoPdfTaskIds = null;
@@ -153,7 +201,7 @@ public class PdfController : ControllerBase
         var previewService = HttpContext.RequestServices.GetRequiredService<IPdfPreviewService>();
         Stream preview = await previewService.GeneratePreview(
             instance,
-            taskId,
+            task.Id,
             language,
             subformContext,
             autoPdfTaskIds,
