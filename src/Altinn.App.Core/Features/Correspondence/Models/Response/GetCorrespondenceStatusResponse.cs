@@ -154,4 +154,10 @@ public sealed record GetCorrespondenceStatusResponse
     /// </summary>
     [JsonPropertyName("isConfidential")]
     public bool IsConfidential { get; init; }
+
+    /// <summary>
+    /// Specifies whether the correspondence can be forwarded through email.
+    /// </summary>
+    [JsonPropertyName("allowForwarding")]
+    public bool AllowForwarding { get; init; }
 }

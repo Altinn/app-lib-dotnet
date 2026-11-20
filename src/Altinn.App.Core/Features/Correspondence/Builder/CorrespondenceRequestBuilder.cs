@@ -23,6 +23,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     private bool? _ignoreReservation;
     private bool? _isConfirmationNeeded;
     private bool? _isConfidential;
+    private bool? _allowForwarding;
     private List<Guid>? _existingAttachments;
 
     private CorrespondenceRequestBuilder() { }
@@ -318,6 +319,13 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
     }
 
     /// <inheritdoc/>
+    public ICorrespondenceRequestBuilder WithAllowForwarding(bool allowForwarding)
+    {
+        _allowForwarding = allowForwarding;
+        return this;
+    }
+
+    /// <inheritdoc/>
     public CorrespondenceRequest Build()
     {
         BuilderUtils.NotNullOrEmpty(_resourceId);
@@ -342,6 +350,7 @@ public class CorrespondenceRequestBuilder : ICorrespondenceRequestBuilder
             ExistingAttachments = _existingAttachments,
             IsConfirmationNeeded = _isConfirmationNeeded,
             IsConfidential = _isConfidential,
+            AllowForwarding = _allowForwarding,
         };
     }
 }
