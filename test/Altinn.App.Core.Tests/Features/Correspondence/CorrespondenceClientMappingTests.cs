@@ -73,6 +73,7 @@ public class CorrespondenceClientMappingTests
             .WithIgnoreReservation(true)
             .WithIsConfirmationNeeded(true)
             .WithIsConfidential(true)
+            .WithAllowForwarding(true)
             .WithPropertyList(
                 new Dictionary<string, string> { ["prop-key-1"] = "prop-value-1", ["prop-key-2"] = "prop-value-2" }
             )
@@ -143,6 +144,7 @@ public class CorrespondenceClientMappingTests
         corr.GetProperty("ignoreReservation").GetBoolean().Should().BeTrue();
         corr.GetProperty("isConfirmationNeeded").GetBoolean().Should().BeTrue();
         corr.GetProperty("isConfidential").GetBoolean().Should().BeTrue();
+        corr.GetProperty("allowForwarding").GetBoolean().Should().BeTrue();
 
         var content = corr.GetProperty("content");
         content.GetProperty("language").GetString().Should().Be("nb");
