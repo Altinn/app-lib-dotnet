@@ -127,7 +127,7 @@ public class PdfController : ControllerBase
         else
         {
             // Callers that only know the subform get the subform PDF service task of its data type
-            string? subformId = dataElementId?.ToString();
+            string subformId = dataElementId.GetValueOrDefault().ToString();
             DataElement? subform = instance.Data.Find(element => element.Id == subformId);
             if (subform is null)
             {
